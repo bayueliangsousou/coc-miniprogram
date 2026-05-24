@@ -1,0 +1,107 @@
+/* components/custom-picker/custom-picker.wxss */
+
+/* 遮罩层 */
+.custom-picker-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.custom-picker-mask.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 容器 */
+.custom-picker-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  transform: translateY(100%);
+  transition: transform 0.3s;
+}
+
+.custom-picker-container.show {
+  transform: translateY(0);
+}
+
+/* 头部 */
+.custom-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid #e5e5e5;
+}
+
+.custom-picker-cancel {
+  font-size: 28rpx;
+  color: #999;
+  padding: 8rpx 16rpx;
+}
+
+.custom-picker-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.custom-picker-confirm {
+  font-size: 28rpx;
+  color: #07c160;
+  padding: 8rpx 16rpx;
+}
+
+/* 身体 */
+.custom-picker-body {
+  position: relative;
+  height: 480rpx;
+  background: #fff;
+}
+
+/* picker-view */
+.custom-picker-view {
+  width: 100%;
+  height: 100%;
+}
+
+/* 选项 */
+.custom-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96rpx;
+  padding: 0 32rpx;
+}
+
+.custom-picker-item-text {
+  font-size: 28rpx;
+  color: #333;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 选中框指示器 */
+.custom-picker-indicator {
+  position: absolute;
+  left: 32rpx;
+  right: 32rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 96rpx;
+  border-top: 1rpx solid #e5e5e5;
+  border-bottom: 1rpx solid #e5e5e5;
+  pointer-events: none;
+}

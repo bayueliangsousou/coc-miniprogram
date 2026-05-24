@@ -1,0 +1,24 @@
+<!--components/custom-picker/custom-picker.wxml-->
+<view class="custom-picker-mask {{show ? 'show' : ''}}" bindtap="onMaskClick">
+  <view class="custom-picker-container {{show ? 'show' : ''}}" catchtap="onContainerTap">
+    <!-- 头部 -->
+    <view class="custom-picker-header">
+      <text class="custom-picker-cancel" bindtap="onCancel">取消</text>
+      <text class="custom-picker-title">{{title}}</text>
+      <text class="custom-picker-confirm" bindtap="onConfirm">确定</text>
+    </view>
+    
+    <!-- 选择器内容 -->
+    <view class="custom-picker-body">
+      <picker-view class="custom-picker-view" value="{{[selectedIndex < 0 ? 0 : selectedIndex]}}" bindchange="onChange">
+        <picker-view-column>
+          <view wx:for="{{range}}" wx:key="index" class="custom-picker-item">
+            <text class="custom-picker-item-text">{{rangeKey ? item[rangeKey] : item}}</text>
+          </view>
+        </picker-view-column>
+      </picker-view>
+      <!-- 选中框遮罩 -->
+      <view class="custom-picker-indicator"></view>
+    </view>
+  </view>
+</view>

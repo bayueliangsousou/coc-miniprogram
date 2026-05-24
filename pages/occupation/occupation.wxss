@@ -1,0 +1,121 @@
+/* pages/occupation/occupation.wxss */
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 0 20rpx;
+  margin-bottom: 24rpx;
+  border: 2rpx solid var(--color-border);
+  height: 80rpx;
+}
+
+.search-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+}
+
+.search-input {
+  flex: 1;
+  height: 80rpx;
+  font-size: 28rpx;
+  color: var(--color-text);
+}
+
+.occ-list {
+  padding-bottom: 20rpx;
+}
+
+.occ-item {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+  border: 2rpx solid transparent;
+  display: flex;
+  align-items: flex-start;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05);
+  transition: border-color 0.2s;
+}
+
+.occ-item:active {
+  background: #fafafa;
+}
+
+.occ-item.is-selected {
+  border-color: var(--color-primary);
+  background: rgba(201, 168, 76, 0.04);
+}
+
+.occ-left {
+  flex: 1;
+}
+
+.occ-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 8rpx;
+}
+
+.occ-desc {
+  font-size: 24rpx;
+  color: var(--color-text-sub);
+  margin-bottom: 16rpx;
+  line-height: 1.5;
+}
+
+.occ-meta {
+  margin-bottom: 16rpx;
+}
+
+.occ-tag {
+  display: inline-block;
+  font-size: 24rpx;
+  background: rgba(201, 168, 76, 0.12);
+  color: var(--color-primary-dark);
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.occ-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.skill-chip {
+  font-size: 24rpx;
+  background: #f0f0ec;
+  color: #666;
+  padding: 4rpx 14rpx;
+  border-radius: 20rpx;
+}
+
+.occ-check {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  margin-top: 4rpx;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 32rpx;
+  background: rgba(245, 245, 240, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -2rpx 16rpx rgba(0, 0, 0, 0.08);
+}

@@ -1,0 +1,241 @@
+/* app.wxss — 全局样式 */
+
+/* 颜色变量（用 page 根选择器模拟 CSS 变量） */
+page {
+  --color-bg: #f5f5f0;
+  --color-bg-dark: #1a1a2e;
+  --color-card: #ffffff;
+  --color-primary: #c9a84c;
+  --color-primary-dark: #8b5e1a;
+  --color-text: #2c2c2c;
+  --color-text-sub: #888888;
+  --color-border: #e0ddd5;
+  --color-danger: #c0392b;
+  --color-success: #27ae60;
+  --radius-sm: 8rpx;
+  --radius-md: 16rpx;
+  --radius-lg: 24rpx;
+
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+/* 移除 * 选择器，小程序不支持 */
+view, text, image, button, input, textarea, scroll-view, swiper, swiper-item {
+  box-sizing: border-box;
+}
+
+/* 通用容器 */
+.page-container {
+  min-height: 100vh;
+  padding: 24rpx;
+  background-color: var(--color-bg);
+}
+
+/* 卡片 */
+.card {
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 区块标题 */
+.section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 24rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 2rpx solid var(--color-border);
+  display: flex;
+  align-items: center;
+}
+
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 6rpx;
+  height: 30rpx;
+  background-color: var(--color-primary);
+  border-radius: 3rpx;
+  margin-right: 16rpx;
+}
+
+/* 表单行 */
+.form-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.form-label {
+  font-size: 24rpx;
+  color: var(--color-text-sub);
+  width: 160rpx;
+  flex-shrink: 0;
+}
+
+.form-input {
+  flex: 1;
+  height: 72rpx;
+  padding: 0 20rpx;
+  border: 2rpx solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 28rpx;
+  color: var(--color-text);
+  background: #fafafa;
+}
+
+.form-input:focus {
+  border-color: var(--color-primary);
+  background: #fff;
+}
+
+/* 按钮 */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: var(--radius-md);
+  font-size: 30rpx;
+  font-weight: 600;
+  border: none;
+  padding: 0 40rpx;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #c9a84c, #8b5e1a);
+  color: #fff;
+}
+
+.btn-primary:active {
+  opacity: 0.85;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 2rpx solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* 数值徽章 */
+.stat-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f0;
+  border: 2rpx solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 12rpx 16rpx;
+  min-width: 100rpx;
+}
+
+.stat-badge .stat-value {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.stat-badge .stat-label {
+  font-size: 24rpx;
+  color: var(--color-text-sub);
+  margin-top: 6rpx;
+}
+
+/* 进度条（用于属性展示） */
+.attr-bar {
+  height: 8rpx;
+  background: var(--color-border);
+  border-radius: 4rpx;
+  overflow: hidden;
+  margin-top: 8rpx;
+}
+
+.attr-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c9a84c, #8b5e1a);
+  border-radius: 4rpx;
+  transition: width 0.3s ease;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+  color: var(--color-text-sub);
+}
+
+.empty-state text {
+  font-size: 28rpx;
+  margin-top: 16rpx;
+}
+
+/* 导航栏底部安全区 */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 悬浮操作按钮 */
+.fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: calc(40rpx + env(safe-area-inset-bottom));
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c9a84c, #8b5e1a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(201, 168, 76, 0.4);
+  z-index: 100;
+}
+
+.fab text {
+  color: #fff;
+  font-size: 50rpx;
+  line-height: 1;
+  margin-top: -4rpx;
+}
+
+/* 标签 */
+.tag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  background: rgba(201, 168, 76, 0.15);
+  color: var(--color-primary-dark);
+}
+
+/* 分割线 */
+.divider {
+  height: 2rpx;
+  background: var(--color-border);
+  margin: 24rpx 0;
+}

@@ -1,0 +1,9 @@
+{
+  "name": "playerJoin",
+  "version": "1.0.0",
+  "description": "玩家加入战役云函数",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest"
+  }
+}

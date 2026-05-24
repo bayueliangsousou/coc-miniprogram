@@ -1,0 +1,9 @@
+<view class="login-page">
+  <image class="login-bg" src="/assets/images/login-bg.jpg" mode="aspectFill"/>
+  <view class="gradient-top"></view>
+  <view class="gradient-bottom"></view>
+  <image class="login-title" src="/assets/images/login-title.png" mode="widthFix"/>
+  <button class="login-btn" bind:tap="onGetUserProfile" loading="{{isLoading}}">
+    <text class="btn-text">微信一键登录</text>
+  </button>
+</view>

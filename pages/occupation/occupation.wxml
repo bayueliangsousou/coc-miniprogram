@@ -1,0 +1,48 @@
+<view class="page-container" style="padding-bottom:140rpx">
+
+  <!-- 搜索框 -->
+  <view class="search-bar">
+    <text class="search-icon">🔍</text>
+    <input
+      class="search-input"
+      placeholder="搜索职业名称..."
+      value="{{searchText}}"
+      bindinput="onSearch"
+    />
+  </view>
+
+  <!-- 职业列表 -->
+  <view class="occ-list">
+    <view
+      class="occ-item {{selectedId === item.id ? 'is-selected' : ''}}"
+      wx:for="{{filteredOccupations}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onSelectOccupation"
+    >
+      <view class="occ-left">
+        <view class="occ-name">{{item.name}}</view>
+        <view class="occ-desc">{{item.desc}}</view>
+        <view class="occ-meta">
+          <text class="occ-tag">信用评级 {{item.creditRating[0]}}–{{item.creditRating[1]}}</text>
+          <text class="occ-tag" style="margin-left:12rpx">{{item.pointFormula}}</text>
+        </view>
+        <view class="occ-skills">
+          <text class="skill-chip" wx:for="{{item.skills}}" wx:key="*this" wx:for-item="sk">{{sk}}</text>
+        </view>
+      </view>
+      <view class="occ-check" wx:if="{{selectedId === item.id}}">✓</view>
+    </view>
+
+    <!-- 空结果 -->
+    <view wx:if="{{filteredOccupations.length === 0}}" class="empty-state">
+      <text>未找到相关职业</text>
+    </view>
+  </view>
+
+  <!-- 底部确认 -->
+  <view class="bottom-bar safe-bottom">
+    <button class="btn btn-primary btn-block" bindtap="onConfirm">确认选择</button>
+  </view>
+
+</view>

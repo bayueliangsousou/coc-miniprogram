@@ -1,0 +1,135 @@
+<scroll-view scroll-y class="page-container" style="padding-bottom:260rpx" scroll-into-view="{{scrollToSkill}}" scroll-with-animation>
+
+  <!-- 技能点数面板 - 吸顶 -->
+  <view class="points-panel sticky-panel">
+    <!-- 职业技能点数 -->
+    <view class="points-section occ-section">
+      <text class="points-title">职业技能</text>
+      <view class="points-numbers">
+        <text class="points-remain {{points.occRemaining < 0 ? 'points-negative' : ''}}">{{points.occRemaining}}</text>
+        <text class="points-slash">/</text>
+        <text class="points-total">{{points.occTotal}}</text>
+      </view>
+      <text class="points-used-row" wx:if="{{points.occUsed > 0}}">已用 {{points.occUsed}} 点</text>
+      <text class="points-formula">{{pointFormula}}</text>
+      <view class="points-bar-wrap">
+        <view class="points-bar-fill occ-fill" style="width: {{points.occUsed / points.occTotal * 100}}%"></view>
+      </view>
+    </view>
+
+    <!-- 兴趣技能点数 -->
+    <view class="points-section int-section">
+      <text class="points-title">兴趣技能</text>
+      <view class="points-numbers">
+        <text class="points-remain {{points.intRemaining < 0 ? 'points-negative' : ''}}">{{points.intRemaining}}</text>
+        <text class="points-slash">/</text>
+        <text class="points-total">{{points.intTotal}}</text>
+      </view>
+      <text class="points-used-row" wx:if="{{points.intUsed > 0}}">已用 {{points.intUsed}} 点</text>
+      <text class="points-formula">EDU×2</text>
+      <view class="points-bar-wrap">
+        <view class="points-bar-fill int-fill" style="width: {{points.intUsed / points.intTotal * 100}}%"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 社会信用评级 -->
+  <view class="credit-rating-section" wx:if="{{creditRatingRange}}">
+    <view class="credit-rating-header">
+      <text class="credit-rating-title">社会信用评级</text>
+      <text class="credit-rating-range">{{creditRatingRange[0]}} — {{creditRatingRange[1]}}</text>
+    </view>
+    <view class="credit-rating-input-wrap">
+      <input
+        class="credit-rating-input"
+        type="number"
+        value="{{creditRatingValue}}"
+        bindinput="onCreditRatingInput"
+        bindblur="onCreditRatingBlur"
+        placeholder="0"
+      />
+      <text class="credit-rating-hint">需在 {{creditRatingRange[0]}}-{{creditRatingRange[1]}} 区间内</text>
+    </view>
+  </view>
+
+  <!-- 搜索 -->
+  <view class="search-bar">
+    <text class="search-icon">🔍</text>
+    <input class="search-input" placeholder="搜索技能..." value="{{searchText}}" bindinput="onSearch" confirm-type="search"/>
+    <view class="search-nav" wx:if="{{searchMatches.length > 0}}" bindtap="onSearchNext">
+      <text class="search-count">{{searchIndex + 1}}/{{searchMatches.length}}</text>
+    </view>
+    <view class="search-nav search-nav-empty" wx:elif="{{searchText}}">
+      <text class="search-count">0/0</text>
+    </view>
+  </view>
+
+  <!-- 职业技能提示 -->
+  <view class="occ-hint" wx:if="{{occupationSkills.length > 0}}">
+    <text>★ 金色标记为职业技能</text>
+  </view>
+
+  <!-- 技能分类列表 -->
+  <view wx:for="{{skillCategories}}" wx:key="category">
+    <!-- 分类标题 -->
+    <view class="cat-header" data-category="{{item.category}}" bindtap="onToggleCategory">
+      <text class="cat-name">{{item.category}}</text>
+      <text class="cat-count">{{item.skills.length}} 项</text>
+      <text class="cat-arrow">{{expandedCategories[item.category] ? '▾' : '▸'}}</text>
+    </view>
+
+    <!-- 技能行 -->
+    <view wx:if="{{expandedCategories[item.category]}}">
+      <block wx:for="{{item.skills}}" wx:key="name" wx:for-item="sk">
+        <!-- 搜索过滤 -->
+        <view
+          id="skill-{{sk.name}}"
+          class="skill-row {{sk.isOccSkill ? 'is-occ' : ''}} {{searchMatches[searchIndex] === sk.name ? 'skill-highlight' : ''}}"
+          wx:if="{{!searchText || sk.name.indexOf(searchText) !== -1}}"
+        >
+          <view class="skill-name-wrap">
+            <text class="occ-dot" wx:if="{{sk.isOccSkill}}">★</text>
+            <text class="skill-name">{{sk.name}}</text>
+            <text class="skill-base">基础{{sk.baseValue}}</text>
+          </view>
+          <view class="skill-inputs">
+            <input
+              class="skill-input current {{sk.isOccSkill ? 'input-occ' : 'input-int'}} {{invalidSkillName === sk.name ? 'input-error' : ''}}"
+              type="number"
+              value="{{sk.current}}"
+              data-name="{{sk.name}}"
+              bindinput="onSkillInput"
+              bindblur="onSkillBlur"
+              bindfocus="onSkillFocus"
+              disabled="{{invalidSkillName && invalidSkillName !== sk.name}}"
+              placeholder="0"
+            />
+            <view class="skill-thresholds">
+              <text class="threshold">{{sk.hard}}</text>
+              <text class="threshold-sep">/</text>
+              <text class="threshold">{{sk.extreme}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <!-- 表头说明（悬浮） -->
+  <view class="skills-header-hint">
+    <text>当前值</text>
+    <text style="margin-left:20rpx">困难 / 极难</text>
+  </view>
+
+</scroll-view>
+
+<!-- 底部保存 -->
+<view class="bottom-bar safe-bottom">
+  <view class="bottom-btns">
+    <button class="btn btn-ghost btn-random" bindtap="onRandomDistribute">
+      <image class="dice-icon" src="/assets/icons/dice-new.svg" mode="aspectFit"/>
+      <text>随机分配</text>
+    </button>
+    <button class="btn btn-primary btn-save" bindtap="onSave">保存技能</button>
+  </view>
+</view>

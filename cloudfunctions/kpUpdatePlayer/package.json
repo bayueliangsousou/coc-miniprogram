@@ -1,0 +1,9 @@
+{
+  "name": "kpUpdatePlayer",
+  "version": "1.0.0",
+  "description": "KP修改玩家数据云函数",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest"
+  }
+}

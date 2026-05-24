@@ -1,0 +1,58 @@
+{
+  "cloudfunctionRoot": "./cloudfunctions",
+  "cloudbaseRoot": "./cloudbaseroot/",
+  "setting": {
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "uglifyFileName": false,
+    "enhance": true,
+    "packNpmRelationList": [
+      {
+        "packageJsonPath": "./package.json",
+        "miniprogramNpmDistDir": "./"
+      }
+    ],
+    "packNpmManually": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "useCompilerPlugins": false,
+    "minifyWXML": true,
+    "compileWorklet": false,
+    "uploadWithSourceMap": true,
+    "minifyWXSS": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": true,
+    "swc": false,
+    "disableSWC": true
+  },
+  "compileType": "miniprogram",
+  "simulatorPluginLibVersion": {
+    "wxext14566970e7e9f62": "2.27.3"
+  },
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "cloudfunctions"
+      },
+      {
+        "type": "folder",
+        "value": "cloudbaseroot"
+      },
+      {
+        "type": "suffix",
+        "value": ".map"
+      }
+    ]
+  },
+  "appid": "wx99360a82b6a9a584",
+  "editorSetting": {},
+  "libVersion": "3.15.0",
+  "projectArchitecture": "multiPlatform",
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate"
+}

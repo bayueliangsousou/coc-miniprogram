@@ -1,0 +1,1358 @@
+/* pages/character-detail/character-detail.wxss */
+
+.detail-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--color-bg);
+  padding-bottom: 120rpx;
+  box-sizing: border-box;
+}
+
+/* ── 顶部区域 ── */
+.top-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  padding: 32rpx 24rpx 24rpx;
+  background: linear-gradient(180deg, #1a1a2e 0%, #2c2c4a 100%);
+  overflow: hidden;
+}
+
+.top-section-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+  z-index: 0;
+}
+
+.top-section > view,
+.top-section > text {
+  position: relative;
+  z-index: 1;
+}
+
+/* 姓名+职业 */
+.name-occ-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.header-name {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-occ {
+  background: rgba(201, 168, 76, 0.2);
+  border: 2rpx solid rgba(201, 168, 76, 0.4);
+  border-radius: 16rpx;
+  padding: 4rpx 20rpx;
+  font-size: 28rpx;
+  color: #c9a84c;
+  font-weight: 700;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* 状态标签行（右对齐） */
+.header-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* 状态标签统一用职业样式 */
+.status-tag-style {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(201, 168, 76, 0.2);
+  border: 2rpx solid rgba(201, 168, 76, 0.4);
+  border-radius: 16rpx;
+  padding: 4rpx 20rpx;
+  font-size: 28rpx;
+  color: #c9a84c;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-left: 12rpx;
+}
+
+.status-tag-style text {
+  color: #c9a84c;
+}
+
+/* 添加状态按钮（职业样式） */
+.add-status-btn-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(201, 168, 76, 0.2);
+  border: 2rpx dashed rgba(201, 168, 76, 0.4);
+  border-radius: 16rpx;
+  padding: 4rpx 16rpx;
+  white-space: nowrap;
+}
+
+.add-status-icon-tag {
+  font-size: 28rpx;
+  color: #c9a84c;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* 职业·性别·年龄行（左对齐） */
+.header-info-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4rpx;
+}
+
+/* ── 房间按钮/房间号 ── */
+.room-section {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.join-room-btn {
+  display: flex;
+  align-items: center;
+  padding: 6rpx 20rpx;
+  background: rgba(39, 174, 96, 0.2);
+  border: 2rpx solid rgba(39, 174, 96, 0.5);
+  border-radius: 20rpx;
+}
+
+.join-room-btn-text {
+  font-size: 24rpx;
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.room-badge {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 6rpx 20rpx;
+  background: rgba(39, 174, 96, 0.2);
+  border: 2rpx solid rgba(39, 174, 96, 0.5);
+  border-radius: 20rpx;
+}
+
+.room-icon {
+  font-size: 24rpx;
+}
+
+.room-code {
+  font-size: 24rpx;
+  color: #27ae60;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+
+/* ── 房间输入弹窗 ── */
+.room-input-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.room-input-content {
+  width: 80%;
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.room-input-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.room-input-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.room-input-close {
+  font-size: 48rpx;
+  color: #999;
+  line-height: 1;
+  padding: 0 10rpx;
+}
+
+.room-input-form {
+  padding: 40rpx 30rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30rpx;
+}
+
+.room-code-input {
+  width: 100%;
+  height: 88rpx;
+  border: 2rpx solid #ddd;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 36rpx;
+  text-align: center;
+  letter-spacing: 8rpx;
+  box-sizing: border-box;
+  background: #f8f8f8;
+}
+
+.room-join-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: linear-gradient(135deg, #27ae60, #1e8449);
+  border-radius: 44rpx;
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+}
+
+.room-join-btn::after {
+  border: none;
+}
+
+.header-sub-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.header-sub-sep {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* HP/SAN/MP 紧凑行 */
+.hp-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.hp-item {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  width: 220rpx;
+}
+
+.hp-lbl {
+  font-size: 28rpx;
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.hp-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+}
+
+.hp-input {
+  width: 88rpx;
+  height: 64rpx;
+  background: rgba(255,255,255,0.1);
+  border: 2rpx solid rgba(255,255,255,0.15);
+  border-radius: 6rpx;
+  text-align: center;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #fff;
+  padding: 0;
+}
+
+.hp-current-tap {
+  width: 88rpx;
+  height: 64rpx;
+  background: rgba(255,255,255,0.1);
+  border: 2rpx solid rgba(255,255,255,0.2);
+  border-radius: 6rpx;
+  text-align: center;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #fff;
+  line-height: 60rpx;
+  display: inline-block;
+}
+
+.hp-slash {
+  font-size: 28rpx;
+  color: rgba(255,255,255,0.3);
+}
+
+.hp-max {
+  font-size: 28rpx;
+  color: rgba(255,255,255,0.45);
+  font-weight: 600;
+}
+
+.hp-divider {
+  width: 1rpx;
+  height: 48rpx;
+  background: rgba(255,255,255,0.12);
+  margin: 0 4rpx;
+}
+
+/* 闪避+武器紧凑行 */
+.weapon-row-compact {
+  display: flex;
+  gap: 12rpx;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+
+.w-tag {
+  background: rgba(255,255,255,0.08);
+  border: 2rpx solid rgba(255,255,255,0.1);
+  border-radius: 8rpx;
+  flex-shrink: 0;
+}
+
+.w-tag.dodge {
+  width: 140rpx;
+  border-color: rgba(201,168,76,0.3);
+  background: rgba(201,168,76,0.12);
+  padding: 16rpx 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  height: 100rpx;
+  box-sizing: border-box;
+}
+
+.w-tag.dodge .w-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  line-height: 1;
+}
+
+.w-tag.dodge .w-val {
+  font-size: 34rpx;
+  color: #c9a84c;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.w-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.w-val {
+  font-size: 28rpx;
+  color: #c9a84c;
+  white-space: nowrap;
+}
+
+/* 武器选择器样式 */
+.weapon-picker {
+  flex: 1;
+  min-width: 0;
+}
+
+.w-tag.weapon-select {
+  cursor: pointer;
+  padding: 16rpx 20rpx;
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.weapon-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.weapon-skill-name {
+  font-size: 28rpx;
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.weapon-info {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.weapon-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200rpx;
+  line-height: 1;
+}
+
+.weapon-damage {
+  font-size: 28rpx;
+  color: #c9a84c;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.weapon-arrow-box {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 16rpx;
+}
+
+.w-arrow {
+  font-size: 40rpx;
+  color: rgba(255,255,255,0.5);
+  line-height: 1;
+}
+
+/* ── Tab 栏 ── */
+.tab-bar {
+  display: flex;
+  background: var(--color-card, #fff);
+  border-bottom: 2rpx solid var(--color-border, #e0ddd5);
+  flex-shrink: 0;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 24rpx 0;
+  font-size: 28rpx;
+  color: var(--color-text-sub, #888);
+  position: relative;
+}
+
+.tab-item.active {
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 4rpx;
+  background: var(--color-primary);
+  border-radius: 2rpx;
+}
+
+/* Tab 滚动容器 */
+.tab-scroll-view {
+  flex: 1;
+  height: 0;
+}
+
+/* Tab 内容区 */
+.tab-content {
+  position: relative;
+  padding: 24rpx;
+  padding-bottom: 120rpx;
+  min-height: 100%;
+}
+
+.tab-content > view,
+.tab-content > .card {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── 属性九宫格 ── */
+.attr-grid9 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.attr-cell {
+  background: var(--color-card, #fff);
+  border-radius: var(--radius-sm);
+  padding: 24rpx 10rpx 21rpx;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12rpx;
+  min-height:140rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.attr-cell-header {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.attr-cell-en {
+  font-size:28rpx;
+  font-weight:700;
+  color: var(--color-text, #2c2c2c);
+  line-height:1;
+}
+
+.attr-cell-cn {
+  font-size:28rpx;
+  color: var(--color-text-sub, #888);
+}
+
+.attr-cell-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.attr-cell-val {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  line-height: 1;
+}
+
+.attr-thresholds {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rpx;
+}
+
+.attr-dice-btn {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: rgba(249,213,86,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  flex-shrink: 0;
+}
+
+.attr-dice-btn:active {
+  background: rgba(249,213,86,0.3);
+}
+
+.attr-edit-btn {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: rgba(103,221,123,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  flex-shrink: 0;
+}
+
+.attr-edit-btn:active {
+  background: rgba(103,221,123,0.25);
+}
+
+.attr-threshold-sep {
+  font-size:20rpx;
+  color: var(--color-text-sub, #888);
+  line-height:1;
+}
+
+.attr-threshold {
+  font-size:24rpx;
+  color: var(--color-text-sub, #888);
+  line-height:1;
+}
+
+/* 第四行：移动/体格/伤害修正（跟九宫格统一浅色） */
+.attr-row4 {
+  display: flex;
+  gap: 12rpx;
+}
+
+.attr-row4-item {
+  flex:1;
+  background: var(--color-card, #fff);
+  border-radius: var(--radius-sm);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:16rpx 8rpx;
+  gap:4rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.row4-lbl {
+  font-size:28rpx;
+  color: var(--color-text-sub, #888);
+  line-height:1;
+}
+
+.row4-val {
+  font-size: 38rpx;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  line-height: 1.2;
+}
+
+/* 战斗属性：闪避 */
+.combat-attrs-row {
+  display: flex;
+  gap: 12rpx;
+}
+
+.combat-attr-item {
+  flex:1;
+  background: var(--color-card, #fff);
+  border-radius: var(--radius-sm);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:16rpx 8rpx;
+  gap:4rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.ca-val {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  line-height: 1;
+}
+
+.ca-lbl {
+  font-size:24rpx;
+  color: var(--color-text-sub, #888);
+}
+
+/* ── 技能列表 ── */
+/* 搜索栏 + 表头吸顶 */
+.skill-sticky-wrap {
+  position:sticky;
+  top:0;
+  z-index:30;
+  background: var(--color-bg, #f5f5f0);
+  padding-bottom:4rpx;
+}
+
+.skill-header-row {
+  display: flex;
+  padding: 0 0 16rpx;
+  border-bottom: 2rpx solid var(--color-border);
+  margin-bottom: 8rpx;
+}
+
+.sh-name {
+  flex: 1;
+  font-size: 24rpx;
+  color: var(--color-text-sub);
+  font-weight: 600;
+}
+
+.sh-val {
+  width: 64rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-text-sub);
+  font-weight: 600;
+}
+
+.sh-dice {
+  width: 56rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-text-sub);
+  font-weight: 600;
+}
+
+.skill-view-row {
+  display:flex;
+  align-items:center;
+  padding:16rpx 0;
+  border-bottom:1rpx solid var(--color-border, #e0ddd5);
+}
+
+.skill-view-row:last-child {
+  border-bottom: none;
+}
+
+.skv-name {
+  flex: 1;
+  font-size: 32rpx;
+  color: var(--color-text);
+}
+
+.skv-val {
+  width: 64rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-text-sub);
+}
+
+.skv-val.primary {
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  font-size: 28rpx;
+}
+
+.skv-dice-btn {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.05);
+}
+
+/* 社会信用评级展示 */
+.credit-rating-display {
+  background: var(--color-card);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 21.3rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+.credit-rating-label {
+  font-size: 28rpx;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.credit-rating-value {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+
+/* ── 背景文本 ── */
+.bg-text {
+  font-size:28rpx;
+  color: var(--color-text, #2c2c2c);
+  line-height:1.8;
+  white-space:pre-wrap;
+  word-break: break-all;
+}
+
+/* 背景字段分隔 */
+.bg-field {
+  border-bottom: 2rpx solid var(--color-border, #e0ddd5);
+  padding-bottom: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.bg-field:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.bg-section-title {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 16rpx;
+}
+
+/* ── 技能搜索栏 ── */
+.skill-search-bar {
+  display:flex;
+  align-items:center;
+  background: var(--color-card, #fff);
+  border-radius:16rpx;
+  padding:0 24rpx;
+  margin-bottom:20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+  height:72rpx;
+}
+
+.skill-search-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.skill-search-input {
+  flex:1;
+  font-size:28rpx;
+  color: var(--color-text, #2c2c2c);
+  height:72rpx;
+  line-height:72rpx;
+}
+
+.skill-search-clear {
+  width:48rpx;
+  height:48rpx;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:36rpx;
+  color:var(--color-text-sub, #888);
+  background: var(--color-border, #e0ddd5);
+  border-radius:50%;
+  margin-left:12rpx;
+  flex-shrink:0;
+}
+
+.skill-search-nav {
+  min-width: 80rpx;
+  height: 48rpx;
+  background: var(--color-primary, #c9a84c);
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16rpx;
+  margin-left: 12rpx;
+  flex-shrink: 0;
+}
+
+.skill-search-nav-empty {
+  background: #e0e0e0;
+}
+
+.skill-search-count {
+  font-size: 24rpx;
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.skill-search-nav-empty .skill-search-count {
+  color: #999;
+}
+
+/* 搜索定位高亮 */
+.skill-view-row.skill-highlight {
+  background: rgba(201, 168, 76, 0.18);
+  border-left: 4rpx solid var(--color-primary, #c9a84c);
+}
+
+/* ── 技能分组 ── */
+.skill-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 8rpx 12rpx;
+  border-bottom: 2rpx solid var(--color-border, #eee);
+}
+
+.skill-group-title {
+  font-size:28rpx;
+  font-weight:700;
+  color: var(--color-text, #2c2c2c);
+}
+
+.skill-group-meta {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.skill-group-count {
+  font-size: 22rpx;
+  color: var(--color-text-sub, #999);
+}
+
+.skill-group-arrow {
+  font-size: 22rpx;
+  color: var(--color-text-sub, #999);
+  transition: transform 0.2s ease;
+  line-height: 1;
+}
+
+.skill-group-arrow.collapsed {
+  transform: rotate(-90deg);
+}
+
+.skill-group-body {
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+  max-height: 2000rpx;
+}
+
+.skill-group-body.group-collapsed {
+  max-height: 0;
+}
+
+/* ── 编辑 FAB ── */
+
+/* ── 内联状态标签（与性别同一行） ── */
+.status-tag-inline {
+  display: inline-flex;
+  align-items: center;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #fff;
+  margin-left: 8rpx;
+}
+
+.status-tag-inline text {
+  color: #fff;
+}
+
+/* 添加状态按钮（内联） */
+.add-status-btn-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36rpx;
+  height: 36rpx;
+  margin-left: 8rpx;
+  background: rgba(255,255,255,0.15);
+  border: 1rpx dashed rgba(255,255,255,0.4);
+  border-radius: 8rpx;
+}
+
+.add-status-icon-inline {
+  font-size: 24rpx;
+  color: rgba(255,255,255,0.6);
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* ── 状态选择器弹窗 ── */
+.status-picker-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.status-picker-content {
+  width: 100%;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.status-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.status-picker-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.status-picker-close {
+  font-size: 48rpx;
+  color: #999;
+  line-height: 1;
+  padding: 0 10rpx;
+}
+
+.status-picker-list {
+  padding: 20rpx 30rpx 60rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.status-picker-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background: #f8f8f8;
+  border-radius: 12rpx;
+  border: 2rpx solid transparent;
+}
+
+.status-picker-item.selected {
+  background: #f0f7ff;
+  border-color: var(--status-color, #3498db);
+}
+
+.status-picker-radio {
+  width: 40rpx;
+  height: 40rpx;
+  border: 2rpx solid #ccc;
+  border-radius: 50%;
+  margin-right: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-picker-item.selected .status-picker-radio {
+  border-color: var(--status-color, #3498db);
+}
+
+.radio-check {
+  width: 24rpx;
+  height: 24rpx;
+  background: var(--status-color, #3498db);
+  border-radius: 50%;
+}
+
+.status-picker-label {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+/* ── 房间输入弹窗 ── */
+.room-input-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.room-modal-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.room-input-content {
+  position: relative;
+  width: 560rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+}
+
+.room-input-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40rpx;
+}
+
+.room-input-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.room-input-close {
+  font-size: 48rpx;
+  color: #999;
+  line-height: 1;
+  padding: 0 10rpx;
+}
+
+.room-input-form {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+}
+
+.room-code-input {
+  width: 100%;
+  height: 88rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 32rpx;
+  color: #333;
+  box-sizing: border-box;
+}
+
+.room-join-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #c9a84c, #8b5e1a);
+  border-radius: 12rpx;
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.room-join-btn::after {
+  border: none;
+}
+
+/* ── 记事本 ── */
+.notepad-card {
+  background: var(--color-card, #fff);
+  border-radius: var(--radius-md, 16rpx);
+  padding:24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.notepad-textarea {
+  width:100%;
+  min-height:400rpx;
+  font-size:28rpx;
+  color: var(--color-text, #2c2c2c);
+  line-height:1.8;
+  background:transparent;
+  padding:0;
+  margin:0;
+  box-sizing:border-box;
+}
+
+.notepad-hint {
+  display: block;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--color-text-sub, #999);
+  margin-top: 20rpx;
+}
+
+/* ============================================================
+   骰子叠加层（与 index 页面共用样式）
+   ============================================================ */
+.dice-fab {
+  position: fixed;
+  width: 100rpx;
+  height: 100rpx;
+  background: rgba(26, 26, 46, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3);
+  z-index: 20;
+}
+
+.dice-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; z-index: 99; }
+.dice-overlay.visible { display: block; }
+
+.dice-canvas { width: 100%; height: 100%; }
+
+/* 骰子结果卡片 */
+.dice-result-panel { position: fixed; top: 120rpx; left: 50%; margin-left: -300rpx; width: 600rpx; z-index: 140; background: rgba(22,22,38,0.92); border-radius: 20rpx; padding: 24rpx; display: flex; flex-direction: row; box-sizing: border-box; }
+.drp-left { width: 400rpx; flex-shrink: 0; display: flex; flex-wrap: wrap; align-content: flex-start; }
+.drp-item { display: flex; flex-direction: row; align-items: baseline; width: 100rpx; flex-shrink: 0; margin-bottom: 6rpx; }
+.drpi-type { color: #999; font-size: 26rpx; margin-right: 4rpx; line-height: 1.3; }
+.drpi-val { color: #e8b830; font-size: 32rpx; font-weight: bold; line-height: 1.3; }
+.drp-divider { width: 2rpx; margin: 0 16rpx; background: rgba(255,255,255,0.12); flex-shrink: 0; }
+.drp-right { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; }
+.drpr-label { color: #999; font-size: 26rpx; }
+.drpr-num { color: #e8b830; font-size: 52rpx; font-weight: bold; }
+
+/* 骰子控制栏 */
+.dice-controls { position: fixed; bottom: 0; left: 0; right: 0; z-index: 130; display: grid; grid-template-columns: repeat(4, 1fr) auto; grid-template-rows: repeat(2, auto); gap: 8px; padding: 6px 12px 20px; align-items: center; background-color: #1a1a1a; }
+.dice-btn-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+.dice-btn { background-color: rgba(60,60,80,0.9); color: #fff; font-size: 14px; font-weight: bold; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(100,100,130,0.5); min-width: 40px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3); width: 100%; height: 40px; line-height: 36px; }
+.dice-count { position: absolute; top: -6px; right: -6px; background: #ff4444; color: #fff; font-size: 11px; font-weight: bold; min-width: 16px; height: 16px; line-height: 16px; text-align: center; border-radius: 8px; padding: 0 4px; }
+.throw-area { grid-column: 5; grid-row: 1/3; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
+.throw-collapse { color: rgba(255,255,255,0.45); font-size: 20rpx; text-align: center; padding: 4rpx 0; }
+.throw-btn { display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #e8b830, #c89a20); color: #1a1a2e; font-size: 18px; font-weight: bold; padding: 0 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(232,184,48,0.3); height: 66px; }
+.throw-btn.disabled { opacity: 0.4; }
+
+/* 底部吸底按钮栏 */
+.detail-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 24rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: rgba(26, 26, 46, 0.95);
+}
+.dbb-btn {
+  flex: 1;
+  height: 72rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #fff;
+}
+.dbb-btn.join,
+.dbb-btn.edit {
+  background: rgba(60, 60, 80, 0.9);
+  border: 1px solid rgba(100, 100, 130, 0.5);
+}
+
+/* ===== 技能检定结果弹窗（无蒙版，靠上） ===== */
+.skill-check-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  padding-top: 260rpx;
+  pointer-events: none;
+}
+.skill-check-content {
+  position: relative;
+  width: 600rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
+}
+.skill-check-close {
+  position: absolute;
+  top: -18rpx;
+  right: -18rpx;
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  background: #c0392b;
+  color: #fff;
+  font-size: 32rpx;
+  line-height: 52rpx;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.skill-check-body {
+  display: flex;
+  align-items: center;
+}
+.skill-check-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.skill-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  white-space: nowrap;
+}
+.skill-check-label {
+  font-size: 28rpx;
+  color: #333;
+}
+.skill-check-dice {
+  font-size: 28rpx;
+  color: #999;
+}
+.skill-check-num {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #F9D556;
+}
+/* 技能值数字：和投掷值保持完全一致，无边框无背景 */
+.skill-check-num-skill {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #F9D556;
+  border: none;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+.skill-check-divider {
+  width: 2rpx;
+  height: 80rpx;
+  background: rgba(0,0,0,0.1);
+  margin: 0 20rpx;
+}
+.skill-check-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+}
+.skill-check-result-label {
+  font-size: 28rpx;
+  color: #999;
+}
+.skill-check-result-text {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #F9D556;
+  white-space: nowrap;
+}
+.skill-check-result-text.critical-success {
+  color: #F9D556;
+}
+.skill-check-result-text.extreme-success {
+  color: #F9D556;
+}
+.skill-check-result-text.hard-success {
+  color: #F9D556;
+}
+.skill-check-result-text.success {
+  color: #F9D556;
+}
+.skill-check-result-text.failure {
+  color: #666;
+}
+.skill-check-result-text.fumble {
+  color: #e74c3c;
+}

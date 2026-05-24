@@ -1,0 +1,230 @@
+<scroll-view scroll-y class="edit-page character-edit" enhanced>
+  <view class="page-container" style="padding-bottom:160rpx">
+
+    <!-- ── 基本信息卡片 ── -->
+    <view class="card">
+      <view class="section-title">基本信息</view>
+
+      <view class="form-row">
+        <text class="form-label">姓名</text>
+        <input class="form-input" placeholder="调查员姓名"
+          value="{{character.name}}" data-field="name" bindinput="onBaseInput"/>
+      </view>
+      <view class="form-row">
+        <text class="form-label">职业</text>
+        <view class="form-value-touch" bindtap="onSelectOccupation">
+          <text class="{{character.occupation ? 'form-value' : 'form-placeholder'}}">
+            {{character.occupation || '点击选择职业'}}
+          </text>
+          <text class="form-arrow">›</text>
+        </view>
+      </view>
+      <view class="form-row">
+        <text class="form-label">玩家</text>
+        <input class="form-input" placeholder="玩家名（可选）"
+          value="{{character.player}}" data-field="player" bindinput="onBaseInput"/>
+      </view>
+      <view class="info-row3">
+        <view class="info-cell">
+          <text class="info-label">年龄</text>
+          <input class="info-input" type="number" placeholder="28"
+            value="{{character.age}}" data-field="age" bindinput="onBaseInput"/>
+        </view>
+        <view class="info-cell">
+          <text class="info-label">性别</text>
+          <view class="info-picker" catchtap="onShowGenderPicker">
+            <view class="picker-value">
+              <text wx:if="{{character.gender}}">{{character.gender}}</text>
+              <text wx:else class="placeholder">请选择</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </view>
+        </view>
+        <view class="info-cell">
+          <text class="info-label">出生地</text>
+          <input class="info-input" placeholder="阿卡姆"
+            value="{{character.birthplace}}" data-field="birthplace" bindinput="onBaseInput"/>
+        </view>
+      </view>
+    </view>
+
+    <!-- ── 属性卡片（九宫格） ── -->
+    <view class="card">
+      <view class="section-title">
+        <text>属性</text>
+        <view class="btn-roll-all" bindtap="onRollAll" wx:if="{{isNew}}">
+          <image class="roll-icon" src="/assets/icons/dice-new.svg" mode="aspectFit"/>
+          <text>随机</text>
+        </view>
+      </view>
+
+      <!-- 九宫格属性 -->
+      <view class="attr-grid9">
+        <view class="attr-cell" wx:for="{{attrKeys}}" wx:key="*this">
+          <view class="attr-cell-title">
+            <text class="attr-cell-en">{{item}}</text>
+            <text class="attr-cell-cn">{{attrNames[item]}}</text>
+          </view>
+          <view class="attr-cell-input-row">
+            <input
+              class="attr-cell-input"
+              type="number"
+              value="{{character.attributes[item]}}"
+              data-key="{{item}}"
+              bindinput="onAttrInput"
+              placeholder="0"
+            />
+          </view>
+        </view>
+      </view>
+
+      <!-- 第四行：移动、体格、伤害修正 -->
+      <view class="attr-row4">
+        <view class="attr-row4-item">
+          <text class="row4-val">{{derived.mov}}</text>
+          <text class="row4-lbl">移动</text>
+        </view>
+        <view class="attr-row4-item">
+          <text class="row4-val">{{derived.build}}</text>
+          <text class="row4-lbl">体格</text>
+        </view>
+        <view class="attr-row4-item">
+          <text class="row4-val">{{derived.db}}</text>
+          <text class="row4-lbl">伤害修正</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ── 武器设置卡片 ── -->
+    <!-- 只要有武器就显示武器模块 -->
+    <view class="card" wx:if="{{hasEditedSkills || (character.weapons && character.weapons.length > 0)}}">
+      <view class="section-title">武器设置</view>
+
+      <!-- 已添加的武器列表 -->
+      <view class="weapons-list">
+        <view wx:if="{{!character.weapons || character.weapons.length === 0}}" class="weapons-empty">
+          <text>暂无武器，点击下方添加</text>
+        </view>
+        <view
+          class="weapon-row"
+          wx:for="{{character.weapons}}"
+          wx:key="index"
+          data-index="{{index}}"
+          bindtap="onEditWeapon"
+        >
+          <view class="weapon-info">
+            <text class="weapon-name">{{item.name}}</text>
+            <text class="weapon-skill">{{item.skillDisplay}}</text>
+            <text class="weapon-damage">{{item.damage}}</text>
+          </view>
+          <view class="weapon-del" catchtap="onDeleteWeapon" data-index="{{index}}">×</view>
+        </view>
+      </view>
+
+      <!-- 武器输入表单（点击添加后显示） -->
+      <view wx:if="{{showWeaponForm}}" class="weapon-form-section">
+        <!-- 第一行：战斗技能下拉选择 -->
+        <view class="weapon-form-row">
+          <text class="weapon-form-label">战斗技能</text>
+          <view class="weapon-form-picker" bindtap="onShowCombatSkillPicker">
+            <view class="weapon-form-picker-value">
+              <text wx:if="{{weaponForm.skillKey}}">{{weaponForm.skillKey}} {{weaponForm.skillValue}}%</text>
+              <text wx:else class="placeholder">请选择战斗技能</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 第二行：武器名称下拉选择（选择战斗技能后显示） -->
+        <view class="weapon-form-row" wx:if="{{weaponForm.skillKey}}">
+          <text class="weapon-form-label">武器名称</text>
+          <view class="weapon-form-picker" bindtap="onShowWeaponPicker">
+            <view class="weapon-form-picker-value">
+              <text wx:if="{{weaponForm.name}}">{{weaponForm.name}}</text>
+              <text wx:else class="placeholder">请选择武器</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 第三行：显示伤害值（选择武器后自动显示） -->
+        <view class="weapon-form-row" wx:if="{{weaponForm.name}}">
+          <text class="weapon-form-label">伤害值</text>
+          <view class="weapon-damage-display">
+            <text class="damage-value">{{weaponForm.damage}}</text>
+          </view>
+        </view>
+
+        <!-- 确认/取消按钮 -->
+        <view class="weapon-form-btns">
+          <view class="weapon-form-btn-cancel" bindtap="onWeaponCancel">取消</view>
+          <view class="weapon-form-btn-confirm" bindtap="onWeaponConfirm">确认添加</view>
+        </view>
+      </view>
+
+      <!-- 添加武器按钮（未展开表单时显示） -->
+      <view wx:if="{{!showWeaponForm}}" class="add-weapon-btn" bindtap="onAddWeapon">
+        <text>＋ 添加武器</text>
+      </view>
+
+      <!-- 武器选择器 -->
+      <custom-picker
+        show="{{showCombatSkillPicker}}"
+        title="选择战斗技能"
+        range="{{combatSkills}}"
+        range-key="display"
+        value="{{skillIndex}}"
+        bind:confirm="onCombatSkillConfirm"
+        bind:cancel="onCombatSkillCancel"/>
+      <custom-picker
+        show="{{showWeaponPicker}}"
+        title="选择武器"
+        range="{{availableWeapons}}"
+        range-key="display"
+        value="{{weaponIndex}}"
+        bind:confirm="onWeaponConfirmFromPicker"
+        bind:cancel="onWeaponCancelFromPicker"/>
+    </view>
+
+    <!-- ── 快捷导航 ── -->
+    <view class="card">
+      <view class="section-title">继续编辑</view>
+      <view class="quick-nav">
+        <view class="nav-btn" bindtap="onEditSkills">
+          <view class="nav-left">
+            <text class="nav-icon">⚡</text>
+            <view class="nav-text-wrap">
+              <text class="nav-text">技能编辑</text>
+              <text class="nav-sub">职业技能点{{skillPoints.occTotal}}. 兴趣技能点{{skillPoints.intTotal}}</text>
+            </view>
+          </view>
+          <text class="nav-arrow">›</text>
+        </view>
+        <view class="divider" style="margin:0"></view>
+        <view class="nav-btn" bindtap="onEditBackground">
+          <text class="nav-icon">📖</text>
+          <text class="nav-text">人物背景</text>
+          <text class="nav-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 全局选择器 -->
+    <custom-picker
+      show="{{showGenderPicker}}"
+      title="选择性别"
+      range="{{genderOptions}}"
+      value="{{genderIndex}}"
+      bind:confirm="onGenderConfirm"
+      bind:cancel="onGenderCancel"/>
+
+  </view>
+
+  <!-- 底部保存按钮 -->
+  <view class="bottom-bar safe-bottom">
+    <button class="btn btn-primary btn-block" bindtap="onSave">保存角色卡</button>
+  </view>
+
+</scroll-view>
+
+

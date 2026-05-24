@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "编辑调查员",
+  "usingComponents": {
+    "custom-picker": "/components/custom-picker/custom-picker"
+  }
+}

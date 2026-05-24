@@ -1,0 +1,30 @@
+<scroll-view scroll-y style="height:100vh">
+<view class="page-container" style="padding-bottom:140rpx">
+
+  <view class="intro-card">
+    <text class="intro-text">记录调查员的故事与背景。这些不仅是角色扮演的基础，也是面对黑暗时的精神支柱。</text>
+  </view>
+
+  <view class="card" wx:for="{{fields}}" wx:key="key">
+    <view class="section-title">{{item.label}}</view>
+    <textarea
+      class="bg-textarea"
+      placeholder="{{item.placeholder}}"
+      value="{{background[item.key]}}"
+      data-key="{{item.key}}"
+      bindinput="onInput"
+      auto-height
+      show-confirm-bar="{{false}}"
+      style="min-height:{{item.rows * 44}}rpx"
+    />
+    <view class="char-count">
+      <text>{{background[item.key].length}} 字</text>
+    </view>
+  </view>
+
+</view>
+
+<view class="bottom-bar safe-bottom">
+  <button class="btn btn-primary btn-block" bindtap="onSave">保存背景</button>
+</view>
+</scroll-view>

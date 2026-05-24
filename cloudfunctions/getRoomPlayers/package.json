@@ -1,0 +1,9 @@
+{
+  "name": "getRoomPlayers",
+  "version": "1.0.0",
+  "description": "获取房间玩家列表",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest"
+  }
+}

@@ -1,0 +1,415 @@
+<view class="detail-page" wx:if="{{character}}">
+
+  <!-- ===== 骰子模式叠加层 ===== -->
+  <view class="dice-overlay {{diceMode || skillCheckMode ? 'visible' : ''}}" bindtap="onDiceOverlayTap">
+    <canvas type="webgl" id="dice-canvas" class="dice-canvas"></canvas>
+    <!-- 完整骰子模式的结果面板 -->
+    <cover-view class="dice-result-panel" wx:if="{{diceResults.length > 0 && diceMode}}">
+      <cover-view class="drp-left">
+        <cover-view class="drp-item" wx:for="{{diceResults}}" wx:key="id" wx:for-item="r">
+          <cover-view class="drpi-type">{{r.type}}</cover-view>
+          <cover-view class="drpi-val">{{r.value}}</cover-view>
+        </cover-view>
+      </cover-view>
+      <cover-view class="drp-divider"></cover-view>
+      <cover-view class="drp-right">
+        <cover-view class="drpr-label">总值</cover-view>
+        <cover-view class="drpr-num">{{diceTotalSum}}</cover-view>
+      </cover-view>
+    </cover-view>
+  </view>
+
+  <!-- ===== 骰子浮动按钮（打开/关闭一体） ===== -->
+  <view
+    wx:if="{{!diceMode && !skillCheckMode}}"
+    class="dice-fab"
+    style="right: {{fabRight || 30}}rpx; bottom: {{fabBottom || 160}}rpx"
+    catchtouchstart="onFabTouchStart"
+    catchtouchmove="onFabTouchMove"
+    catchtouchend="onFabTouchEnd"
+  >
+    <text>🎲</text>
+  </view>
+
+  <!-- ===== 骰子控制栏（仅完整骰子模式） ===== -->
+  <view class="dice-controls" wx:if="{{diceMode}}" catchtap>
+    <block wx:for="{{diceTypes}}" wx:key="type">
+      <view class="dice-btn-wrap" data-type="{{item.type}}" bindtap="onDiceBtnTap">
+        <view class="dice-btn">{{item.label}}</view>
+        <view class="dice-count" wx:if="{{diceCounts[item.type] > 0}}">{{diceCounts[item.type]}}</view>
+      </view>
+    </block>
+    <view class="throw-area">
+      <view class="throw-collapse" bindtap="onDiceModeToggle">收起骰子</view>
+      <view class="throw-btn {{diceHasDice ? '' : 'disabled'}}" bindtap="onDiceThrow">投掷</view>
+    </view>
+  </view>
+
+  <!-- ── 顶部区域 ── -->
+  <view class="top-section">
+    <image class="top-section-bg" src="/assets/images/login-bg.jpg" mode="aspectFill"/>
+    <!-- 姓名+职业 -->
+    <view class="name-occ-row">
+      <text class="header-name">{{character.name}}</text>
+      <view class="header-occ">
+        <text>{{character.occupation || '未选择职业'}}</text>
+      </view>
+    </view>
+
+    <!-- 状态标签 + 添加按钮（第一排，右对齐） -->
+    <view class="header-status-row">
+      <view class="add-status-btn-tag" bindtap="onShowStatusPicker">
+        <text class="add-status-icon-tag">+</text>
+      </view>
+      <view
+        class="status-tag-style"
+        wx:for="{{character.status}}"
+        wx:key="*this"
+        bindlongpress="onLongPressStatus"
+        data-status="{{item}}"
+      >
+        <text>{{statusLabels[item]}}</text>
+      </view>
+    </view>
+
+    <!-- 职业·性别·年龄（第二排，左对齐） -->
+    <view class="header-info-row">
+      <text class="header-sub-text">{{character.occupation || '未选择职业'}}</text>
+      <text class="header-sub-sep" wx:if="{{character.occupation || character.gender || character.age}}"> · </text>
+      <text class="header-sub-text" wx:if="{{character.gender}}">{{character.gender}}</text>
+      <text class="header-sub-sep" wx:if="{{character.gender && character.age}}"> · </text>
+      <text class="header-sub-text" wx:if="{{character.age}}">{{character.age}}岁</text>
+    </view>
+
+    <!-- HP/SAN/MP（点击当前值弹出滚轮选择） -->
+    <view class="hp-row">
+      <view class="hp-item">
+        <text class="hp-lbl">HP</text>
+        <view class="hp-val-row">
+          <text class="hp-current-tap" data-field="hpCurrent" bindtap="onHpTap">{{character.combat.hpCurrent}}</text>
+          <text class="hp-slash">/</text>
+          <text class="hp-max">{{derived.hp}}</text>
+        </view>
+      </view>
+      <view class="hp-divider"></view>
+      <view class="hp-item">
+        <text class="hp-lbl" bindtap="onSanDiceTap">SAN</text>
+        <view class="hp-val-row">
+          <text class="hp-current-tap" data-field="sanCurrent" bindtap="onHpTap">{{character.combat.sanCurrent}}</text>
+          <text class="hp-slash">/</text>
+          <text class="hp-max">{{derived.sanStart}}</text>
+        </view>
+      </view>
+      <view class="hp-divider"></view>
+      <view class="hp-item">
+        <text class="hp-lbl">MP</text>
+        <view class="hp-val-row">
+          <text class="hp-current-tap" data-field="mpCurrent" bindtap="onHpTap">{{character.combat.mpCurrent}}</text>
+          <text class="hp-slash">/</text>
+          <text class="hp-max">{{derived.mp}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 闪避+武器 -->
+    <view class="weapon-row-compact">
+      <view class="w-tag dodge" bindtap="onDodgeDiceTap">
+        <text class="w-name">闪避</text>
+        <text class="w-val">{{derived.dodge}}%</text>
+      </view>
+      <view class="weapon-picker">
+        <view class="w-tag weapon-select" bindtap="onShowWeaponPicker">
+          <view class="weapon-content">
+            <text class="weapon-skill-name">{{displayWeapons[selectedWeaponIndex].skillKey}} {{displayWeapons[selectedWeaponIndex].skillValue}}%</text>
+            <view class="weapon-info">
+              <text class="weapon-name">{{displayWeapons[selectedWeaponIndex].name}}</text>
+              <text class="weapon-damage">{{displayWeapons[selectedWeaponIndex].damage}}</text>
+            </view>
+          </view>
+          <view class="weapon-arrow-box">
+            <text class="w-arrow">▼</text>
+          </view>
+        </view>
+      </view>
+
+      <custom-picker
+        show="{{showWeaponPicker}}"
+        title="选择武器"
+        range="{{displayWeapons}}"
+        range-key="name"
+        value="{{selectedWeaponIndex}}"
+        bind:confirm="onWeaponConfirm"
+        bind:cancel="onWeaponCancel"/>
+    </view>
+  </view>
+
+  <!-- HP/SAN/MP 滚轮选择器 -->
+  <custom-picker
+    show="{{showHpPicker}}"
+    title="修改数值"
+    range="{{hpPickerRange}}"
+    value="{{hpPickerValue}}"
+    bind:confirm="onHpPickerConfirm"
+    bind:cancel="onHpPickerCancel"/>
+
+  <!-- 幸运值滚轮选择器 -->
+  <custom-picker
+    show="{{showLuckPicker}}"
+    title="修改幸运值"
+    range="{{luckPickerRange}}"
+    value="{{luckPickerValue}}"
+    bind:confirm="onLuckPickerConfirm"
+    bind:cancel="onLuckPickerCancel"/>
+
+  <!-- Tab 切换 -->
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab === 'attrs' ? 'active' : ''}}"
+      data-tab="attrs" bindtap="onTabChange">属性</view>
+    <view class="tab-item {{activeTab === 'skills' ? 'active' : ''}}"
+      data-tab="skills" bindtap="onTabChange">技能</view>
+    <view class="tab-item {{activeTab === 'background' ? 'active' : ''}}"
+      data-tab="background" bindtap="onTabChange">背景</view>
+    <view class="tab-item {{activeTab === 'notepad' ? 'active' : ''}}"
+      data-tab="notepad" bindtap="onTabChange">记事本</view>
+  </view>
+
+  <!-- Tab 内容 -->
+  <scroll-view scroll-y class="tab-scroll-view" enhanced scroll-into-view="{{skillScrollTo}}" scroll-with-animation>
+  <view class="tab-content">
+    <!-- ═══ 属性 Tab ═══ -->
+    <view wx:if="{{activeTab === 'attrs'}}">
+        <view class="attr-grid9">
+          <view class="attr-cell" wx:for="{{attrKeys}}" wx:key="*this">
+            <view class="attr-cell-header">
+              <text class="attr-cell-en">{{item}}</text>
+              <text class="attr-cell-cn">{{attrNames[item]}}</text>
+            </view>
+            <view class="attr-cell-body">
+              <text class="attr-cell-val">{{attrWithThresholds[item].value}}</text>
+              <view class="attr-edit-btn" wx:if="{{item === 'LUK'}}" bindtap="onLuckTap">✏️</view>
+              <view class="attr-dice-btn" data-name="{{attrNames[item]}}" data-value="{{attrWithThresholds[item].value}}" bindtap="onAttrDiceTap">🎲</view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 第四行：移动、体格、伤害修正 -->
+        <view class="attr-row4">
+          <view class="attr-row4-item">
+            <text class="row4-lbl">移动</text>
+            <text class="row4-val">{{derived.mov}}</text>
+          </view>
+          <view class="attr-row4-item">
+            <text class="row4-lbl">体格</text>
+            <text class="row4-val">{{derived.build}}</text>
+          </view>
+          <view class="attr-row4-item">
+            <text class="row4-lbl">伤害修正</text>
+            <text class="row4-val">{{derived.db}}</text>
+          </view>
+        </view>
+    </view>
+
+    <!-- ═══ 技能 Tab ═══ -->
+    <view wx:if="{{activeTab === 'skills'}}">
+      <!-- 社会信用评级 -->
+      <view class="credit-rating-display" wx:if="{{creditRatingValue > 0}}">
+        <text class="credit-rating-label">社会信用评级</text>
+        <text class="credit-rating-value">{{creditRatingValue}}</text>
+      </view>
+
+      <!-- 搜索栏 + 表头 吸顶 -->
+      <view class="skill-sticky-wrap">
+        <view class="skill-search-bar" wx:if="{{skillList.length > 0}}">
+          <view class="skill-search-icon">🔍</view>
+          <input
+            class="skill-search-input"
+            type="text"
+            placeholder="搜索技能..."
+            value="{{skillSearchKeyword}}"
+            bindinput="onSkillSearchInput"
+            confirm-type="search"
+          />
+          <view class="skill-search-nav" wx:if="{{skillSearchMatches.length > 0}}" bindtap="onSkillSearchNext">
+            <text class="skill-search-count">{{skillSearchIndex + 1}}/{{skillSearchMatches.length}}</text>
+          </view>
+          <view class="skill-search-nav skill-search-nav-empty" wx:elif="{{skillSearchKeyword}}">
+            <text class="skill-search-count">0/0</text>
+          </view>
+          <view class="skill-search-clear" wx:if="{{skillSearchKeyword}}" bindtap="onSkillSearchClear">×</view>
+        </view>
+        <!-- 技能表头 -->
+        <view class="skill-header-row">
+          <text class="sh-name">技能</text>
+          <text class="sh-val">当前</text>
+          <text class="sh-dice">检定</text>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="card" wx:if="{{skillList.length === 0}}">
+        <view class="empty-state">
+          <text>尚未设置技能</text>
+          <text style="font-size:24rpx;color:#aaa;margin-top:8rpx">返回编辑页分配技能点数</text>
+        </view>
+      </view>
+
+      <!-- 搜索无结果 -->
+      <view class="card" wx:elif="{{skillGroupedList.length === 0 && skillSearchKeyword}}">
+        <view class="empty-state">
+          <text>未找到「{{skillSearchKeyword}}」相关的技能</text>
+        </view>
+      </view>
+
+      <!-- 技能分组列表 -->
+      <view wx:else>
+        <block wx:for="{{skillGroupedList}}" wx:key="key">
+          <!-- 分组头部（可折叠） -->
+          <view class="skill-group-header" bindtap="onToggleSkillGroup" data-group="{{item.key}}">
+            <text class="skill-group-title">{{item.label}}</text>
+            <view class="skill-group-meta">
+              <text class="skill-group-count">{{item.count}}项</text>
+              <text class="skill-group-arrow {{skillCollapsed[item.key] ? 'collapsed' : ''}}">▼</text>
+            </view>
+          </view>
+          <!-- 分组内容（折叠后去掉表头，改用最外层的吸顶表头） -->
+          <view class="skill-group-body {{skillCollapsed[item.key] ? 'group-collapsed' : ''}}" wx:if="{{!skillCollapsed[item.key] || skillSearchKeyword}}">
+            <view
+              id="skv-{{sk.name}}"
+              class="skill-view-row {{skillSearchMatches[skillSearchIndex] === sk.name ? 'skill-highlight' : ''}}"
+              wx:for="{{item.skills}}" wx:for-item="sk" wx:key="name"
+            >
+              <text class="skv-name">{{sk.name}}</text>
+              <text class="skv-val primary">{{sk.current}}</text>
+              <view class="skv-dice-btn" data-name="{{sk.name}}" data-value="{{sk.current}}" bindtap="onSkillDiceTap">🎲</view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- ═══ 背景 Tab ═══ -->
+    <view wx:if="{{activeTab === 'background'}}">
+      <view class="card">
+        <block wx:for="{{backgroundFields}}" wx:key="key">
+          <view class="bg-field" wx:if="{{character.background[item.key]}}">
+            <view class="section-title bg-section-title">{{item.label}}</view>
+            <text class="bg-text">{{character.background[item.key]}}</text>
+          </view>
+        </block>
+      </view>
+      <view class="card" wx:if="{{!character.background.story && !character.background.beliefs}}">
+        <view class="empty-state">
+          <text>尚未填写背景</text>
+          <text style="font-size:24rpx;color:#aaa;margin-top:8rpx">记录调查员的故事与经历</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ═══ 记事本 Tab ═══ -->
+    <view wx:if="{{activeTab === 'notepad'}}">
+      <view class="notepad-card">
+        <textarea
+          class="notepad-textarea"
+          placeholder="记录任何你想记下的内容..."
+          value="{{notepadContent}}"
+          bindinput="onNotepadInput"
+          auto-height
+          maxlength="-1"
+        />
+        <text class="notepad-hint">内容自动保存，无需手动点击储存</text>
+      </view>
+    </view>
+
+  </view>
+  </scroll-view>
+
+  <!-- 状态选择器弹窗 -->
+  <view class="status-picker-modal" wx:if="{{showStatusPicker}}" bindtap="onCloseStatusPicker">
+    <view class="status-picker-content" catchtap="">
+      <view class="status-picker-header">
+        <text class="status-picker-title">选择状态</text>
+        <view class="status-picker-close" bindtap="onCloseStatusPicker">×</view>
+      </view>
+      <view class="status-picker-list">
+        <view 
+          class="status-picker-item {{character.status && character.status.includes(item.value) ? 'selected' : ''}}"
+          wx:for="{{availableStatuses}}"
+          wx:key="value"
+          data-status="{{item.value}}"
+          bindtap="onSelectStatus"
+          style="--status-color: {{item.color}}"
+        >
+          <view class="status-picker-radio">
+            <view class="radio-check" wx:if="{{character.status && character.status.includes(item.value)}}"></view>
+          </view>
+          <text class="status-picker-label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 技能检定结果弹窗（无蒙版，靠上） -->
+  <view class="skill-check-modal" wx:if="{{showSkillCheckModal}}">
+    <view class="skill-check-content">
+      <view class="skill-check-close" bindtap="onCloseSkillCheckModal">×</view>
+      <view class="skill-check-body">
+        <view class="skill-check-left">
+          <view class="skill-check-row">
+            <text class="skill-check-label">投掷值</text>
+            <text class="skill-check-num">{{skillCheckResult.rollValue}}</text>
+          </view>
+          <view class="skill-check-row">
+            <text class="skill-check-label">技能值</text>
+            <text class="skill-check-num skill-check-num-skill">{{skillCheckResult.skillValue}}</text>
+          </view>
+        </view>
+        <view class="skill-check-divider"></view>
+        <view class="skill-check-right">
+          <text class="skill-check-result-label">结果</text>
+          <text class="skill-check-result-text {{skillCheckResult.resultClass}}">{{skillCheckResult.resultText}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 房间输入弹窗 -->
+  <view class="room-input-modal" wx:if="{{showRoomInputModal}}" catchtouchmove="preventTouchMove">
+    <view class="room-modal-mask" bindtap="onCloseRoomInputModal"></view>
+    <view class="room-input-content">
+      <view class="room-input-header">
+        <text class="room-input-title">加入房间</text>
+        <view class="room-input-close" bindtap="onCloseRoomInputModal">×</view>
+      </view>
+      <view class="room-input-form">
+        <input 
+          class="room-code-input" 
+          type="text" 
+          placeholder="请输入4位房间号"
+          maxlength="6"
+          value="{{inputRoomCode}}"
+          bindinput="onRoomCodeInput"
+          focus="{{showRoomInputModal}}"
+        />
+        <button class="room-join-btn" bindtap="onConfirmJoinRoom" loading="{{isJoining}}">确认加入</button>
+      </view>
+    </view>
+  </view>
+
+</view>
+
+<!-- 底部吸底按钮栏 -->
+<view class="detail-bottom-bar" wx:if="{{character}}">
+  <view class="dbb-btn edit" bindtap="onEditTap">
+    <text>编辑</text>
+  </view>
+  <view class="dbb-btn join" bindtap="onRoomAction">
+    <text wx:if="{{isJoining}}">加入中：{{inputRoomCode || roomCode}}</text>
+    <text wx:elif="{{isInRoom}}">房间 {{roomCode}}</text>
+    <text wx:else>加入房间</text>
+  </view>
+</view>
+
+<!-- 加载失败 -->
+<view wx:else class="empty-state" style="margin-top:200rpx">
+  <text>角色数据不存在</text>
+</view>

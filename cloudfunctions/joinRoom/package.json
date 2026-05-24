@@ -1,0 +1,9 @@
+{
+  "name": "joinRoom",
+  "version": "1.0.0",
+  "description": "玩家加入房间",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest"
+  }
+}

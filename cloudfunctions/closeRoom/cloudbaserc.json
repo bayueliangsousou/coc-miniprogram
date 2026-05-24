@@ -1,0 +1,7 @@
+{
+  "name": "closeRoom",
+  "timeout": 15,
+  "runtime": "Nodejs18.15",
+  "memorySize": 256,
+  "handler": "index.main"
+}

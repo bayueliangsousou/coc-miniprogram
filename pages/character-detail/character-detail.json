@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "调查员详情",
+  "navigationBarBackgroundColor": "#1a1a2e",
+  "navigationBarTextStyle": "white",
+  "usingComponents": {
+    "custom-picker": "/components/custom-picker/custom-picker"
+  }
+}

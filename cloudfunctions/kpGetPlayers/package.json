@@ -1,0 +1,9 @@
+{
+  "name": "kpGetPlayers",
+  "version": "1.0.0",
+  "description": "KP获取玩家列表云函数",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest"
+  }
+}

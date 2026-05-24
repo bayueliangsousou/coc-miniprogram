@@ -1,0 +1,30 @@
+{
+  "envId": "mastermind-5grqnmdu0d3a7d81",
+  "functionRoot": "cloudfunctions",
+  "functions": [
+    {
+      "name": "createRoom",
+      "envVariables": {
+        "TCB_ENV": "mastermind-5grqnmdu0d3a7d81"
+      }
+    },
+    {
+      "name": "joinRoom",
+      "envVariables": {
+        "TCB_ENV": "mastermind-5grqnmdu0d3a7d81"
+      }
+    },
+    {
+      "name": "closeRoom",
+      "envVariables": {
+        "TCB_ENV": "mastermind-5grqnmdu0d3a7d81"
+      }
+    },
+    {
+      "name": "getRoomPlayers",
+      "envVariables": {
+        "TCB_ENV": "mastermind-5grqnmdu0d3a7d81"
+      }
+    }
+  ]
+}

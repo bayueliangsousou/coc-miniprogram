@@ -1,0 +1,32 @@
+<!-- 骰子投掷页面 -->
+<view class="container">
+  <view class="dice-viewport">
+    <canvas type="webgl" id="dice-canvas" class="dice-canvas" bindtap="onCanvasTap"></canvas>
+    <!-- 结果浮窗 cover-view 覆盖 WebGL 原生组件 -->
+    <cover-view class="result-panel" wx:if="{{results.length > 0}}">
+      <cover-view class="rp-left">
+        <cover-view class="rp-item" wx:for="{{results}}" wx:key="id" wx:for-item="r">
+          <cover-view class="rpi-type">{{r.type}}</cover-view>
+          <cover-view class="rpi-val">{{r.value}}</cover-view>
+        </cover-view>
+      </cover-view>
+      <cover-view class="rp-divider"></cover-view>
+      <cover-view class="rp-right">
+        <cover-view class="rpr-label">总值</cover-view>
+        <cover-view class="rpr-num">{{totalSum}}</cover-view>
+      </cover-view>
+    </cover-view>
+    <!-- Toast 提示 -->
+    <cover-view class="c-toast-cover" wx:if="{{toast.show}}">
+      <cover-view class="c-toast-msg-cover">{{toast.message}}</cover-view>
+    </cover-view>
+  </view>
+  <!-- 下半部分：操作按钮区域 -->
+  <view class="dice-controls">
+    <view class="dice-btn-wrap" wx:for="{{diceTypes}}" wx:key="type" data-type="{{item.type}}" bindtap="onDiceBtnTap">
+      <view class="dice-btn">{{item.label}}</view>
+      <view class="dice-count" wx:if="{{diceCounts[item.type] > 0}}">{{diceCounts[item.type]}}</view>
+    </view>
+    <view class="throw-btn {{hasDice ? '' : 'disabled'}}" bindtap="onThrowTap">投掷</view>
+  </view>
+</view>

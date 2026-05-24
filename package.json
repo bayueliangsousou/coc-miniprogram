@@ -1,0 +1,9 @@
+{
+  "name": "coc-miniprogram",
+  "version": "1.0.0",
+  "description": "克苏鲁的呼唤角色扮演小程序",
+  "dependencies": {
+    "cannon-es": "^0.20.0",
+    "threejs-miniprogram": "^0.0.8"
+  }
+}

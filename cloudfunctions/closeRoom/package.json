@@ -1,0 +1,9 @@
+{
+  "name": "closeRoom",
+  "version": "1.0.0",
+  "description": "关闭房间",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest"
+  }
+}

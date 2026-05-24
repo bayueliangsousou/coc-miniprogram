@@ -1,0 +1,25 @@
+{
+  "cloud": true,
+  "pages": [
+    "pages/index/index",
+    "pages/login/login",
+    "pages/index/index-test",
+    "pages/dice/dice",
+    "pages/character-edit/character-edit",
+    "pages/occupation/occupation",
+    "pages/skills/skills",
+    "pages/background/background",
+    "pages/character-detail/character-detail",
+    "pages/join-room/join-room"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#1a1a2e",
+    "navigationBarTitleText": "帷幕之主-coc版",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f5f0"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

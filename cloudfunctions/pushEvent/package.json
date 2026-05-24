@@ -1,0 +1,1 @@
+{"name": "pushEvent", "version": "1.0.0", "description": "统一事件写入接口 - 双端数据同步", "main": "index.js", "dependencies": {"@cloudbase/node-sdk": "latest"}}

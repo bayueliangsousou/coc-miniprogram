@@ -1,0 +1,1 @@
+{"name": "syncPull", "version": "1.0.0", "description": "按版本号拉取事件流 - 断线重连补齐", "main": "index.js", "dependencies": {"@cloudbase/node-sdk": "latest"}}
