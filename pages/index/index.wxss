@@ -117,7 +117,7 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background: #777C68;
+  background: url('https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/mingce.png') center/cover no-repeat #777C68;
   padding: 20rpx 24rpx;
   gap: 16rpx;
 }
