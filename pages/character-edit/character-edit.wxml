@@ -1,4 +1,4 @@
-<scroll-view scroll-y class="edit-page character-edit" enhanced>
+<scroll-view scroll-y class="edit-page character-edit" enhanced scroll-into-view="{{scrollTarget}}" scroll-with-animation>
   <view class="page-container" style="padding-bottom:160rpx">
 
     <!-- ── 基本信息卡片 ── -->
@@ -49,7 +49,7 @@
     </view>
 
     <!-- ── 属性卡片（九宫格） ── -->
-    <view class="card">
+    <view class="card" id="attr-section">
       <view class="section-title">
         <text>属性</text>
         <view class="btn-roll-all" bindtap="onRollAll" wx:if="{{isNew}}">

@@ -3,14 +3,21 @@
   "pages": [
     "pages/index/index",
     "pages/login/login",
-    "pages/index/index-test",
-    "pages/dice/dice",
     "pages/character-edit/character-edit",
     "pages/occupation/occupation",
     "pages/skills/skills",
     "pages/background/background",
     "pages/character-detail/character-detail",
     "pages/join-room/join-room"
+  ],
+  "subpackages": [
+    {
+      "root": "packageDice",
+      "name": "dice",
+      "pages": [
+        "pages/dice/dice"
+      ]
+    }
   ],
   "window": {
     "backgroundTextStyle": "dark",

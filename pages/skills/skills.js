@@ -1,6 +1,7 @@
 // pages/skills/skills.js
 const { SKILLS, getSkillsByCategory, OCCUPATIONS } = require('../../utils/coc-data')
 const { getCharacterById, saveCharacter, calcSkillThresholds, calcSkillPoints } = require('../../utils/character')
+const { saveThenBack } = require('../../utils/nav')
 
 Page({
   data: {
@@ -26,18 +27,27 @@ Page({
       remaining: 0
     },
     // 校验错误状态
-    invalidSkillName: '',   // 有错误的技能名（空=全部合法）
+    invalidSkills: {},     // { skillName: errorMsg } 多个技能可同时标红
     // 职业配置解析结果
     occConfig: {
       lockedSkills: [],     // 锁定的职业技能
       optionalCount: 0,     // 可选择的职业技能数量
       optionalSkills: []    // 用户已选择的可选职业技能
-    }
+    },
+    // 新建技能弹窗
+    showNewSkillModal: false,
+    newSkillName: '',
+    newSkillValue: '',
+    creditRatingError: false
   },
 
   onLoad(options) {
     this.setData({ characterId: options.id || '' })
     this.initSkills()
+    // 启用页面离开确认
+    wx.enableAlertBeforeUnload({
+      message: '您有未保存的修改，确定要离开吗？'
+    })
   },
 
   onShow() {
@@ -96,6 +106,82 @@ Page({
         }
       })
       return { category, skills }
+    })
+
+    // 加载自定义「其他语言（XX）」技能：character.skills 里有但标准列表里没有的
+    Object.keys(character.skills).forEach(skillName => {
+      // 检查是否已出现在 skillCategories 中
+      let exists = false
+      skillCategories.forEach(cat => {
+        cat.skills.forEach(sk => {
+          if (sk.name === skillName) exists = true
+        })
+      })
+      if (exists) return
+
+      // 仅处理「其他语言（XX）」格式
+      if (!skillName.match(/^其他语言（.+）$/)) return
+
+      const current = character.skills[skillName]
+      const thresholds = calcSkillThresholds(current)
+      const cat = skillCategories.find(c => c.category === '知识')
+      if (cat) {
+        cat.skills.push({
+          name: skillName,
+          baseValue: 1,
+          current,
+          hard: thresholds.hard,
+          extreme: thresholds.extreme,
+          isOccSkill: false,
+          isLocked: false,
+          isOptional: false,
+          isCustom: true
+        })
+      }
+    })
+
+    // 加载通过「新技能」创建的自定义职业技能
+    const customSkills = character.customSkills || []
+    customSkills.forEach(cs => {
+      // 检查是否已存在
+      let exists = false
+      skillCategories.forEach(cat => {
+        cat.skills.forEach(sk => {
+          if (sk.name === cs.name) exists = true
+        })
+      })
+      if (exists) return
+
+      const current = character.skills[cs.name] || 0
+      const thresholds = calcSkillThresholds(current)
+      // 自建技能放到「其他」分类
+      let otherCat = skillCategories.find(c => c.category === '其他')
+      if (!otherCat) {
+        otherCat = { category: '其他', skills: [] }
+        skillCategories.push(otherCat)
+      }
+      otherCat.skills.unshift({
+        name: cs.name,
+        baseValue: cs.baseValue || 0,
+        current,
+        hard: thresholds.hard,
+        extreme: thresholds.extreme,
+        isOccSkill: cs.isOccSkill,
+        isLocked: false,
+        isOptional: false,
+        isCustom: true
+      })
+    })
+
+    // 固定分类展示顺序
+    const CATEGORY_ORDER = ['侦查', '社交', '知识', '技术', '运动', '科学', '艺术', '战斗', '其他']
+    skillCategories.sort((a, b) => {
+      const idxA = CATEGORY_ORDER.indexOf(a.category)
+      const idxB = CATEGORY_ORDER.indexOf(b.category)
+      if (idxA === -1 && idxB === -1) return 0
+      if (idxA === -1) return 1
+      if (idxB === -1) return -1
+      return idxA - idxB
     })
 
     // 默认展开所有分类
@@ -198,70 +284,54 @@ Page({
 
   // 社会信用评级输入
   onCreditRatingInput(e) {
-    let value = e.detail.value === '' ? '' : parseInt(e.detail.value)
-    const { creditRatingRange, character } = this.data
-    
-    // 空值不处理
-    if (value === '') {
-      this.setData({ creditRatingValue: '' })
-      return
-    }
-    
-    if (creditRatingRange) {
-      const [min, max] = creditRatingRange
-      // 限制在职业信用评级区间内
-      if (value < min) {
-        value = min
-      }
-      if (value > max) {
-        value = max
-      }
-    }
-    
-    // 更新角色数据
-    const skills = { ...character.skills, '信用评级': value }
-    const newCharacter = { ...character, skills }
-    saveCharacter(newCharacter)
-    
-    this.setData({ creditRatingValue: value, character: newCharacter })
+    // 输入中只更新显示值，不做校验拦截
+    const raw = e.detail.value
+    const value = raw === '' ? '' : parseInt(raw)
+    this.setData({ creditRatingValue: value, creditRatingError: false })
   },
 
-  // 社会信用评级失去焦点时强制修正
+  // 社会信用评级失去焦点时校验修正
   onCreditRatingBlur(e) {
-    let value = parseInt(e.detail.value) || 0
+    const raw = e.detail.value
+    let value = raw === '' ? 0 : parseInt(raw)
     const { creditRatingRange, character } = this.data
-    
+
+    let hasError = false
+
+    // 空值校验
+    if (raw === '' || raw === undefined || raw === null) {
+      hasError = true
+    }
+
     if (creditRatingRange) {
       const [min, max] = creditRatingRange
-      let corrected = false
-      
-      if (value < min) {
-        value = min
-        corrected = true
-      }
-      if (value > max) {
-        value = max
-        corrected = true
-      }
-      
-      if (corrected) {
-        wx.showToast({ title: `已调整为 ${value}`, icon: 'none' })
+      if (value < min || value > max) {
+        hasError = true
+        // 自动修正
+        if (value < min) value = min
+        if (value > max) value = max
       }
     }
-    
+
+    this.setData({ creditRatingError: hasError })
+
     // 更新角色数据
     const skills = { ...character.skills, '信用评级': value }
     const newCharacter = { ...character, skills }
     saveCharacter(newCharacter)
-    
-    this.setData({ creditRatingValue: value, character: newCharacter })
+
+    this.setData({ creditRatingValue: value, character: newCharacter }, () => this.calcPoints())
   },
 
   // ── 输入中：只更新值 + 实时算剩余点数，不做任何校验拦截 ──
   onSkillInput(e) {
     const { name } = e.currentTarget.dataset
     const value = parseInt(e.detail.value) || 0
-    const { skillCategories: oldCats, character } = this.data
+    const { skillCategories: oldCats, character, invalidSkills } = this.data
+
+    // 清除该技能的错误标记
+    const newInvalidSkills = { ...invalidSkills }
+    delete newInvalidSkills[name]
 
     // 直接用输入值更新，不做任何截断或限制
     const skillCategories = oldCats.map(cat => ({
@@ -280,7 +350,7 @@ Page({
     })
     const newPoints = calcSkillPoints({ ...character, skills: tempSkills })
 
-    this.setData({ skillCategories, points: newPoints })
+    this.setData({ skillCategories, points: newPoints, invalidSkills: newInvalidSkills })
   },
 
   // ── 输入框失焦时：执行完整校验 ──
@@ -288,7 +358,7 @@ Page({
     const { name } = e.currentTarget.dataset
     let value = parseInt(e.detail.value) || 0
 
-    const { points, skillCategories: oldCats, occConfig, character } = this.data
+    const { points, skillCategories: oldCats, occConfig, character, invalidSkills } = this.data
 
     let baseValue = 0, oldCurrent = 0
     let isLocked = false, isOptional = false
@@ -307,50 +377,50 @@ Page({
     let error = ''       // 错误信息
     let finalValue = value
 
-    // 校验1：不能低于基础值
+    // 校验1：不能低于基础值 → 自动修正到基础值
     if (value < baseValue) {
       error = `不能低于基础值 ${baseValue}`
       finalValue = baseValue
     }
 
-    // 校验2：上限
+    // 校验2：超过上限 → 自动修正到基础值（重置）
     const max = (isLocked || isOptional) ? 85 : 50
     if (!error && value > max) {
       error = `${(isLocked || isOptional) ? '职业' : '兴趣'}技能最大${max}点`
-      finalValue = max
+      finalValue = baseValue
     }
 
-    // 校验3：可选技能名额
+    // 校验3：可选技能名额已满 → 自动修正到基础值
     if (!error && !isLocked && value > 50 && !isOptional) {
       const count = this.countOptionalSkillsOverThreshold(oldCats, occConfig.optionalSkills)
       if (count >= occConfig.optionalCount) {
         error = `可选技能已达${occConfig.optionalCount}门`
-        finalValue = 50
+        finalValue = baseValue
       }
     }
 
-    // 校验4：技能点余额（职业点不足时可用兴趣点补）
+    // 校验4：职业点+兴趣点都不够 → 花光所有剩余点
     if (!error) {
       const oldUsed = Math.max(0, oldCurrent - baseValue)
       const newUsed = Math.max(0, finalValue - baseValue)
       const delta = newUsed - oldUsed
       if (delta > 0) {
         if (isLocked || isOptional) {
-          // 优先用职业点，不够时用兴趣点补
           const occAvailable = Math.max(0, points.occRemaining)
           const intAvailable = Math.max(0, points.intRemaining)
           const totalAvailable = occAvailable + intAvailable
 
           if (delta > totalAvailable) {
-            // 两边都不够
+            // 花光所有剩余点
             finalValue = baseValue + oldUsed + totalAvailable
             if (finalValue > 99) finalValue = 99
             error = '技能点不足'
           } else if (delta > occAvailable) {
-            // 职业点不够但兴趣点够——允许，不报错
+            // 职业点不够但兴趣点够——允许
           }
         } else {
           if (delta > points.intRemaining) {
+            // 花光所有剩余兴趣点
             const allowed = Math.max(0, points.intRemaining)
             finalValue = baseValue + oldUsed + allowed
             if (finalValue > 99) finalValue = 99
@@ -377,37 +447,29 @@ Page({
     })
     const newPoints = calcSkillPoints({ ...character, skills: tempSkills })
 
-    // 有错误则标记该技能为非法状态（标红）
+    // 更新错误标记（支持多个技能同时标红）
+    const newInvalidSkills = { ...invalidSkills }
+    if (error) {
+      newInvalidSkills[name] = error
+    } else {
+      delete newInvalidSkills[name]
+    }
+
     this.setData({
       skillCategories,
       points: newPoints,
-      invalidSkillName: error ? name : ''
+      invalidSkills: newInvalidSkills
     })
-
-    if (error) {
-      wx.showToast({ title: error, icon: 'none', duration: 2000 })
-    }
   },
 
-  // ── 输入框聚焦时：如果其他输入框有错误，拦截不让切走 ──
+  // ── 输入框聚焦时：清除该技能的错误标记 ──
   onSkillFocus(e) {
     const { name } = e.currentTarget.dataset
-    const { invalidSkillName } = this.data
-
-    if (invalidSkillName && invalidSkillName !== name) {
-      // 其他输入框有错误，拦截
-      wx.showToast({ title: `请先修正「${invalidSkillName}」的数值`, icon: 'none', duration: 2000 })
-      // 阻止焦点切换：通过 blur 当前触发的 focus 来实现
-      // 小程序没有 preventDefault，但可以立即 blur 掉刚获得的焦点
-      setTimeout(() => {
-        // 让用户回到错误的输入框
-      }, 100)
-      return false
-    }
-
-    // 清除当前技能的错误标记（用户准备修改了）
-    if (invalidSkillName === name) {
-      this.setData({ invalidSkillName: '' })
+    const { invalidSkills } = this.data
+    if (invalidSkills[name]) {
+      const newInvalidSkills = { ...invalidSkills }
+      delete newInvalidSkills[name]
+      this.setData({ invalidSkills: newInvalidSkills })
     }
   },
 
@@ -486,13 +548,31 @@ Page({
           })
         })
 
-        // 随机分配职业技能点（只分给职业技能）
+        // 第一步：先随机设置社会信用评级（消耗职业技能点，需先占位）
+        const { creditRatingRange, character } = this.data
+        let newCreditRating = character.skills['信用评级'] || 0
         let occLeft = points.occRemaining
+        if (creditRatingRange && creditRatingRange.length === 2) {
+          const [min, max] = creditRatingRange
+          const creditBase = min  // 基础值 = 区间最小值
+          // 在区间内随机，但受剩余职业点约束
+          const maxByPoints = Math.min(max, creditBase + occLeft)
+          if (maxByPoints >= min) {
+            newCreditRating = Math.floor(Math.random() * (maxByPoints - min + 1)) + min
+          } else {
+            newCreditRating = min  // 点数不足，给最低值
+          }
+          // 扣除信用评级超过基础值的部分（消耗职业点）
+          const creditPointsUsed = Math.max(0, newCreditRating - creditBase)
+          occLeft -= creditPointsUsed
+        }
+
+        // 第二步：随机分配职业技能点（只分给职业技能）
         if (occLeft > 0 && occSkills.length > 0) {
           occLeft = this._randomDistributePoints(cats, occSkills, occLeft)
         }
 
-        // 随机分配兴趣技能点（只分给非职业技能）
+        // 第三步：随机分配兴趣技能点（只分给非职业技能）
         let intLeft = points.intRemaining
         if (intLeft > 0 && allSkills.length > 0) {
           // 只收集非职业技能
@@ -516,7 +596,10 @@ Page({
           })
         }))
 
-        this.setData({ skillCategories: cats }, () => {
+        const newSkills = { ...character.skills, '信用评级': newCreditRating }
+        const newCharacter = { ...character, skills: newSkills }
+
+        this.setData({ skillCategories: cats, creditRatingValue: newCreditRating, character: newCharacter, invalidSkills: {}, creditRatingError: false }, () => {
           this.calcPoints()
           wx.showToast({ title: '随机分配完成！', icon: 'success' })
         })
@@ -526,31 +609,39 @@ Page({
 
   // 内部：将 totalPoints 随机分配到 skillList 对应的 cats 里，返回剩余点数
   _randomDistributePoints(cats, skillList, totalPoints, isOcc = false) {
-    // 洗牌打乱顺序
-    const shuffled = skillList.slice().sort(() => Math.random() - 0.5)
     let left = totalPoints
+    const maxRounds = 20  // 防死循环
 
-    shuffled.forEach(({ ci, si }) => {
-      if (left <= 0) return
-      const sk = cats[ci].skills[si]
+    for (let round = 0; round < maxRounds && left > 0; round++) {
+      // 每轮洗牌
+      const shuffled = skillList.slice().sort(() => Math.random() - 0.5)
+      let added = false
 
-      // 判断技能上限
-      let max = isOcc ? 85 : 50
-      if (sk.isLocked || sk.isOptional) {
-        max = 85
+      for (const { ci, si } of shuffled) {
+        if (left <= 0) break
+        const sk = cats[ci].skills[si]
+
+        // 判断技能上限
+        let max = isOcc ? 85 : 50
+        if (sk.isLocked || sk.isOptional) {
+          max = 85
+        }
+
+        const maxCanAdd = max - sk.current
+        if (maxCanAdd <= 0) continue
+
+        // 随机分配 1 ~ min(left, maxCanAdd) 点
+        const add = Math.min(Math.floor(Math.random() * maxCanAdd) + 1, left)
+        if (add > 0) {
+          cats[ci].skills[si] = { ...sk, current: sk.current + add }
+          left -= add
+          added = true
+        }
       }
 
-      const maxCanAdd = max - sk.current
-      if (maxCanAdd <= 0) return
-
-      // 随机分配 1 ~ min(left, maxCanAdd) 点
-      // 确保不会超过剩余点数
-      const add = Math.min(Math.floor(Math.random() * maxCanAdd) + 1, left)
-      if (add > 0) {
-        cats[ci].skills[si] = { ...sk, current: sk.current + add }
-        left -= add
-      }
-    })
+      // 本轮没有任何技能能加点，退出
+      if (!added) break
+    }
 
     return left
   },
@@ -596,20 +687,89 @@ Page({
     return matches
   },
 
-  onSave() {
-    const { character, skillCategories, characterId, occConfig, invalidSkillName } = this.data
+  // 全局校验：检查所有错误，返回错误列表
+  validateAll() {
+    const { skillCategories, points, creditRatingRange, creditRatingValue } = this.data
+    const errors = []
 
-    // 如果有不合法的值，阻止保存
-    if (invalidSkillName) {
-      wx.showToast({ title: `请先修正「${invalidSkillName}」的数值`, icon: 'none', duration: 2000 })
+    // 1. 检查已标记的技能错误
+    const { invalidSkills } = this.data
+    Object.keys(invalidSkills).forEach(name => {
+      errors.push(`「${name}」${invalidSkills[name]}`)
+    })
+
+    // 2. 检查技能点负值
+    if (points.occRemaining < 0) {
+      errors.push(`职业技能点超出 ${Math.abs(points.occRemaining)} 点`)
+    }
+    if (points.intRemaining < 0) {
+      errors.push(`兴趣技能点超出 ${Math.abs(points.intRemaining)} 点`)
+    }
+
+    // 3. 检查信用评级
+    if (creditRatingRange) {
+      if (creditRatingValue === '' || creditRatingValue === undefined || creditRatingValue === null) {
+        errors.push('社会信用评级不能为空')
+      } else {
+        const [min, max] = creditRatingRange
+        const val = parseInt(creditRatingValue) || 0
+        if (val < min || val > max) {
+          errors.push(`信用评级应在 ${min}~${max} 之间`)
+        }
+      }
+    }
+
+    // 4. 逐技能重新校验（防止漏检）
+    skillCategories.forEach(cat => {
+      cat.skills.forEach(sk => {
+        if (sk.current < sk.baseValue) {
+          const err = `「${sk.name}」低于基础值 ${sk.baseValue}`
+          if (!errors.some(e => e.includes(`「${sk.name}」`))) {
+            errors.push(err)
+          }
+        }
+      })
+    })
+
+    return errors
+  },
+
+  onSave() {
+    const { character, skillCategories, characterId, occConfig } = this.data
+
+    // 全局校验
+    const errors = this.validateAll()
+    if (errors.length > 0) {
+      const errorList = errors.map((e, i) => `${i + 1}. ${e}`).join('\n')
+      wx.showModal({
+        title: '数据有误',
+        content: errorList,
+        showCancel: true,
+        cancelText: '返回修改',
+        confirmText: '强制保存',
+        success: (res) => {
+          if (!res.confirm) return
+          // 强制保存
+          this._doSave(character, skillCategories, occConfig)
+        }
+      })
       return
     }
 
+    this._doSave(character, skillCategories, occConfig)
+  },
+
+  _doSave(character, skillCategories, occConfig) {
     // 收集所有技能值
     const skills = {}
     skillCategories.forEach(cat => {
       cat.skills.forEach(sk => {
-        skills[sk.name] = sk.current
+        let name = sk.name
+        // 「其他语言」如果填了语言名，保存为「其他语言（XX）」
+        if (name === '其他语言' && sk.languageName) {
+          name = `其他语言（${sk.languageName}）`
+        }
+        skills[name] = sk.current
       })
     })
     // 保存可选技能信息
@@ -619,7 +779,143 @@ Page({
       optionalSkills: occConfig.optionalSkills
     }
     saveCharacter(updated)
-    wx.showToast({ title: '技能已保存', icon: 'success' })
-    setTimeout(() => wx.navigateBack(), 600)
-  }
+    saveThenBack({ title: '技能已保存' })
+  },
+
+  // 其他语言名称输入
+  onLanguageNameInput(e) {
+    const langName = e.detail.value.trim()
+    const skillCategories = this.data.skillCategories.map(cat => {
+      return {
+        ...cat,
+        skills: cat.skills.map(sk => {
+          if (sk.name === '其他语言') {
+            return { ...sk, languageName: langName }
+          }
+          return sk
+        })
+      }
+    })
+    this.setData({ skillCategories })
+  },
+
+  // ========== 新建职业技能弹窗 ==========
+  onShowNewSkill() {
+    this.setData({ showNewSkillModal: true, newSkillName: '', newSkillValue: '' })
+  },
+
+  onNewSkillNameInput(e) {
+    this.setData({ newSkillName: e.detail.value })
+  },
+
+  onNewSkillValueInput(e) {
+    this.setData({ newSkillValue: e.detail.value })
+  },
+
+  onConfirmNewSkill() {
+    const name = this.data.newSkillName.trim()
+    const val = parseInt(this.data.newSkillValue, 10)
+
+    if (!name) {
+      wx.showToast({ title: '请输入技能名称', icon: 'none' })
+      return
+    }
+    if (isNaN(val) || val < 1) {
+      wx.showToast({ title: '请输入有效数值', icon: 'none' })
+      return
+    }
+
+    // 检查是否已存在
+    let exists = false
+    this.data.skillCategories.forEach(cat => {
+      cat.skills.forEach(sk => {
+        if (sk.name === name) exists = true
+      })
+    })
+    if (exists) {
+      wx.showToast({ title: '该技能已存在', icon: 'none' })
+      return
+    }
+
+    // 检查职业点数是否足够
+    const { points } = this.data
+    if (points.occRemaining < val) {
+      wx.showToast({ title: '职业技能点数不足', icon: 'none' })
+      return
+    }
+
+    const thresholds = calcSkillThresholds(val)
+
+    // 新建技能插入到第一个分类（侦查）的最前面
+    const skillCategories = this.data.skillCategories.map((cat, idx) => {
+      if (idx === 0) {
+        return {
+          ...cat,
+          skills: [
+            {
+              name,
+              baseValue: 0,
+              current: val,
+              hard: thresholds.hard,
+              extreme: thresholds.extreme,
+              isOccSkill: true,
+              isLocked: false,
+              isOptional: false,
+              isCustom: true
+            },
+            ...cat.skills
+          ]
+        }
+      }
+      return cat
+    })
+
+    // 保存自定义技能信息到 character
+    const character = { ...this.data.character }
+    character.customSkills = character.customSkills || []
+    character.customSkills.push({ name, baseValue: 0, isOccSkill: true })
+    character.skills = character.skills || {}
+    character.skills[name] = val
+
+    this.setData({
+      skillCategories,
+      character,
+      showNewSkillModal: false,
+      newSkillName: '',
+      newSkillValue: ''
+    }, () => {
+      this.calcPoints()
+      this.setData({ scrollToSkill: `skill-${name}` })
+    })
+  },
+
+  onCancelNewSkill() {
+    this.setData({ showNewSkillModal: false, newSkillName: '', newSkillValue: '' })
+  },
+
+  onDeleteCustomSkill(e) {
+    const name = e.currentTarget.dataset.name
+    wx.showModal({
+      title: '删除技能',
+      content: `确定删除「${name}」？`,
+      success: (res) => {
+        if (!res.confirm) return
+        const skillCategories = this.data.skillCategories.map(cat => {
+          return {
+            ...cat,
+            skills: cat.skills.filter(sk => sk.name !== name)
+          }
+        })
+        // 同时从 character.skills 中删除
+        const character = { ...this.data.character }
+        delete character.skills[name]
+        saveCharacter(character)
+        this.setData({ skillCategories, character }, () => {
+          this.calcPoints()
+        })
+      }
+    })
+  },
+
+  preventBubble() {}
 })

@@ -2,11 +2,13 @@
 const { createEmptyCharacter, saveCharacter, getCharacterById, calcDerived, calcSkillPoints } = require('../../utils/character')
 const { ATTR_NAMES, ATTR_DICE_RULES, rollAttributes, SKILLS } = require('../../utils/coc-data')
 const { WEAPONS_BY_SKILL } = require('../../utils/weapons-data')
+const { saveThenBack } = require('../../utils/nav')
 
 Page({
   data: {
     character: null,
     derived: {},
+    scrollTarget: '',
     attrKeys: ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU', 'LUK'],
     attrNames: ATTR_NAMES,
     attrDiceRules: ATTR_DICE_RULES,
@@ -133,11 +135,6 @@ Page({
 
   // 显示性别选择器
   onShowGenderPicker() {
-    console.log('🔵 点击性别选择器', {
-      showGenderPicker: this.data.showGenderPicker,
-      genderIndex: this.data.genderIndex,
-      genderOptions: this.data.genderOptions
-    })
     this.setData({ showGenderPicker: true })
   },
 
@@ -396,9 +393,43 @@ Page({
 
   // 去技能编辑
   onEditSkills() {
-    const character = saveCharacter(this.data.character)
-    this.setData({ character })
-    wx.navigateTo({ url: `/pages/skills/skills?id=${character.id}` })
+    const character = this.data.character
+
+    // 检查1：未选择职业 → 弹窗阻拦，跳转职业选择页
+    if (!character.occupation) {
+      wx.showModal({
+        title: '请先选择职业',
+        content: '编辑技能前需要先选择职业，职业决定了可分配的技能点。',
+        confirmText: '去选择',
+        showCancel: false,
+        success: () => {
+          const saved = saveCharacter(character)
+          this.setData({ character: saved })
+          wx.navigateTo({ url: `/pages/occupation/occupation?id=${saved.id}` })
+        }
+      })
+      return
+    }
+
+    // 检查2：未填写属性 → 弹窗阻拦，滚动到属性区域
+    const attrs = character.attributes || {}
+    const hasAnyAttr = Object.values(attrs).some(v => v > 0)
+    if (!hasAnyAttr) {
+      wx.showModal({
+        title: '请先填写属性',
+        content: '技能点数由属性决定，请先填写属性值。',
+        confirmText: '去填写',
+        showCancel: false,
+        success: () => {
+          this.setData({ scrollTarget: 'attr-section' })
+        }
+      })
+      return
+    }
+
+    const saved = saveCharacter(character)
+    this.setData({ character: saved })
+    wx.navigateTo({ url: `/pages/skills/skills?id=${saved.id}` })
   },
 
   // 去背景编辑
@@ -416,8 +447,7 @@ Page({
       return
     }
     saveCharacter(this.data.character)
-    wx.showToast({ title: '保存成功', icon: 'success' })
-    setTimeout(() => { wx.navigateBack() }, 800)
+    saveThenBack({ title: '保存成功' })
   }
 })
 

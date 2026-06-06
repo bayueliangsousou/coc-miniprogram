@@ -1,10 +1,46 @@
 /* pages/index/index.wxss */
 
 .page-container {
-  min-height: 100vh;
-  background: #202031;
-  padding: 24rpx;
+  height: 100vh;
   box-sizing: border-box;
+  position: relative;
+  z-index: 0;
+}
+
+.main-scroll {
+  padding: 24rpx;
+  padding-top: 0;
+  box-sizing: border-box;
+}
+
+/* ── 背景图 ── */
+.page-bg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -1;
+}
+
+/* ── 自定义导航栏 ── */
+.custom-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: transparent;
+}
+
+.custom-nav-title {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 190rpx;
+  box-sizing: border-box;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #fff;
+  pointer-events: auto;
 }
 
 .character-list {
@@ -16,7 +52,7 @@
   text-align: center;
   padding: 16rpx 0 8rpx;
   font-size: 22rpx;
-  color: #bbb;
+  color: #888888;
 }
 
 /* ── 滑动容器 ── */
@@ -27,17 +63,97 @@
   border-radius: var(--radius-md);
 }
 
-/* ── 角色卡 ── */
+/* ── 角色卡 v2（档案卡风格） ── */
 .character-card {
-  display: flex;
-  align-items: stretch;
-  background: #fff;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
   position: relative;
+  background: none;
+  padding: 0;
+  overflow: visible;
   z-index: 1;
   will-change: transform;
+}
+
+/* 内部容器 */
+.card-v2-inner {
+  position: relative;
+  z-index: 2;
+  background: #F0ECE4;
+  border-radius: 10rpx;
+  overflow: hidden;
+}
+
+/* 上半部分：信息区 */
+.card-v2-top {
+  padding: 24rpx 28rpx 20rpx;
+}
+
+.card-v2-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.card-v2-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #252533;
+  font-family: 'Special Elite';
+}
+
+.card-v2-date {
+  font-size: 26rpx;
+  color: #888888;
+  font-family: 'Special Elite';
+}
+
+.card-v2-meta {
+  font-size: 26rpx;
+  color: #888888;
+}
+
+/* 下半部分：属性区 */
+.card-v2-bottom {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: #777C68;
+  padding: 20rpx 24rpx;
+  gap: 16rpx;
+}
+
+.card-v2-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 2rpx;
+}
+
+.card-v2-stat-lbl {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #000;
+  margin-right: 8rpx;
+  font-family: 'Special Elite';
+}
+
+.card-v2-stat-current {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #000;
+  line-height: 1;
+  font-family: 'Special Elite';
+}
+
+.card-v2-stat-sep {
+  font-size: 24rpx;
+  color: #000;
+  font-family: 'Special Elite';
+}
+
+.card-v2-stat-max {
+  font-size: 28rpx;
+  color: #000;
+  font-family: 'Special Elite';
 }
 
 /* ── 删除按钮（右侧隐藏区） ── */
@@ -47,7 +163,7 @@
   top: 0;
   bottom: 0;
   width: 120rpx;
-  background: #c0392b;
+  background: #e74c3c;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -58,72 +174,6 @@
   color: #fff;
   font-size: 28rpx;
   font-weight: 600;
-}
-
-/* ── 卡片内容 ── */
-.card-accent {
-  width: 10rpx;
-  background: linear-gradient(180deg, #c9a84c, #8b5e1a);
-  flex-shrink: 0;
-}
-
-.card-body {
-  flex: 1;
-  padding: 28rpx 28rpx 28rpx 24rpx;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10rpx;
-}
-
-.card-name {
-  font-size: 34rpx;
-  font-weight: 700;
-  color: #1a1a2e;
-}
-
-.card-occupation {
-  font-size: 28rpx;
-}
-
-.card-meta {
-  font-size: 28rpx;
-  color: var(--color-text-sub);
-  margin-bottom: 20rpx;
-}
-
-.card-stats {
-  display: flex;
-  gap: 24rpx;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  background: #f8f7f3;
-  border-radius: 8rpx;
-  width: 110px;
-  height: 40px;
-  gap: 8rpx;
-  box-sizing: border-box;
-}
-
-.stat-lbl {
-  font-size: 24rpx;
-  color: var(--color-text-sub);
-  line-height: 1;
-}
-
-.stat-val {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: #1a1a2e;
-  line-height: 1;
 }
 
 /* ── 空状态 ── */
@@ -144,211 +194,13 @@
 .empty-title {
   font-size: 36rpx;
   font-weight: bold;
-  color: #1a1a2e;
+  color: #252533;
   margin-bottom: 16rpx;
 }
 
 .empty-desc {
   font-size: 24rpx;
-  color: #888;
-}
-
-/* ============================================================
-   骰子叠加层
-   ============================================================ */
-.dice-fab {
-  position: fixed;
-  width: 100rpx;
-  height: 100rpx;
-  background: #f5f5f0;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 44rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3);
-  z-index: 20;
-}
-
-.dice-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 99;
-}
-.dice-overlay.visible {
-  display: block;
-}
-
-.dice-canvas {
-  width: 100%;
-  height: 100%;
-}
-
-/* 骰子底部控制栏 - Grid 4列 + 投掷按钮跨两行 */
-.dice-controls {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 130;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr) auto;
-  grid-template-rows: repeat(2, auto);
-  gap: 8px;
-  padding: 6px 12px 20px;
-  align-items: center;
-  background-color: #1a1a1a;
-}
-
-.dice-btn-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.dice-btn {
-  background-color: rgba(60, 60, 80, 0.9);
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: bold;
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(100, 100, 130, 0.5);
-  min-width: 40px;
-  text-align: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  width: 100%;
-  height: 40px;
-  line-height: 36px;
-}
-
-.dice-btn:active {
-  background-color: rgba(80, 80, 110, 0.9);
-  transform: scale(0.95);
-}
-
-/* 骰子数量 tag */
-.dice-count {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background-color: #ff4444;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: bold;
-  min-width: 16px;
-  height: 16px;
-  line-height: 16px;
-  text-align: center;
-  border-radius: 8px;
-  padding: 0 4px;
-}
-
-/* 右侧投掷区域 */
-.throw-area {
-  grid-column: 5;
-  grid-row: 1 / 3;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 4px;
-}
-.throw-collapse {
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 20rpx;
-  text-align: center;
-  padding: 4rpx 0;
-}
-/* 投掷按钮 */
-.throw-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #e8b830, #c89a20);
-  color: #1a1a2e;
-  font-size: 18px;
-  font-weight: bold;
-  padding: 0 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(232, 184, 48, 0.3);
-  height: 66px;
-}
-.throw-btn:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 8px rgba(232, 184, 48, 0.2);
-}
-.throw-btn.disabled {
-  opacity: 0.4;
-}
-
-/* 结果卡片 */
-.dice-result-panel {
-  position: fixed;
-  top: 120rpx;
-  left: 50%;
-  margin-left: -300rpx;
-  width: 600rpx;
-  z-index: 140;
-  background: rgba(22, 22, 38, 0.92);
-  border-radius: 20rpx;
-  padding: 24rpx 24rpx;
-  display: flex;
-  flex-direction: row;
-  box-sizing: border-box;
-}
-.drp-left {
-  width: 400rpx;
-  flex-shrink: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-}
-.drp-item {
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  width: 100rpx;
-  flex-shrink: 0;
-  margin-bottom: 6rpx;
-}
-.drpi-type {
-  color: #999;
-  font-size: 26rpx;
-  margin-right: 4rpx;
-  line-height: 1.3;
-}
-.drpi-val {
-  color: #e8b830;
-  font-size: 32rpx;
-  font-weight: bold;
-  line-height: 1.3;
-}
-.drp-divider {
-  width: 2rpx;
-  margin: 0 16rpx;
-  background: rgba(255, 255, 255, 0.12);
-  flex-shrink: 0;
-}
-.drp-right {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-}
-.drpr-label {
-  color: #999;
-  font-size: 26rpx;
-}
-.drpr-num {
-  color: #e8b830;
-  font-size: 52rpx;
-  font-weight: bold;
+  color: #888888;
 }
 
 /* ── 吸底按钮栏 ── */
@@ -362,7 +214,7 @@
   gap: 16rpx;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: #202031;
+  background: #252533;
 }
 
 .bottom-bar-create {
@@ -371,7 +223,7 @@
   align-items: center;
   justify-content: center;
   height: 88rpx;
-  background: #A98948;
+  background: #c9a84c;
   border-radius: 16rpx;
   color: #fff;
   font-size: 30rpx;
@@ -383,6 +235,10 @@
 .bottom-bar-create:active {
   opacity: 0.85;
   transform: scale(0.98);
+}
+
+.bottom-bar-create-disabled {
+  background: rgba(201, 168, 76, 0.5);
 }
 
 .bottom-bar-icon {
@@ -397,7 +253,7 @@
   align-items: center;
   justify-content: center;
   height: 88rpx;
-  background: #A98948;
+  background: #c9a84c;
   border-radius: 16rpx;
   color: #fff;
   font-size: 30rpx;
@@ -425,7 +281,7 @@
 }
 
 .mine-modal {
-  width: 580rpx;
+  width: 600rpx;
   background: #fff;
   border-radius: 24rpx;
   padding: 48rpx 40rpx;
@@ -435,7 +291,7 @@
 .mine-modal-title {
   font-size: 34rpx;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #252533;
   text-align: center;
   margin-bottom: 36rpx;
 }
@@ -452,7 +308,7 @@
 
 .mine-modal-label {
   font-size: 24rpx;
-  color: #999;
+  color: #888888;
   margin-bottom: 8rpx;
 }
 
@@ -483,7 +339,7 @@
 
 .mine-modal-btn.close {
   background: #f0f0f0;
-  color: #666;
+  color: #888888;
 }
 
 .mine-modal-btn.close:active {

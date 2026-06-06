@@ -1,74 +1,47 @@
 <view class="detail-page" wx:if="{{character}}">
 
-  <!-- ===== 骰子模式叠加层 ===== -->
-  <view class="dice-overlay {{diceMode || skillCheckMode ? 'visible' : ''}}" bindtap="onDiceOverlayTap">
-    <canvas type="webgl" id="dice-canvas" class="dice-canvas"></canvas>
-    <!-- 完整骰子模式的结果面板 -->
-    <cover-view class="dice-result-panel" wx:if="{{diceResults.length > 0 && diceMode}}">
-      <cover-view class="drp-left">
-        <cover-view class="drp-item" wx:for="{{diceResults}}" wx:key="id" wx:for-item="r">
-          <cover-view class="drpi-type">{{r.type}}</cover-view>
-          <cover-view class="drpi-val">{{r.value}}</cover-view>
-        </cover-view>
-      </cover-view>
-      <cover-view class="drp-divider"></cover-view>
-      <cover-view class="drp-right">
-        <cover-view class="drpr-label">总值</cover-view>
-        <cover-view class="drpr-num">{{diceTotalSum}}</cover-view>
-      </cover-view>
-    </cover-view>
-  </view>
-
-  <!-- ===== 骰子浮动按钮（打开/关闭一体） ===== -->
-  <view
-    wx:if="{{!diceMode && !skillCheckMode}}"
-    class="dice-fab"
-    style="right: {{fabRight || 30}}rpx; bottom: {{fabBottom || 160}}rpx"
-    catchtouchstart="onFabTouchStart"
-    catchtouchmove="onFabTouchMove"
-    catchtouchend="onFabTouchEnd"
-  >
-    <text>🎲</text>
-  </view>
-
-  <!-- ===== 骰子控制栏（仅完整骰子模式） ===== -->
-  <view class="dice-controls" wx:if="{{diceMode}}" catchtap>
-    <block wx:for="{{diceTypes}}" wx:key="type">
-      <view class="dice-btn-wrap" data-type="{{item.type}}" bindtap="onDiceBtnTap">
-        <view class="dice-btn">{{item.label}}</view>
-        <view class="dice-count" wx:if="{{diceCounts[item.type] > 0}}">{{diceCounts[item.type]}}</view>
+  <!-- ===== 自定义导航栏（fixed 吸顶） ===== -->
+  <view class="custom-nav" style="height: {{statusBarHeight + navHeight}}px; background: {{navBarBg}};">
+    <view class="custom-nav-inner" style="padding-top: {{statusBarHeight}}px;">
+      <view class="custom-nav-back" bindtap="onBackTap">
+        <view class="back-arrow-icon"></view>
       </view>
-    </block>
-    <view class="throw-area">
-      <view class="throw-collapse" bindtap="onDiceModeToggle">收起骰子</view>
-      <view class="throw-btn {{diceHasDice ? '' : 'disabled'}}" bindtap="onDiceThrow">投掷</view>
     </view>
   </view>
+
+  <!-- ===== 骰子工具组件 ===== -->
+  <dice-tool id="diceTool"
+    fab-bottom-default="160"
+    fab-bg="rgba(26,26,46,0.9)"
+    throw-btn-bg="#C1916C"
+    bottom-limit="300"
+    bind:close="onDiceToolClose"
+    bind:skillcheckresult="onSkillCheckResultEvent"
+  />
+
+  <!-- ══ 主滚动区 ══ -->
+  <scroll-view scroll-y class="main-scroll" enhanced bounces="{{false}}" scroll-into-view="{{skillScrollTo}}" scroll-with-animation bindscroll="onMainScroll">
 
   <!-- ── 顶部区域 ── -->
   <view class="top-section">
-    <image class="top-section-bg" src="/assets/images/login-bg.jpg" mode="aspectFill"/>
-    <!-- 姓名+职业 -->
+    <image class="top-section-bg" src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/character-bg.jpg" mode="aspectFill"/>
+    <view class="top-section-content" style="padding-top: {{topSectionPaddingTop}}px;">
+    <!-- 姓名 + 状态标签 -->
     <view class="name-occ-row">
       <text class="header-name">{{character.name}}</text>
-      <view class="header-occ">
-        <text>{{character.occupation || '未选择职业'}}</text>
-      </view>
-    </view>
-
-    <!-- 状态标签 + 添加按钮（第一排，右对齐） -->
-    <view class="header-status-row">
-      <view class="add-status-btn-tag" bindtap="onShowStatusPicker">
-        <text class="add-status-icon-tag">+</text>
-      </view>
-      <view
-        class="status-tag-style"
-        wx:for="{{character.status}}"
-        wx:key="*this"
-        bindlongpress="onLongPressStatus"
-        data-status="{{item}}"
-      >
-        <text>{{statusLabels[item]}}</text>
+      <view class="header-status-row">
+        <view class="add-status-btn-tag" bindtap="onShowStatusPicker">
+          <text class="add-status-icon-tag">+</text>
+        </view>
+        <view
+          class="status-tag-style"
+          wx:for="{{character.status}}"
+          wx:key="*this"
+          bindlongpress="onLongPressStatus"
+          data-status="{{item}}"
+        >
+          <text>{{statusLabels[item]}}</text>
+        </view>
       </view>
     </view>
 
@@ -132,15 +105,8 @@
         </view>
       </view>
 
-      <custom-picker
-        show="{{showWeaponPicker}}"
-        title="选择武器"
-        range="{{displayWeapons}}"
-        range-key="name"
-        value="{{selectedWeaponIndex}}"
-        bind:confirm="onWeaponConfirm"
-        bind:cancel="onWeaponCancel"/>
     </view>
+    </view><!-- /top-section-content -->
   </view>
 
   <!-- HP/SAN/MP 滚轮选择器 -->
@@ -161,6 +127,16 @@
     bind:confirm="onLuckPickerConfirm"
     bind:cancel="onLuckPickerCancel"/>
 
+  <!-- 武器选择器 -->
+  <custom-picker
+    show="{{showWeaponPicker}}"
+    title="选择武器"
+    range="{{displayWeapons}}"
+    range-key="name"
+    value="{{selectedWeaponIndex}}"
+    bind:confirm="onWeaponConfirm"
+    bind:cancel="onWeaponCancel"/>
+
   <!-- Tab 切换 -->
   <view class="tab-bar">
     <view class="tab-item {{activeTab === 'attrs' ? 'active' : ''}}"
@@ -174,25 +150,32 @@
   </view>
 
   <!-- Tab 内容 -->
-  <scroll-view scroll-y class="tab-scroll-view" enhanced scroll-into-view="{{skillScrollTo}}" scroll-with-animation>
-  <view class="tab-content">
+  <view class="tab-body">
     <!-- ═══ 属性 Tab ═══ -->
     <view wx:if="{{activeTab === 'attrs'}}">
         <view class="attr-grid9">
-          <view class="attr-cell" wx:for="{{attrKeys}}" wx:key="*this">
+          <view class="attr-cell" wx:for="{{attrKeys}}" wx:key="*this"
+            data-key="{{item}}" bindtap="onAttrCellTap"
+            hover-class="attr-cell-active" hover-start-time="0" hover-stay-time="120">
             <view class="attr-cell-header">
               <text class="attr-cell-en">{{item}}</text>
               <text class="attr-cell-cn">{{attrNames[item]}}</text>
             </view>
             <view class="attr-cell-body">
               <text class="attr-cell-val">{{attrWithThresholds[item].value}}</text>
-              <view class="attr-edit-btn" wx:if="{{item === 'LUK'}}" bindtap="onLuckTap">✏️</view>
-              <view class="attr-dice-btn" data-name="{{attrNames[item]}}" data-value="{{attrWithThresholds[item].value}}" bindtap="onAttrDiceTap">🎲</view>
+              <view class="attr-thresholds">
+                <text class="attr-threshold-val">{{attrWithThresholds[item].hard}}</text>
+                <view class="attr-threshold-line"></view>
+                <text class="attr-threshold-val">{{attrWithThresholds[item].extreme}}</text>
+              </view>
             </view>
           </view>
         </view>
 
-        <!-- 第四行：移动、体格、伤害修正 -->
+        <!-- 提示：点击属性进行鉴定 -->
+        <view class="attr-hint-row">点击属性进行鉴定</view>
+
+        <!-- 第四行：移动、体格、伤害修正（不可交互） -->
         <view class="attr-row4">
           <view class="attr-row4-item">
             <text class="row4-lbl">移动</text>
@@ -241,7 +224,9 @@
         <view class="skill-header-row">
           <text class="sh-name">技能</text>
           <text class="sh-val">当前</text>
-          <text class="sh-dice">检定</text>
+          <text class="sh-threshold">困难</text>
+          <text class="sh-threshold">极难</text>
+          <view class="sh-dice-placeholder"></view>
         </view>
       </view>
 
@@ -280,6 +265,8 @@
             >
               <text class="skv-name">{{sk.name}}</text>
               <text class="skv-val primary">{{sk.current}}</text>
+              <text class="skv-threshold-val">{{sk.hard}}</text>
+              <text class="skv-threshold-val">{{sk.extreme}}</text>
               <view class="skv-dice-btn" data-name="{{sk.name}}" data-value="{{sk.current}}" bindtap="onSkillDiceTap">🎲</view>
             </view>
           </view>
@@ -349,28 +336,28 @@
   </view>
 
   <!-- 技能检定结果弹窗（无蒙版，靠上） -->
-  <view class="skill-check-modal" wx:if="{{showSkillCheckModal}}">
-    <view class="skill-check-content">
-      <view class="skill-check-close" bindtap="onCloseSkillCheckModal">×</view>
-      <view class="skill-check-body">
-        <view class="skill-check-left">
-          <view class="skill-check-row">
-            <text class="skill-check-label">投掷值</text>
-            <text class="skill-check-num">{{skillCheckResult.rollValue}}</text>
-          </view>
-          <view class="skill-check-row">
-            <text class="skill-check-label">技能值</text>
-            <text class="skill-check-num skill-check-num-skill">{{skillCheckResult.skillValue}}</text>
-          </view>
-        </view>
-        <view class="skill-check-divider"></view>
-        <view class="skill-check-right">
-          <text class="skill-check-result-label">结果</text>
-          <text class="skill-check-result-text {{skillCheckResult.resultClass}}">{{skillCheckResult.resultText}}</text>
-        </view>
-      </view>
-    </view>
-  </view>
+  <cover-view class="skill-check-modal" wx:if="{{showSkillCheckModal}}">
+    <cover-view class="skill-check-content">
+      <cover-image class="skill-check-bg" src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png" bindload="onSkillCheckBgLoaded"/>
+      <cover-view class="skill-check-body" wx:if="{{skillCheckBgLoaded}}">
+        <cover-view class="skill-check-left">
+          <cover-view class="skill-check-row">
+            <cover-view class="skill-check-label">投掷值</cover-view>
+            <cover-view class="skill-check-num">{{skillCheckResult.rollValue}}</cover-view>
+          </cover-view>
+          <cover-view class="skill-check-row">
+            <cover-view class="skill-check-label">技能值</cover-view>
+            <cover-view class="skill-check-num skill-check-num-skill">{{skillCheckResult.skillValue}}</cover-view>
+          </cover-view>
+        </cover-view>
+        <cover-view class="skill-check-divider"></cover-view>
+        <cover-view class="skill-check-right">
+          <cover-view class="skill-check-result-label">结果</cover-view>
+          <cover-view class="skill-check-result-text {{skillCheckResult.resultClass}}">{{skillCheckResult.resultText}}</cover-view>
+        </cover-view>
+      </cover-view>
+    </cover-view>
+  </cover-view>
 
   <!-- 房间输入弹窗 -->
   <view class="room-input-modal" wx:if="{{showRoomInputModal}}" catchtouchmove="preventTouchMove">

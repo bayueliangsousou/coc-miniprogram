@@ -2,6 +2,11 @@
 
 .edit-page {
   height: 100vh;
+  background: #f5f5f0;
+}
+
+.character-edit .page-container {
+  background: #f5f5f0;
 }
 
 /* ── 基本信息表单 ── */
@@ -23,7 +28,7 @@
   font-size: 28rpx;
   color: var(--color-text-sub);
   flex-shrink: 0;
-  line-height: 1;
+  line-height: 64rpx;
 }
 
 .form-input {
@@ -181,6 +186,7 @@
   font-weight: 700;
   color: #1a1a2e;
   line-height: 1;
+  font-family: 'Special Elite';
 }
 
 .attr-cell-cn {
@@ -388,6 +394,7 @@
   left: 0;
   right: 0;
   padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: rgba(245, 245, 240, 0.95);
   backdrop-filter: blur(10px);
   box-shadow: 0 -2rpx 16rpx rgba(0, 0, 0, 0.08);

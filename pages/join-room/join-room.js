@@ -16,6 +16,11 @@ Page({
   },
 
   onLoad() {
+    // 未登录不允许进入加入房间页
+    if (!cloud.checkLogin()) {
+      wx.redirectTo({ url: '/pages/login/login' })
+      return
+    }
     // 加载本地角色列表
     const characters = loadCharacters()
     this.setData({ characters })
@@ -35,9 +40,7 @@ Page({
 
   // 确认加入
   async onJoinRoom() {
-    console.log('[加入房间] onJoinRoom 被调用')
     const { roomCode, selectedCharacterId, useMock } = this.data
-    console.log('[加入房间] 当前状态:', { roomCode, selectedCharacterId, useMock })
 
     if (!roomCode || roomCode.length !== 4) {
       this.setData({ error: '请输入4位数字房间号' })
@@ -64,12 +67,10 @@ Page({
         this.handleJoinResult(result)
       } else {
         // 云函数模式
-        console.log('[加入房间] 正在调用云函数...', { roomCode, characterName: character.name })
         const result = await cloud.callCloudFunction('joinRoom', {
           roomCode,
           characterData: character
         })
-        console.log('[加入房间] 云函数返回:', JSON.stringify(result, null, 2))
         this.handleJoinResult(result)
       }
     } catch (err) {

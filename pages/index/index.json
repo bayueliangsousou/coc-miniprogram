@@ -1,7 +1,9 @@
 {
-  "navigationBarTitleText": "调查员名册",
-  "navigationBarBackgroundColor": "#1a1a2e",
-  "navigationBarTextStyle": "white",
+  "navigationStyle": "custom",
   "enablePullDownRefresh": false,
-  "backgroundColor": "#f5f5f0"
+  "disableScroll": true,
+  "backgroundColor": "#f5f5f0",
+  "usingComponents": {
+    "dice-tool": "/components/dice-tool/dice-tool"
+  }
 }

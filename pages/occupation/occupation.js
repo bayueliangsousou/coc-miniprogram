@@ -1,6 +1,7 @@
 // pages/occupation/occupation.js
 const { OCCUPATIONS } = require('../../utils/coc-data')
 const { getCharacterById, saveCharacter } = require('../../utils/character')
+const { saveThenBack } = require('../../utils/nav')
 
 Page({
   data: {
@@ -47,8 +48,7 @@ Page({
       character.occupation = occ.name
       character.occupationId = occ.id
       saveCharacter(character)
-      wx.showToast({ title: `已选择：${occ.name}`, icon: 'success' })
-      setTimeout(() => wx.navigateBack(), 600)
+      saveThenBack({ title: `已选择：${occ.name}` })
     }
   }
 })

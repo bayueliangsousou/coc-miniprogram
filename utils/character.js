@@ -52,13 +52,13 @@ function createEmptyCharacter() {
 
     // 人物背景
     background: {
-      story: '',          // 个人描述 / 故事
-      beliefs: '',        // 重要之人与地点
+      story: '',          // 个人描述
+      keyPeople: '',      // 重要之人
+      gear: '',           // 重要之物
+      beliefs: '',        // 重要地点
       traits: '',         // 特质
       ideology: '',       // 意识形态与信仰
       wounds: '',         // 重要伤疤与创伤
-      gear: '',           // 宝贵之物与珍宝
-      keyPeople: '',      // 重要的人
     }
   }
 }
@@ -92,12 +92,14 @@ function calcDerived(attrs) {
   const strSiz = STR + SIZ
   let db = '0'
   let build = 0
-  if (strSiz >= 2 && strSiz <= 64) { db = '-2'; build = -2 }
-  else if (strSiz >= 65 && strSiz <= 84) { db = '-1'; build = -1 }
-  else if (strSiz >= 85 && strSiz <= 124) { db = '0'; build = 0 }
-  else if (strSiz >= 125 && strSiz <= 164) { db = '+1d4'; build = 1 }
-  else if (strSiz >= 165 && strSiz <= 204) { db = '+1d6'; build = 2 }
-  else if (strSiz >= 205) { db = '+2d6'; build = 3 }
+  if (strSiz <= 64)                        { db = '-2';  build = -2 }
+  else if (strSiz <= 84)                   { db = '-1';  build = -1 }
+  else if (strSiz <= 124)                  { db = '0';   build = 0  }
+  else if (strSiz <= 164)                  { db = '+1d4'; build = 1 }
+  else if (strSiz <= 204)                  { db = '+1d6'; build = 2 }
+  else if (strSiz <= 244)                  { db = '+2d6'; build = 3 }
+  else if (strSiz <= 284)                  { db = '+3d6'; build = 4 }
+  else                                     { db = '+4d6'; build = 5 }
 
   // 闪避基础值 = DEX / 2 向下取整
   const dodge = Math.floor(DEX / 2)
@@ -217,6 +219,29 @@ function calcSkillPoints(character) {
     } else {
       // 非职业技能：只用兴趣点
       intUsed += inputPoints
+    }
+  })
+
+  // 处理自定义技能（不在标准列表中）
+  const customSkills = character.customSkills || []
+  customSkills.forEach(cs => {
+    const currentValue = skills[cs.name] || 0
+    const pointsUsed = Math.max(0, currentValue - (cs.baseValue || 0))
+
+    if (pointsUsed > 0) {
+      if (cs.isOccSkill) {
+        // 自定义职业技能：先用职业点，不够再用兴趣点
+        const occAvailable = occTotal - occUsed
+        if (pointsUsed <= occAvailable) {
+          occUsed += pointsUsed
+        } else {
+          occUsed += occAvailable
+          intUsed += (pointsUsed - occAvailable)
+        }
+      } else {
+        // 自定义非职业技能：只用兴趣点
+        intUsed += pointsUsed
+      }
     }
   })
 
@@ -443,31 +468,14 @@ function getStatusColor(status) {
 // ─── 云端同步（内部方法，不暴露给外部调用） ──────────────────────────────────
 
 /**
- * 深度清理对象中的 undefined 值
- * 微信云数据库 update 时会忽略 undefined 字段，导致数据丢失
- */
-function deepClean(obj) {
-  if (obj === null || typeof obj !== 'object') return obj
-  if (Array.isArray(obj)) return obj.map(item => deepClean(item))
-  const cleaned = {}
-  for (const key of Object.keys(obj)) {
-    const val = obj[key]
-    if (val === undefined) continue
-    cleaned[key] = deepClean(val)
-  }
-  return cleaned
-}
-
-/**
  * 异步同步到云端（静默，失败只打日志）
+ * 深度清理由云端 characterSync 统一处理，客户端不再重复 deepClean
  */
 function syncToCloud(action, character, characterId) {
-  const cleanedCharacter = character ? deepClean(character) : null
   wx.cloud.callFunction({
     name: 'characterSync',
-    data: { action, character: cleanedCharacter, characterId }
+    data: { action, character, characterId }
   }).then(res => {
-    console.log('syncToCloud success:', action, res.result)
   }).catch(err => {
     console.error('syncToCloud failed:', action, err)
   })

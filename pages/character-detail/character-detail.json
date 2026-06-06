@@ -1,8 +1,10 @@
 {
-  "navigationBarTitleText": "调查员详情",
+  "navigationStyle": "custom",
   "navigationBarBackgroundColor": "#1a1a2e",
   "navigationBarTextStyle": "white",
+  "disableScroll": true,
   "usingComponents": {
-    "custom-picker": "/components/custom-picker/custom-picker"
+    "custom-picker": "/components/custom-picker/custom-picker",
+    "dice-tool": "/components/dice-tool/dice-tool"
   }
 }

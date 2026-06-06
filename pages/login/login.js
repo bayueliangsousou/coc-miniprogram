@@ -30,14 +30,9 @@ Page({
 
   async onGetUserProfile() {
     this.setData({ isLoading: true });
-    console.log('[login] 开始登录流程...');
 
     try {
       wx.cloud.init({ env: CLOUD_ENV });
-      console.log('[login] wx.cloud.init 完成, env:', CLOUD_ENV);
-
-      console.log('[login] 准备调用 auth 云函数...');
-      const startTime = Date.now();
 
       const res = await wx.cloud.callFunction({
         name: 'auth',
@@ -45,11 +40,9 @@ Page({
         config: { env: CLOUD_ENV }
       });
 
-      console.log('[login] auth 返回, 耗时:', Date.now() - startTime, 'ms', JSON.stringify(res));
       const { result } = res;
 
       if (result.code === 0) {
-        console.log('[login] 登录成功');
         wx.setStorageSync('cloud_user', result.data);
         this.setData({ isLoading: false });
         wx.reLaunch({ url: '/pages/index/index' });
@@ -62,6 +55,10 @@ Page({
       this.setData({ isLoading: false });
       wx.showToast({ title: '登录失败，请重试', icon: 'none' });
     }
+  },
+
+  onCancelLogin() {
+    wx.reLaunch({ url: '/pages/index/index' });
   },
 
   onLogout() {

@@ -46,7 +46,7 @@
 
 .custom-picker-cancel {
   font-size: 28rpx;
-  color: #999;
+  color: #888888;
   padding: 8rpx 16rpx;
 }
 

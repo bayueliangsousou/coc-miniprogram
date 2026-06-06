@@ -1,16 +1,22 @@
 const tcb = require('@cloudbase/node-sdk');
 
 const app = tcb.init({
-  env: 'cloud1-1gp39wlmaa1fc8d5'
+  env: process.env.TCB_ENV
 });
 
 const db = app.database();
+const _ = db.command;
 
 exports.main = async (event, context) => {
-  const { playerId, characterData, OPENID } = event;
-  
+  // 安全获取 OPENID（从服务端上下文，不可伪造）
+  const { openId } = app.auth().getUserInfo();
+  if (!openId) {
+    return { code: -99, message: '未登录或无法获取用户身份' };
+  }
+
+  const { playerId, characterData } = event;
+
   try {
-    const openId = OPENID;
     
     // 验证玩家身份
     const playerRes = await db.collection('players').doc(playerId).get();

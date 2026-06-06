@@ -2,21 +2,21 @@
 
 /* 颜色变量（用 page 根选择器模拟 CSS 变量） */
 page {
-  --color-bg: #f5f5f0;
-  --color-bg-dark: #1a1a2e;
+  --color-bg: #252533;
+  --color-bg-dark: #252533;
   --color-card: #ffffff;
   --color-primary: #c9a84c;
-  --color-primary-dark: #8b5e1a;
+  --color-primary-dark: #8b6914;
   --color-text: #2c2c2c;
   --color-text-sub: #888888;
   --color-border: #e0ddd5;
-  --color-danger: #c0392b;
+  --color-danger: #e74c3c;
   --color-success: #27ae60;
-  --radius-sm: 8rpx;
+  --radius-sm: 24rpx;
   --radius-md: 16rpx;
   --radius-lg: 24rpx;
 
-  background-color: var(--color-bg);
+  background-color: #252533;
   color: var(--color-text);
   font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
   font-size: 28rpx;
@@ -55,6 +55,7 @@ view, text, image, button, input, textarea, scroll-view, swiper, swiper-item {
   border-bottom: 2rpx solid var(--color-border);
   display: flex;
   align-items: center;
+  font-family: 'Special Elite';
 }
 
 .section-title::before {
@@ -227,7 +228,7 @@ view, text, image, button, input, textarea, scroll-view, swiper, swiper-item {
 .tag {
   display: inline-block;
   padding: 4rpx 16rpx;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   font-size: 24rpx;
   background: rgba(201, 168, 76, 0.15);
   color: var(--color-primary-dark);

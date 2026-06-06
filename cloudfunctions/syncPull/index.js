@@ -12,7 +12,7 @@
 const tcb = require('@cloudbase/node-sdk');
 
 const app = tcb.init({
-  env: process.env.TCB_ENV || 'mastermind-5grqnmdu0d3a7d81'
+  env: process.env.TCB_ENV
 });
 
 const db = app.database();

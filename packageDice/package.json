@@ -1,0 +1,8 @@
+{
+  "name": "packageDice",
+  "version": "1.0.0",
+  "dependencies": {
+    "cannon-es": "^0.20.0",
+    "threejs-miniprogram": "^0.0.8"
+  }
+}

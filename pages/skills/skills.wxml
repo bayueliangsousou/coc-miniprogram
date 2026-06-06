@@ -1,7 +1,7 @@
-<scroll-view scroll-y class="page-container" style="padding-bottom:260rpx" scroll-into-view="{{scrollToSkill}}" scroll-with-animation>
+<view class="skills-page">
 
-  <!-- 技能点数面板 - 吸顶 -->
-  <view class="points-panel sticky-panel">
+  <!-- 技能点数面板（固定在顶部） -->
+  <view class="points-panel">
     <!-- 职业技能点数 -->
     <view class="points-section occ-section">
       <text class="points-title">职业技能</text>
@@ -10,7 +10,6 @@
         <text class="points-slash">/</text>
         <text class="points-total">{{points.occTotal}}</text>
       </view>
-      <text class="points-used-row" wx:if="{{points.occUsed > 0}}">已用 {{points.occUsed}} 点</text>
       <text class="points-formula">{{pointFormula}}</text>
       <view class="points-bar-wrap">
         <view class="points-bar-fill occ-fill" style="width: {{points.occUsed / points.occTotal * 100}}%"></view>
@@ -25,7 +24,6 @@
         <text class="points-slash">/</text>
         <text class="points-total">{{points.intTotal}}</text>
       </view>
-      <text class="points-used-row" wx:if="{{points.intUsed > 0}}">已用 {{points.intUsed}} 点</text>
       <text class="points-formula">EDU×2</text>
       <view class="points-bar-wrap">
         <view class="points-bar-fill int-fill" style="width: {{points.intUsed / points.intTotal * 100}}%"></view>
@@ -33,22 +31,23 @@
     </view>
   </view>
 
+  <scroll-view scroll-y class="skills-scroll" scroll-into-view="{{scrollToSkill}}" scroll-with-animation>
+
   <!-- 社会信用评级 -->
   <view class="credit-rating-section" wx:if="{{creditRatingRange}}">
     <view class="credit-rating-header">
-      <text class="credit-rating-title">社会信用评级</text>
-      <text class="credit-rating-range">{{creditRatingRange[0]}} — {{creditRatingRange[1]}}</text>
-    </view>
-    <view class="credit-rating-input-wrap">
-      <input
-        class="credit-rating-input"
-        type="number"
-        value="{{creditRatingValue}}"
-        bindinput="onCreditRatingInput"
-        bindblur="onCreditRatingBlur"
-        placeholder="0"
-      />
-      <text class="credit-rating-hint">需在 {{creditRatingRange[0]}}-{{creditRatingRange[1]}} 区间内</text>
+      <text class="credit-rating-title {{creditRatingError ? 'credit-rating-error-text' : ''}}">社会信用评级</text>
+      <view class="credit-rating-right">
+        <input
+          class="credit-rating-input {{creditRatingError ? 'credit-rating-input-error' : ''}}"
+          type="number"
+          value="{{creditRatingValue}}"
+          bindinput="onCreditRatingInput"
+          bindblur="onCreditRatingBlur"
+          placeholder="0"
+        />
+        <text class="credit-rating-range {{creditRatingError ? 'credit-rating-error-text' : ''}}">{{creditRatingRange[0]}} — {{creditRatingRange[1]}}</text>
+      </view>
     </view>
   </view>
 
@@ -90,18 +89,29 @@
           <view class="skill-name-wrap">
             <text class="occ-dot" wx:if="{{sk.isOccSkill}}">★</text>
             <text class="skill-name">{{sk.name}}</text>
+            <input
+              wx:if="{{sk.name === '其他语言'}}"
+              class="language-name-input"
+              placeholder="语言名"
+              value="{{sk.languageName}}"
+              data-name="{{sk.name}}"
+              bindinput="onLanguageNameInput"
+            />
             <text class="skill-base">基础{{sk.baseValue}}</text>
+            <!-- 删除按钮（仅自定义技能） -->
+            <view class="skill-delete" wx:if="{{sk.isCustom}}" catchtap="onDeleteCustomSkill" data-name="{{sk.name}}">
+              <text class="delete-icon">删除</text>
+            </view>
           </view>
           <view class="skill-inputs">
             <input
-              class="skill-input current {{sk.isOccSkill ? 'input-occ' : 'input-int'}} {{invalidSkillName === sk.name ? 'input-error' : ''}}"
+              class="skill-input current {{sk.isOccSkill ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
               type="number"
               value="{{sk.current}}"
               data-name="{{sk.name}}"
               bindinput="onSkillInput"
               bindblur="onSkillBlur"
               bindfocus="onSkillFocus"
-              disabled="{{invalidSkillName && invalidSkillName !== sk.name}}"
               placeholder="0"
             />
             <view class="skill-thresholds">
@@ -112,6 +122,7 @@
           </view>
         </view>
       </block>
+
     </view>
   </view>
 
@@ -121,15 +132,48 @@
     <text style="margin-left:20rpx">困难 / 极难</text>
   </view>
 
-</scroll-view>
+  </scroll-view>
+
+</view>
 
 <!-- 底部保存 -->
 <view class="bottom-bar safe-bottom">
   <view class="bottom-btns">
     <button class="btn btn-ghost btn-random" bindtap="onRandomDistribute">
-      <image class="dice-icon" src="/assets/icons/dice-new.svg" mode="aspectFit"/>
-      <text>随机分配</text>
+      <text>随机</text>
+    </button>
+    <button class="btn btn-ghost btn-new-skill" bindtap="onShowNewSkill">
+      <text>新技能</text>
     </button>
     <button class="btn btn-primary btn-save" bindtap="onSave">保存技能</button>
+  </view>
+</view>
+
+<!-- 新建技能弹窗 -->
+<view class="modal-mask" wx:if="{{showNewSkillModal}}" bindtap="onCancelNewSkill">
+  <view class="modal-box" catchtap="preventBubble">
+    <view class="modal-title">新建职业技能</view>
+    <view class="new-skill-row">
+      <input
+        class="new-skill-name-input"
+        placeholder="技能名称"
+        value="{{newSkillName}}"
+        bindinput="onNewSkillNameInput"
+        focus="{{showNewSkillModal}}"
+      />
+      <input
+        class="new-skill-val-input"
+        type="number"
+        placeholder="数值"
+        value="{{newSkillValue}}"
+        bindinput="onNewSkillValueInput"
+        bindconfirm="onConfirmNewSkill"
+      />
+    </view>
+    <view class="new-skill-hint">新建技能值将占用职业技能点数</view>
+    <view class="modal-btns">
+      <button class="btn btn-ghost" bindtap="onCancelNewSkill">取消</button>
+      <button class="btn btn-primary" bindtap="onConfirmNewSkill">保存</button>
+    </view>
   </view>
 </view>

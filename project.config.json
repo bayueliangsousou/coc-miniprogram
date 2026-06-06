@@ -11,6 +11,10 @@
       {
         "packageJsonPath": "./package.json",
         "miniprogramNpmDistDir": "./"
+      },
+      {
+        "packageJsonPath": "./packageDice/package.json",
+        "miniprogramNpmDistDir": "./packageDice/"
       }
     ],
     "packNpmManually": true,

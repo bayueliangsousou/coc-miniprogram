@@ -20,7 +20,7 @@
   left: 0;
   width: 100%;
   height: 12.5vh;
-  background: linear-gradient(to bottom, #202031, transparent);
+  background: linear-gradient(to bottom, #252533, transparent);
   z-index: 1;
   pointer-events: none;
 }
@@ -31,17 +31,17 @@
   left: 0;
   width: 100%;
   height: 12.5vh;
-  background: linear-gradient(to top, #202031, transparent);
+  background: linear-gradient(to top, #252533, transparent);
   z-index: 1;
   pointer-events: none;
 }
 
 .login-title {
   position: absolute;
-  top: 33.33%;
+  top: 42%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 70%;
+  width: 90%;
   z-index: 2;
 }
 
@@ -70,4 +70,14 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
+}
+
+.cancel-login {
+  position: absolute;
+  bottom: 9%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #4A90D9;
+  font-size: 30rpx;
+  z-index: 2;
 }

@@ -1,5 +1,9 @@
 /* pages/occupation/occupation.wxss */
 
+.page-container {
+  background-color: #F5F0E8;
+}
+
 .search-bar {
   display: flex;
   align-items: center;
@@ -55,7 +59,7 @@
 .occ-name {
   font-size: 32rpx;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #252533;
   margin-bottom: 8rpx;
 }
 
@@ -88,9 +92,9 @@
 .skill-chip {
   font-size: 24rpx;
   background: #f0f0ec;
-  color: #666;
+  color: #888888;
   padding: 4rpx 14rpx;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
 }
 
 .occ-check {
@@ -115,6 +119,7 @@
   left: 0;
   right: 0;
   padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: rgba(245, 245, 240, 0.95);
   backdrop-filter: blur(10px);
   box-shadow: 0 -2rpx 16rpx rgba(0, 0, 0, 0.08);

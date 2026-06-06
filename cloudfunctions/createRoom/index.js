@@ -10,16 +10,19 @@ exports.main = async (event, context) => {
   const { campaignId, campaignName, creatorName, maxPlayers = 6 } = event;
 
   try {
-    // 生成4位数字房间号
-    const roomCode = Math.floor(1000 + Math.random() * 9000).toString();
+    // 生成唯一的4位房间号（最多重试5次）
+    let roomCode;
+    let existing;
+    for (let i = 0; i < 5; i++) {
+      roomCode = Math.floor(1000 + Math.random() * 9000).toString();
+      existing = await db.collection('rooms')
+        .where({ roomCode, status: 'active' })
+        .count();
+      if (existing.total === 0) break;
+    }
 
-    // 检查房间号是否已存在
-    const existing = await db.collection('rooms')
-      .where({ roomCode, status: 'active' })
-      .count();
-    
     if (existing.total > 0) {
-      return exports.main({ campaignId, campaignName, creatorName, maxPlayers }, context);
+      return { code: -1, message: '房间号生成失败，请重试' };
     }
 
     const now = new Date();

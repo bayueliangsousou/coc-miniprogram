@@ -2,7 +2,31 @@
 const { getCharacterById, saveCharacter, calcDerived, calcSkillThresholds, StatusLabels, StatusColors, addStatus, removeStatus } = require('../../utils/character')
 const { ATTR_NAMES, OCCUPATIONS, SKILLS } = require('../../utils/coc-data')
 const cloud = require('../../utils/cloud')
-const dice = require('../../utils/dice-engine')
+const { getDefaultCharacter } = require('../../utils/default-character')
+
+// ─── 伤害修正（DB）替换辅助 ──────────────────────────────────────────
+// db 格式：'-2' / '-1' / '0' / '+1d4' / '+1d6' / '+2d6'
+// 原始公式中有 '+DB' 时，db 自带 '+' 号会导致 '++1d4'；统一在这里处理
+function applyDB(damage, db) {
+  if (!damage) return '-'
+  if (db === '0') {
+    // 无修正：直接删掉 +DB / -DB 片段
+    return damage.replace(/[+-]?\s*DB/gi, '').replace(/\+\s*0/gi, '') || '-'
+  }
+  // 先把 '+DB' 替换（正向 db 已带符号，不需要额外加号）
+  // 再把单独 'DB'（前面没有符号）替换
+  return damage
+    .replace(/\+\s*DB/gi, db)        // '+DB' → db（如 '+1d4'，不重复加号）
+    .replace(/\-\s*DB/gi, dbNeg(db)) // '-DB' → 对 db 取反
+    .replace(/\bDB\b/gi, db)         // 裸 'DB' → db
+}
+// 对 db 值取反（'-2'↔'+2'，'+1d4'↔'-1d4'）
+function dbNeg(db) {
+  if (!db || db === '0') return '0'
+  if (db.startsWith('+')) return '-' + db.slice(1)
+  if (db.startsWith('-')) return '+' + db.slice(1)
+  return '-' + db
+}
 
 // ─── 技能分类映射（CoC 七版 → 归组展示）─────────────────────────────
 // coc-data.js 里的 category → UI 展示分组
@@ -67,12 +91,12 @@ Page({
     ],
     backgroundFields: [
       { key: 'story',     label: '个人描述' },
-      { key: 'beliefs',   label: '重要之人与地点' },
+      { key: 'keyPeople', label: '重要之人' },
+      { key: 'gear',      label: '重要之物' },
+      { key: 'beliefs',   label: '重要地点' },
       { key: 'traits',    label: '特质' },
       { key: 'ideology',  label: '意识形态与信仰' },
       { key: 'wounds',    label: '重要伤疤与创伤' },
-      { key: 'gear',      label: '宝贵之物' },
-      { key: 'keyPeople', label: '重要的人' },
     ],
     // 房间相关
     isInRoom: false,
@@ -82,24 +106,13 @@ Page({
     isJoining: false,
     // 记事本
     notepadContent: '',
-    // 骰子模式
-    diceMode: false,
-    diceCounts: {},
-    diceHasDice: false,
-    diceResults: [],
-    diceTotalSum: 0,
-    fabRight: 30,
-    fabBottom: 160,
-    diceTypes: [
-      { type: 'D3', label: 'D3' }, { type: 'D4', label: 'D4' },
-      { type: 'D6', label: 'D6' }, { type: 'D8', label: 'D8' },
-      { type: 'D10', label: 'D10' }, { type: 'D12', label: 'D12' },
-      { type: 'D20', label: 'D20' }, { type: 'D100', label: 'D100' }
-    ],
     // 技能检定弹窗
     showSkillCheckModal: false,
     skillCheckResult: null,
     skillCheckMode: false,
+    skillCheckBgLoaded: false,
+    // 导航栏背景（初始透明，下滑后变深色）
+    navBarBg: 'transparent',
     // HP/SAN/MP 滚轮
     hpPickerField: '',   // 'hpCurrent' | 'sanCurrent' | 'mpCurrent'
     hpPickerRange: [],
@@ -108,43 +121,61 @@ Page({
     // 幸运值滚轮
     showLuckPicker: false,
     luckPickerRange: [],
-    luckPickerValue: 0
+    luckPickerValue: 0,
+    // 导航栏高度
+    statusBarHeight: 20,
+    navHeight: 44,
+    topSectionPaddingTop: 80
   },
 
   onShow() {
-    // 加载浮球保存位置
-    try {
-      const saved = wx.getStorageSync('diceFabPos')
-      if (saved) this.setData({ fabRight: saved.right || 30, fabBottom: saved.bottom || 160 })
-    } catch(e) {}
+    // 获取导航栏高度
+    const sys = wx.getSystemInfoSync()
+    const navHeight = sys.platform === 'android' ? 48 : 44
+    const statusBarHeight = sys.statusBarHeight
+    const totalNavHeight = statusBarHeight + navHeight
+    // 32rpx ≈ 16px (以 750rpx = 屏幕宽度 为基准，1rpx = 屏幕宽度/750)
+    // 但这里直接用 px 避免 calc 混合单位问题
+    const topSectionPaddingTop = totalNavHeight + 16
+    this.setData({ statusBarHeight, navHeight, topSectionPaddingTop })
+
     const pages = getCurrentPages()
     const current = pages[pages.length - 1]
     const { id } = current.options
     if (!id) return
 
-    const character = getCharacterById(id)
+    // 加载角色：优先本地，若 id 是默认卡则加载默认数据
+    let character = getCharacterById(id)
+    if (!character && id === '__default_amiti__') {
+      character = getDefaultCharacter()
+    }
     if (!character) return
 
     const derived = calcDerived(character.attributes)
 
-    // 兼容旧数据：确保 combat/weapons 字段存在
+    // 兼容旧数据：确保 combat 字段完整
     if (!character.combat) {
-      character.combat = { 
-        hpCurrent: derived.hp, 
-        hpMax: derived.hp,     // 满值 = 初始值
-        sanCurrent: derived.sanStart, 
-        sanMax: 99,           // SAN 满值固定 99
-        mpCurrent: derived.mp, 
-        mpMax: derived.mp     // 满值 = 初始值
-      }
+      character.combat = {}
+    }
+    const combat = character.combat
+    let changed = false
+    if (combat.hpCurrent === undefined) { combat.hpCurrent = derived.hp; changed = true }
+    if (combat.hpMax === undefined) { combat.hpMax = derived.hp; changed = true }
+    if (combat.sanCurrent === undefined) { combat.sanCurrent = derived.sanStart; changed = true }
+    if (combat.sanMax === undefined) { combat.sanMax = 99; changed = true }
+    if (combat.mpCurrent === undefined) { combat.mpCurrent = derived.mp; changed = true }
+    if (combat.mpMax === undefined) { combat.mpMax = derived.mp; changed = true }
+    if (combat.status === undefined) { combat.status = []; changed = true }
+    if (changed) {
+      character.combat = combat
       saveCharacter(character)
     }
+
+    // 兼容旧数据：确保 weapons 字段存在
     if (!character.weapons) {
       character.weapons = []
       saveCharacter(character)
     }
-
-    // 构建显示用的武器列表（确保至少有格斗斗殴）
     const displayWeapons = this.buildDisplayWeapons(character.weapons, character.skills, derived.db)
 
     // 为属性添加困难/极难判定值
@@ -217,10 +248,7 @@ Page({
 
     const hasBrawl = weapons && weapons.some(w => w.name === '格斗斗殴')
 
-    const processDamage = (damage) => {
-      if (!damage) return '-'
-      return damage.replace(/DB/gi, db)
-    }
+    const processDamage = (damage) => applyDB(damage, db)
 
     // 格斗斗殴的技能值：优先用已编辑的值，否则用基础值
     const brawlSkillValue = this._getSkillValue(skills, BRAWL_SKILL_KEY, BRAWL_BASE_VALUE)
@@ -366,17 +394,20 @@ Page({
     })
   },
 
-  // ─── 记事本（自动保存）───
+  // ─── 记事本（防抖自动保存）───
+  _notepadTimer: null,
   onNotepadInput(e) {
     const content = e.detail.value || ''
     this.setData({ notepadContent: content })
-    // 从 storage 读最新数据再写回，避免用 this.data.character 过期快照覆盖其他修改
-    const { id } = getCurrentPages()[getCurrentPages().length - 1].options
-    if (!id) return
-    const latest = getCharacterById(id)
-    if (!latest) return
-    const updated = { ...latest, notepad: content }
-    saveCharacter(updated)
+    clearTimeout(this._notepadTimer)
+    this._notepadTimer = setTimeout(() => {
+      const { id } = getCurrentPages()[getCurrentPages().length - 1].options
+      if (!id) return
+      const latest = getCharacterById(id)
+      if (!latest) return
+      const updated = { ...latest, notepad: content }
+      saveCharacter(updated)
+    }, 500)
   },
 
   onTabChange(e) {
@@ -509,43 +540,22 @@ Page({
     this.setData({ showLuckPicker: false })
   },
 
-  // ── 属性值骰子检定 ──
+  // ── 属性值骰子检定（调用 dice-tool 组件） ──
   _doD100Check(name, val) {
-    if (val <= 0) {
-      wx.showToast({ title: '该数值无效', icon: 'none' })
-      return
-    }
-    if (dice.getIsAnimating()) return
-    this.setData({ skillCheckMode: true, showSkillCheckModal: false, skillCheckResult: null }, () => {
-      this._diceInit()
-      const tryThrow = async () => {
-        if (!this._diceReady) { setTimeout(tryThrow, 200); return }
-        if (dice.getIsAnimating()) return
-        dice.clearAllDice()
-        dice.addDiceToScene('D100')
-        await dice.startThrowAnimation()
-        const r = dice.calculateResults()
-        const d100Result = r.results.find(item => item.type === 'd100')
-        const rollValue = d100Result ? d100Result.value : 0
-        const checkResult = this.calcSkillCheckResult(rollValue, val)
-        this.setData({
-          skillCheckResult: {
-            skillName: name,
-            skillValue: val,
-            rollValue: rollValue,
-            resultText: checkResult.text,
-            resultClass: checkResult.class
-          },
-          showSkillCheckModal: true
-        })
-      }
-      tryThrow()
-    })
+    const diceTool = this.selectComponent('#diceTool')
+    if (diceTool) diceTool.doD100Check(name, val)
   },
 
   onAttrDiceTap(e) {
     const { name, value } = e.currentTarget.dataset
     this._doD100Check(name, parseInt(value) || 0)
+  },
+
+  onAttrCellTap(e) {
+    const { key } = e.currentTarget.dataset
+    const name = this.data.attrNames[key]
+    const val = this.data.character.attributes[key] || 0
+    this._doD100Check(name, val)
   },
 
   onDodgeDiceTap() {
@@ -683,7 +693,6 @@ Page({
       payload: { statuses: value },
     }).then(res => {
       if (res.success) {
-        console.log('[同步] 状态已推送到云端:', value)
       }
     })
   },
@@ -718,7 +727,6 @@ Page({
       },
     }).then(res => {
       if (res.success) {
-        console.log(`[同步] ${field} 已推送: ${value}/${derived?.[mapping.maxKey]}`)
       }
     })
   },
@@ -807,6 +815,12 @@ Page({
 
   // 确认加入房间
   onConfirmJoinRoom() {
+    // 未登录先跳转登录
+    if (!cloud.checkLogin()) {
+      this.setData({ showRoomInputModal: false })
+      wx.redirectTo({ url: '/pages/login/login' })
+      return
+    }
     const { inputRoomCode, character } = this.data
     
     if (!inputRoomCode || inputRoomCode.length !== 4) {
@@ -836,7 +850,7 @@ Page({
     const hasBrawl = rawWeapons.some(w => w.name === '格斗斗殴')
     const buildWeaponData = (w) => ({
       name: w.name || '',
-      damage: w.damage ? w.damage.replace(/DB/gi, derived.db) : '-',
+      damage: applyDB(w.damage, derived.db),
       attacksPerRound: parseInt(w.attacks) || 1,
       range: w.range || '',
       malfunction: w.malfunction && w.malfunction !== '-' ? parseInt(w.malfunction) : undefined,
@@ -850,7 +864,7 @@ Page({
       // 补充默认格斗斗殴到列表头部（与小程序展示一致）
       weaponsToSend.push({
         name: '格斗斗殴',
-        damage: `1D3+${derived.db}`,
+        damage: applyDB('1D3+DB', derived.db),
         attacksPerRound: 1,
         range: '接触',
         skillKey: BRAWL_SKILL_KEY,
@@ -897,23 +911,23 @@ Page({
         notes: [
           character.notes || '',
           '【个人描述】' + ((character.background && character.background.story) || ''),
-          '【重要之人与地点】' + ((character.background && character.background.beliefs) || ''),
+          '【重要之人】' + ((character.background && character.background.keyPeople) || ''),
+          '【重要之物】' + ((character.background && character.background.gear) || ''),
+          '【重要地点】' + ((character.background && character.background.beliefs) || ''),
           '【特质】' + ((character.background && character.background.traits) || ''),
           '【意识形态与信仰】' + ((character.background && character.background.ideology) || ''),
-          '【重要伤疤与创伤】' + ((character.background && character.background.wounds) || ''),
-          '【宝贵之物】' + ((character.background && character.background.gear) || ''),
-          '【重要的人】' + ((character.background && character.background.keyPeople) || '')
+          '【重要伤疤与创伤】' + ((character.background && character.background.wounds) || '')
         ].filter(s => s && s !== '【】' && s !== '').join('\n'),
         // 背景信息单独字段（用于桌面端识别）
         // 数据在 character.background 子对象中，必须从这里读
         background: {
           story: (character.background && character.background.story) || '',
+          keyPeople: (character.background && character.background.keyPeople) || '',
+          gear: (character.background && character.background.gear) || '',
           beliefs: (character.background && character.background.beliefs) || '',
           traits: (character.background && character.background.traits) || '',
           ideology: (character.background && character.background.ideology) || '',
-          wounds: (character.background && character.background.wounds) || '',
-          gear: (character.background && character.background.gear) || '',
-          keyPeople: (character.background && character.background.keyPeople) || ''
+          wounds: (character.background && character.background.wounds) || ''
         },
         // 年龄/性别（如果有）
         age: character.age || 0,
@@ -952,29 +966,31 @@ Page({
 
   // ── 编辑 ──
   onEditTap() {
+    // 未登录先跳转登录
+    if (!cloud.checkLogin()) {
+      wx.redirectTo({ url: '/pages/login/login' })
+      return
+    }
     if (!this.data.character) return
     wx.navigateTo({ url: `/pages/character-edit/character-edit?id=${this.data.character.id}` })
   },
 
-  // ── 骰子模式 ──
-  _diceReady: false,
-  _diceInit() {
-    if (this._diceReady) return
-    const query = this.createSelectorQuery()
-    query.select('#dice-canvas').node().exec(res => {
-      if (res && res[0] && res[0].node) {
-        const sys = wx.getSystemInfoSync()
-        dice.init(res[0].node, sys.windowWidth, sys.windowHeight)
-        dice.startRenderLoop()
-        this._diceReady = true
-      } else {
-        setTimeout(() => this._diceInit(), 300)
-      }
-    })
+  onBackTap() {
+    wx.navigateBack({ delta: 1 })
+  },
+
+  // ── 主区域滚动：控制导航栏背景 ──
+  onMainScroll(e) {
+    const scrollTop = e.detail.scrollTop
+    const navHeight = this.data.statusBarHeight + this.data.navHeight
+    const targetBg = scrollTop > navHeight ? 'rgba(37,37,51,0.92)' : 'transparent'
+    if (this.data.navBarBg !== targetBg) {
+      this.setData({ navBarBg: targetBg })
+    }
   },
 
   // ── 技能检定（D100）──
-  // CoC 第7版 D100 判定逻辑
+  // CoC 第7版 D100 判定逻辑（保留在页面中，属于业务规则）
   calcSkillCheckResult(roll, skill) {
     // 大成功：投掷值 = 1
     if (roll === 1) return { text: '大成功', class: 'critical-success' }
@@ -1007,130 +1023,49 @@ Page({
       wx.showToast({ title: '该技能无数值', icon: 'none' })
       return
     }
-    if (dice.getIsAnimating()) return
-
-    // 进入技能检定模式（只显示 Canvas，不显示控制栏）
-    this.setData({ skillCheckMode: true, showSkillCheckModal: false, skillCheckResult: null }, () => {
-      this._diceInit()
-      const tryThrow = async () => {
-        if (!this._diceReady) {
-          setTimeout(tryThrow, 200)
-          return
-        }
-        if (dice.getIsAnimating()) return
-
-        dice.clearAllDice()
-        dice.addDiceToScene('D100')
-
-        await dice.startThrowAnimation()
-        const r = dice.calculateResults()
-
-        // 提取 D100 结果
-        const d100Result = r.results.find(item => item.type === 'd100')
-        const rollValue = d100Result ? d100Result.value : 0
-
-        // 计算检定结果
-        const checkResult = this.calcSkillCheckResult(rollValue, value)
-
-        // 弹窗出现时保持 skillCheckMode，骰子继续显示
-        this.setData({
-          skillCheckResult: {
-            skillName: name,
-            skillValue: value,
-            rollValue: rollValue,
-            resultText: checkResult.text,
-            resultClass: checkResult.class
-          },
-          showSkillCheckModal: true
-        })
-      }
-      tryThrow()
-    })
+    this._doD100Check(name, value)
   },
 
   onCloseSkillCheckModal() {
+    const diceTool = this.selectComponent('#diceTool')
+    if (diceTool) diceTool.close()
     this.setData({ showSkillCheckModal: false, skillCheckResult: null, skillCheckMode: false })
   },
 
-  onDiceOverlayTap() {
-    if (dice.getIsAnimating()) return
-    if (this.data.diceMode) {
-      this.onDiceModeToggle()
-    } else if (this.data.skillCheckMode) {
-      dice.clearAllDice()
-      this.setData({
-        skillCheckMode: false,
-        showSkillCheckModal: false,
-        skillCheckResult: null
-      })
+  // ── 骰子组件事件处理 ──
+
+  /**
+   * 接收组件的 D100 检定结果事件
+   * 使用本页面的 calcSkillCheckResult 计算判定，然后显示弹窗
+   */
+  onSkillCheckResultEvent(e) {
+    const { skillName, skillValue, rollValue } = e.detail
+    const checkResult = this.calcSkillCheckResult(rollValue, skillValue)
+    this.setData({
+      skillCheckResult: {
+        skillName: skillName,
+        skillValue: skillValue,
+        rollValue: rollValue,
+        resultText: checkResult.text,
+        resultClass: checkResult.class
+      },
+      showSkillCheckModal: true,
+      skillCheckBgLoaded: false
+    })
+  },
+
+  onSkillCheckBgLoaded() {
+    this.setData({ skillCheckBgLoaded: true })
+  },
+
+  /**
+   * 骰子组件关闭事件回调（预留扩展点）
+   */
+  onDiceToolClose(e) {
+    // e.detail.source === 'overlay-tap' | 'collapse'
+    // 如果 skill check 弹窗仍然打开，也需要关闭
+    if (this.data.showSkillCheckModal) {
+      this.setData({ showSkillCheckModal: false, skillCheckResult: null, skillCheckMode: false })
     }
-  },
-
-  onDiceModeToggle() {
-    if (this.data.diceMode) {
-      dice.clearAllDice()
-      this.setData({
-        diceMode: false, diceCounts: {}, diceHasDice: false,
-        diceResults: [], diceTotalSum: 0
-      })
-    } else {
-      this.setData({ diceMode: true }, () => { this._diceInit() })
-    }
-  },
-
-  onDiceBtnTap(e) {
-    const type = e.currentTarget.dataset.type
-    const counts = { ...this.data.diceCounts }
-    counts[type] = (counts[type] || 0) + 1
-    this.setData({ diceCounts: counts, diceHasDice: true })
-  },
-
-  async onDiceThrow() {
-    if (dice.getIsAnimating()) return
-    const counts = this.data.diceCounts
-    dice.clearAllDice()
-    this.setData({ diceResults: [], diceTotalSum: 0 })
-    let hasAny = false
-    for (const t in counts) {
-      for (let i = 0; i < (counts[t] || 0); i++) dice.addDiceToScene(t)
-      if (counts[t] > 0) hasAny = true
-    }
-    if (!hasAny) return
-    this.setData({ diceCounts: {}, diceHasDice: false })
-    await dice.startThrowAnimation()
-    const r = dice.calculateResults()
-    this.setData({ diceResults: r.results, diceTotalSum: r.totalSum })
-  },
-
-  // ── 浮球拖拽 ──
-  _fabTouchStartX: 0, _fabTouchStartY: 0, _fabStartRight: 0, _fabStartBottom: 0, _fabIsDrag: false,
-
-  onFabTouchStart(e) {
-    this._fabTouchStartX = e.touches[0].clientX
-    this._fabTouchStartY = e.touches[0].clientY
-    this._fabStartRight = this.data.fabRight || 30
-    this._fabStartBottom = this.data.fabBottom || 160
-    this._fabIsDrag = false
-  },
-
-  onFabTouchMove(e) {
-    const sys = wx.getSystemInfoSync()
-    const dx = this._fabTouchStartX - e.touches[0].clientX
-    const dy = this._fabTouchStartY - e.touches[0].clientY
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) this._fabIsDrag = true
-    if (!this._fabIsDrag) return
-    const ratio = 750 / sys.windowWidth
-    const right = Math.max(10, Math.min(sys.windowWidth - 60, this._fabStartRight + dx * ratio))
-    const bottom = Math.max(80, Math.min(sys.windowHeight - 300, this._fabStartBottom + dy * ratio))
-    this.setData({ fabRight: right, fabBottom: bottom })
-  },
-
-  onFabTouchEnd() {
-    if (this._fabIsDrag) {
-      wx.setStorage({ key: 'diceFabPos', data: { right: this.data.fabRight, bottom: this.data.fabBottom } })
-    } else {
-      this.onDiceModeToggle()
-    }
-    this._fabIsDrag = false
   }
 })

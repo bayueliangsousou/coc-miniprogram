@@ -1,11 +1,22 @@
 /* pages/skills/skills.wxss */
 
-/* 覆写全局 page-container：skills 页需要固定高度才能让 scroll-view 内部 sticky 生效 */
-.page-container {
-  height: 100vh !important;
-  min-height: unset !important;
+/* 页面外层容器 */
+.skills-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   overflow: hidden;
   box-sizing: border-box;
+  background: #f5f5f0;
+}
+
+/* 滚动区域 */
+.skills-scroll {
+  flex: 1;
+  height: 0;
+  min-height: 0;
+  padding: 0 24rpx;
+  padding-bottom: 140rpx;
 }
 
 /* 社会信用评级 */
@@ -22,13 +33,40 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0;
 }
 
 .credit-rating-title {
   font-size: 28rpx;
   font-weight: 700;
   color: var(--color-text);
+}
+
+.credit-rating-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.credit-rating-input {
+  width: 100rpx;
+  height: 52rpx;
+  border: 2rpx solid var(--color-border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--color-text);
+  background: #fff;
+  font-family: 'Special Elite';
+}
+
+.credit-rating-input-error {
+  border-color: #e74c3c !important;
+  color: #e74c3c !important;
+}
+
+.credit-rating-error-text {
+  color: #e74c3c !important;
 }
 
 .credit-rating-range {
@@ -39,41 +77,16 @@
   border-radius: 20rpx;
 }
 
-.credit-rating-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.credit-rating-input {
-  width: 120rpx;
-  height: 56rpx;
-  border: 2rpx solid var(--color-border);
-  border-radius: var(--radius-sm);
-  text-align: center;
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--color-text);
-  background: #fff;
-}
-
-.credit-rating-hint {
-  font-size: 24rpx;
-  color: var(--color-text-sub);
-}
-
-/* 技能点数面板 - 左右并排，吸顶 */
+/* 技能点数面板 - 左右并排，固定在顶部 */
 .points-panel {
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%);
-  border-radius: var(--radius-md);
-  padding: 16rpx 20rpx;
-  margin-bottom: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(26, 26, 46, 0.2);
+  background: linear-gradient(135deg, #252533 0%, #2d2d4a 100%);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  padding: 16rpx 44rpx;
+  margin: 0 0 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(37, 37, 51, 0.2);
   display: flex;
   gap: 20rpx;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  flex-shrink: 0;
 }
 
 .points-section {
@@ -107,6 +120,7 @@
   font-weight: bold;
   color: #c9a84c;
   line-height: 1;
+  font-family: 'Special Elite';
 }
 
 .points-remain.points-negative {
@@ -117,12 +131,14 @@
   font-size: 28rpx;
   color: rgba(255,255,255,0.4);
   line-height: 1;
+  font-family: 'Special Elite';
 }
 
 .points-total {
   font-size: 28rpx;
   color: rgba(255,255,255,0.5);
   line-height: 1;
+  font-family: 'Special Elite';
 }
 
 .points-bar-wrap {
@@ -143,11 +159,6 @@
 
 .points-bar-fill.int-fill {
   background: linear-gradient(90deg, #3498db, #2980b9);
-}
-
-.points-used-row {
-  font-size: 20rpx;
-  color: rgba(255,255,255,0.5);
 }
 
 /* 职业和兴趣区域的特殊样式 */
@@ -204,7 +215,7 @@
 }
 
 .search-nav-empty .search-count {
-  color: #999;
+  color: #888888;
 }
 
 /* 当前定位技能高亮 */
@@ -217,8 +228,6 @@
   font-size: 24rpx;
   color: var(--color-primary-dark);
   padding: 8rpx 12rpx;
-  background: rgba(201,168,76,0.08);
-  border-radius: var(--radius-sm);
   margin-bottom: 16rpx;
   display: flex;
   align-items: center;
@@ -230,7 +239,7 @@
   display: flex;
   align-items: center;
   padding: 16rpx 12rpx;
-  background: #1a1a2e;
+  background: rgba(201,168,76,0.08);
   border-radius: var(--radius-sm);
   margin-bottom: 4rpx;
   margin-top: 12rpx;
@@ -240,18 +249,19 @@
   flex: 1;
   font-size: 24rpx;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text);
 }
 
 .cat-count {
   font-size: 20rpx;
-  color: rgba(255,255,255,0.5);
+  color: #888888;
   margin-right: 8rpx;
+  font-family: 'Special Elite';
 }
 
 .cat-arrow {
   font-size: 24rpx;
-  color: rgba(255,255,255,0.7);
+  color: #888888;
 }
 
 /* 技能行 */
@@ -261,10 +271,7 @@
   padding: 14rpx 12rpx;
   background: #fff;
   border-bottom: 1rpx solid var(--color-border);
-}
-
-.skill-row.is-occ {
-  background: rgba(201, 168, 76, 0.05);
+  position: relative;
 }
 
 .skill-name-wrap {
@@ -275,7 +282,7 @@
 }
 
 .occ-dot {
-  color: var(--color-primary);
+  color: #835F2D;
   font-size: 20rpx;
 }
 
@@ -286,8 +293,17 @@
 
 .skill-base {
   font-size: 20rpx;
-  color: #bbb;
+  color: #888888;
   margin-left: 4rpx;
+  font-family: 'Special Elite';
+}
+
+.skill-row.is-occ .skill-name {
+  color: #835F2D;
+}
+
+.skill-row.is-occ .skill-base {
+  color: #835F2D;
 }
 
 .skill-inputs {
@@ -307,6 +323,7 @@
   color: var(--color-text);
   padding: 0;
   background: #fafafa;
+  font-family: 'Special Elite';
 }
 
 .skill-input.input-occ {
@@ -341,6 +358,7 @@
   color: var(--color-text-sub);
   min-width: 36rpx;
   text-align: center;
+  font-family: 'Special Elite';
 }
 
 .threshold-sep {
@@ -353,7 +371,7 @@
   display: flex;
   justify-content: flex-end;
   font-size: 24rpx;
-  color: #bbb;
+  color: #888888;
   padding: 0 12rpx;
   margin-bottom: 8rpx;
 }
@@ -403,4 +421,119 @@
 
 .btn-disabled {
   opacity: 0.5;
+}
+
+/* 语言名称输入（其他语言行） */
+.language-name-input {
+  width: 120rpx;
+  height: 40rpx;
+  border: 2rpx solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 10rpx;
+  font-size: 28rpx;
+  color: var(--color-text);
+  background: #fff;
+  margin-left: 8rpx;
+}
+
+/* 自定义技能行 */
+.skill-row.is-custom {
+  position: relative;
+  padding-right: 60rpx;
+}
+
+/* 删除按钮 */
+.skill-delete {
+  display: inline-flex;
+  align-items: center;
+  padding: 2rpx 10rpx;
+  margin-left: 8rpx;
+}
+
+.delete-icon {
+  font-size: 22rpx;
+  color: #e74c3c;
+  line-height: 1;
+}
+
+/* 新技能按钮 */
+.btn-new-skill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 新建技能弹窗 */
+.modal-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-box {
+  width: 600rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 40rpx 32rpx 32rpx;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 32rpx;
+  text-align: center;
+}
+
+.new-skill-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.new-skill-name-input {
+  flex: 1;
+  height: 80rpx;
+  border: 2rpx solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 20rpx;
+  font-size: 28rpx;
+  color: var(--color-text);
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.new-skill-val-input {
+  width: 140rpx;
+  height: 80rpx;
+  border: 2rpx solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 20rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--color-text);
+  background: #fff;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.new-skill-hint {
+  font-size: 22rpx;
+  color: var(--color-text-sub);
+  margin-bottom: 32rpx;
+}
+
+.modal-btns {
+  display: flex;
+  gap: 20rpx;
+}
+
+.modal-btns .btn {
+  flex: 1;
 }

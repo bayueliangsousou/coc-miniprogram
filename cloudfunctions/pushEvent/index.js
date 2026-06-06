@@ -15,7 +15,7 @@
 const tcb = require('@cloudbase/node-sdk');
 
 const app = tcb.init({
-  env: process.env.TCB_ENV || 'mastermind-5grqnmdu0d3a7d81'
+  env: process.env.TCB_ENV
 });
 
 const db = app.database();
@@ -37,8 +37,6 @@ const ALLOWED_TYPES = [
 
 exports.main = async (event, context) => {
   const { roomId, roomCode, characterId, source, type, payload } = event;
-
-  console.log('[pushEvent] 收到请求:', JSON.stringify({ roomId, roomCode, characterId, source, type }));
 
   // 参数校验
   if (!roomId) {
@@ -85,8 +83,6 @@ exports.main = async (event, context) => {
     };
 
     await db.collection('events').add({ data: evtData });
-
-    console.log(`[pushEvent] 事件已写入: ${eventId}, version=${nextVersion}`);
 
     // ④ 同步更新 room_players 中的 characterData（让 watch 直接拿到最新完整数据）
     if (characterId && type !== 'player_join' && type !== 'player_leave') {
@@ -148,8 +144,6 @@ exports.main = async (event, context) => {
             'data.characterId': characterId
           })
           .update({ data: updateFields });
-        
-        console.log(`[pushEvent] room_players 已同步更新:`, Object.keys(updateFields));
       }
     }
 

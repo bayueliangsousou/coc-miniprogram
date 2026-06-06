@@ -1,55 +1,17 @@
 <view class="page-container" catchtap="onPageTap">
 
-  <!-- ===== 骰子模式叠加层 ===== -->
-  <view class="dice-overlay {{diceMode ? 'visible' : ''}}">
-    <!-- WebGL Canvas -->
-    <canvas type="webgl" id="dice-canvas" class="dice-canvas"></canvas>
-    
-    <!-- 结果卡片 -->
-    <cover-view class="dice-result-panel" wx:if="{{diceResults.length > 0}}">
-      <cover-view class="drp-left">
-        <cover-view class="drp-item" wx:for="{{diceResults}}" wx:key="id" wx:for-item="r">
-          <cover-view class="drpi-type">{{r.type}}</cover-view>
-          <cover-view class="drpi-val">{{r.value}}</cover-view>
-        </cover-view>
-      </cover-view>
-      <cover-view class="drp-divider"></cover-view>
-      <cover-view class="drp-right">
-        <cover-view class="drpr-label">总值</cover-view>
-        <cover-view class="drpr-num">{{diceTotalSum}}</cover-view>
-      </cover-view>
-    </cover-view>
+  <!-- ===== 背景图 ===== -->
+  <image class="page-bg" src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/bg.jpg" mode="aspectFill"/>
 
-    <!-- 关闭骰子 -->
-  </view>
-
-  <!-- ===== 骰子浮动按钮（打开/关闭一体） ===== -->
-  <view
-    wx:if="{{!diceMode}}"
-    class="dice-fab"
-    style="right: {{fabRight || 30}}rpx; bottom: {{fabBottom || 200}}rpx"
-    bindtap="onDiceModeToggle"
-    bindtouchstart="onFabTouchStart"
-    bindtouchmove="onFabTouchMove"
-    bindtouchend="onFabTouchEnd"
-  >
-    <text>{{diceMode ? '✕' : '🎲'}}</text>
-  </view>
-
-  <!-- ===== 骰子模式下的底部控制栏 ===== -->
-  <view class="dice-controls" wx:if="{{diceMode}}">
-    <block wx:for="{{diceTypes}}" wx:key="type">
-      <view class="dice-btn-wrap" data-type="{{item.type}}" bindtap="onDiceBtnTap">
-        <view class="dice-btn">{{item.label}}</view>
-        <view class="dice-count" wx:if="{{diceCounts[item.type] > 0}}">{{diceCounts[item.type]}}</view>
-      </view>
-    </block>
-    <!-- 右侧收起 + 投掷区域 -->
-    <view class="throw-area" wx:if="{{diceMode}}">
-      <view class="throw-collapse" bindtap="onDiceModeToggle">收起骰子</view>
-      <view class="throw-btn {{diceHasDice ? '' : 'disabled'}}" bindtap="onDiceThrow">投掷</view>
+  <!-- ===== 自定义导航栏 ===== -->
+  <view class="custom-nav" style="height: {{statusBarHeight + navHeight}}px;">
+    <view class="custom-nav-title" style="top: {{statusBarHeight}}px; height: {{navHeight}}px;">
+      <text>调查员名册</text>
     </view>
   </view>
+  <scroll-view scroll-y class="main-scroll" enhanced style="height:100vh" bounces="{{false}}">
+
+  <view style="height: {{statusBarHeight + navHeight}}px;"></view>
 
   <!-- 空状态 -->
   <block wx:if="{{characters.length === 0}}">
@@ -81,35 +43,41 @@
           data-id="{{item.id}}"
           bindtap="onCardTap"
         >
-          <!-- 左侧色条 -->
-          <view class="card-accent"></view>
-
-          <!-- 主体 -->
-          <view class="card-body">
-            <view class="card-header">
-              <view class="card-name">{{item.name || '未命名调查员'}}</view>
-              <view class="card-occupation tag">{{item.occupation || '未选职业'}}</view>
+          <view class="card-v2-inner">
+            <!-- 上半部分：信息区 -->
+            <view class="card-v2-top">
+              <view class="card-v2-header">
+                <text class="card-v2-name">{{item.name || '未命名调查员'}}</text>
+                <text class="card-v2-date" wx:if="{{item.createdAt}}">{{item.createdAt}}</text>
+              </view>
+              <view class="card-v2-meta">
+                <text wx:if="{{item.age}}">{{item.age}}岁</text>
+                <text wx:if="{{item.age && item.gender}}"> · </text>
+                <text wx:if="{{item.gender}}">{{item.gender}}</text>
+                <text wx:if="{{(item.age || item.gender) && item.occupation}}"> · </text>
+                <text wx:if="{{item.occupation}}">{{item.occupation}}</text>
+              </view>
             </view>
 
-            <view class="card-meta">
-              <text wx:if="{{item.age}}">{{item.age}}岁</text>
-              <text wx:if="{{item.gender}}"> · {{item.gender}}</text>
-              <text wx:if="{{item.birthplace}}"> · {{item.birthplace}}</text>
-            </view>
-
-            <!-- 关键属性预览 -->
-            <view class="card-stats">
-              <view class="stat-item">
-                <text class="stat-lbl">HP</text>
-                <text class="stat-val">{{item.combat.hpCurrent || item.derived.hp}}/{{item.derived.hp}}</text>
+            <!-- 下半部分：属性区 -->
+            <view class="card-v2-bottom">
+              <view class="card-v2-stat">
+                <text class="card-v2-stat-lbl">HP</text>
+                <text class="card-v2-stat-current">{{item.combat.hpCurrent || item.derived.hp}}</text>
+                <text class="card-v2-stat-sep">/</text>
+                <text class="card-v2-stat-max">{{item.derived.hp}}</text>
               </view>
-              <view class="stat-item">
-                <text class="stat-lbl">SAN</text>
-                <text class="stat-val">{{item.combat.sanCurrent || item.derived.sanStart}}/{{item.derived.sanStart}}</text>
+              <view class="card-v2-stat">
+                <text class="card-v2-stat-lbl">SAN</text>
+                <text class="card-v2-stat-current">{{item.combat.sanCurrent || item.derived.sanStart}}</text>
+                <text class="card-v2-stat-sep">/</text>
+                <text class="card-v2-stat-max">{{item.derived.sanStart}}</text>
               </view>
-              <view class="stat-item">
-                <text class="stat-lbl">MP</text>
-                <text class="stat-val">{{item.combat.mpCurrent || item.derived.mp}}/{{item.derived.mp}}</text>
+              <view class="card-v2-stat">
+                <text class="card-v2-stat-lbl">MP</text>
+                <text class="card-v2-stat-current">{{item.combat.mpCurrent || item.derived.mp}}</text>
+                <text class="card-v2-stat-sep">/</text>
+                <text class="card-v2-stat-max">{{item.derived.mp}}</text>
               </view>
             </view>
           </view>
@@ -128,11 +96,22 @@
     </view>
   </block>
 
+  </scroll-view>
+
+  <!-- ===== 骰子工具组件 ===== -->
+  <dice-tool id="diceTool"
+    fab-bottom-default="200"
+    fab-bg="#f5f5f0"
+    throw-btn-bg="linear-gradient(135deg, #e8b830, #c89a20)"
+    bottom-limit="150"
+    bind:close="onDiceClose"
+  />
+
   <!-- 吸底按钮栏：新建调查员(3/4) + 我的(1/4) -->
-  <view class="bottom-bar" wx:if="{{!diceMode}}">
-    <view class="bottom-bar-create" bindtap="onCreateTap">
-      <text class="bottom-bar-icon">+</text>
-      <text>新建调查员</text>
+  <view class="bottom-bar">
+    <view class="bottom-bar-create {{isLoggedIn ? '' : 'bottom-bar-create-disabled'}}" bindtap="onCreateTap">
+      <text class="bottom-bar-icon" wx:if="{{isLoggedIn}}">+</text>
+      <text>{{isLoggedIn ? '新建调查员' : '登录后可新建人物'}}</text>
     </view>
     <view class="bottom-bar-mine" bindtap="onMineTap">
       <text>我的</text>

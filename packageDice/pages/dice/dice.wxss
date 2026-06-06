@@ -1,0 +1,237 @@
+/* pages/dice/dice.wxss - 简化版 */
+
+page { background-color: #000000; height: 100vh; }
+
+.container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab 栏 - cover-view 才能盖在原生组件之上 */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  display: flex;
+  background-color: rgba(37, 37, 51, 0.9);
+  z-index: 1000;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #888;
+}
+
+.tab-item.active {
+  color: #667eea;
+  font-weight: bold;
+}
+
+/* ================================================================
+   Tab 内容区
+   ================================================================ */
+.tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tab-content.hide {
+  display: none;
+}
+
+/* 上半部分：3D 区域 */
+.dice-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 下半部分：操作按钮 - Grid 布局：4列，投掷跨两行 */
+.dice-controls {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) auto;
+  grid-template-rows: repeat(2, auto);
+  gap: 8px;
+  padding: 6px 12px 86px;
+  align-items: center;
+  background-color: #252533;
+}
+
+.dice-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Toast 提示 cover-view */
+.c-toast-cover {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-left: -80px;
+  margin-top: -24px;
+  width: 160px;
+  height: 48px;
+  background-color: rgba(0, 0, 0, 0.9);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.c-toast-msg-cover {
+  color: #ffffff;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* 结果浮窗 cover-view（覆盖 WebGL canvas） */
+.result-panel {
+  position: fixed;
+  top: 90px;
+  left: 50%;
+  margin-left: -187px;
+  width: 374px;
+  background-color: rgba(37, 37, 51, 0.92);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: row;
+}
+.rp-left {
+  width: 256px;
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+}
+.rp-item {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  width: 64px;
+  flex-shrink: 0;
+  margin-bottom: 6px;
+}
+.rpi-type {
+  color: #888888;
+  font-size: 16px;
+  margin-right: 3px;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+.rpi-val {
+  color: #e8b830;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1.3;
+}
+.rp-divider {
+  width: 1px;
+  margin: 0 9px;
+  background-color: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+.rp-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  flex-shrink: 0;
+}
+.rpr-label {
+  color: #888888;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.rpr-num {
+  color: #e8b830;
+  font-size: 34px;
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+
+/* 骰子按钮容器 - Grid 单元格 */
+.dice-btn-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 骰子按钮 */
+.dice-btn {
+  background-color: rgba(60, 60, 80, 0.9);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(100, 100, 130, 0.5);
+  min-width: 40px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  width: 100%;
+  height: 40px;
+  line-height: 36px;
+}
+.dice-btn:active {
+  background-color: rgba(80, 80, 110, 0.9);
+  transform: scale(0.95);
+}
+
+/* 投掷按钮 - 跨两行，右侧 */
+.throw-btn {
+  grid-column: 5;
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 0 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  height: 100px;
+}
+.throw-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+.throw-btn.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* 骰子数量 tag - 右上角 */
+.dice-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #ff4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: bold;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 8px;
+  padding: 0 4px;
+  z-index: 10;
+}

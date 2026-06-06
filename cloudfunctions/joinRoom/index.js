@@ -8,26 +8,23 @@ const db = app.database();
 const _ = db.command;
 
 exports.main = async (event, context) => {
-  const { roomCode, roomId, characterData, OPENID } = event;
+  // 安全获取 OPENID（从服务端上下文，不可伪造）
+  const { openId } = app.auth().getUserInfo();
 
-  console.log('[joinRoom] 收到请求:', JSON.stringify({ roomCode, roomId, characterId: characterData?.id }));
+  const { roomCode, roomId, characterData } = event;
 
   try {
     // 查找房间：优先用 roomId，否则用 roomCode
     let roomRes;
     if (roomId) {
-      console.log('[joinRoom] 使用 roomId 查询:', roomId);
       roomRes = await db.collection('rooms').doc(roomId).get();
-      console.log('[joinRoom] roomId 查询结果:', JSON.stringify(roomRes));
       if (!roomRes.data) {
-        console.log('[joinRoom] roomId 查询无数据');
         return { code: -1, message: '房间不存在或已关闭' };
       }
       roomRes.data = { ...roomRes.data, ...roomRes.data?.data, _id: roomRes.data._id };
     } else if (roomCode) {
       // 通过 roomCode 查询（数据在 data 字段里）
       const upperCode = roomCode.toUpperCase();
-      console.log('[joinRoom] 使用 roomCode 查询:', upperCode);
       roomRes = await db.collection('rooms')
         .where({
           'data.roomCode': upperCode,
@@ -35,18 +32,13 @@ exports.main = async (event, context) => {
         })
         .limit(1)
         .get();
-      console.log('[joinRoom] roomCode 查询结果:', JSON.stringify(roomRes));
     } else {
-      console.log('[joinRoom] 缺少房间标识');
       return { code: -1, message: '缺少房间标识' };
     }
 
     if (!roomRes.data || (Array.isArray(roomRes.data) && roomRes.data.length === 0)) {
-      console.log('[joinRoom] 查询结果为空');
       return { code: -1, message: '房间不存在或已关闭' };
     }
-    
-    console.log('[joinRoom] 找到房间:', JSON.stringify(roomRes.data));
 
     // 统一处理房间数据
     let room;
@@ -111,7 +103,7 @@ exports.main = async (event, context) => {
       characterId: characterData.id,
       characterName: characterData.name,
       occupation: characterData.occupation || '',
-      openId: OPENID || '',
+      openId: openId || '',
       // 存储完整角色数据用于导入到桌面端
       characterData: characterData,
       joinedAt: now,

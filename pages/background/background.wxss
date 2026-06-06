@@ -10,7 +10,7 @@
 
 .intro-text {
   font-size: 24rpx;
-  color: #666;
+  color: #888888;
   line-height: 1.7;
   font-style: italic;
 }
@@ -38,12 +38,24 @@
   margin-top: 8rpx;
 }
 
+/* 背景页标题去装饰 */
+.page-container .section-title {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 16rpx;
+}
+
+.page-container .section-title::before {
+  display: none;
+}
+
 .bottom-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: rgba(245, 245, 240, 0.95);
   backdrop-filter: blur(10px);
   box-shadow: 0 -2rpx 16rpx rgba(0, 0, 0, 0.08);

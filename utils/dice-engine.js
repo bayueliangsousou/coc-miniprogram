@@ -3,7 +3,7 @@
 const { createScopedThreejs } = require('threejs-miniprogram')
 
 let THREE = null, scene = null, camera = null, renderer = null, canvas = null
-let animFrameId = null, isAnimating = false, animResolve = null, initRetryCount = 0
+let animFrameId = null, animFrameCanvas = null, isAnimating = false, animResolve = null, initRetryCount = 0
 let diceMeshes = [], physicsWorld = null, diceBodies = [], diceStateMap = new Map()
 let C = null
 
@@ -416,7 +416,13 @@ function getResultByVertexIntersection(type,mesh){
    ============================================================ */
 
 function init(cvs, cssWidth, cssHeight) {
+  // 切换 canvas 前先用旧 canvas 取消旧的 animFrame，防止残留循环叠加
+  if (animFrameId && animFrameCanvas) {
+    try { animFrameCanvas.cancelAnimationFrame(animFrameId) } catch(e) {}
+    animFrameId = null
+  }
   canvas = cvs
+  animFrameCanvas = cvs
   THREE = createScopedThreejs(canvas)
   scene = new THREE.Scene()
   // transparent background —— 角色卡页面内容穿透作为"桌面"
@@ -438,6 +444,9 @@ function init(cvs, cssWidth, cssHeight) {
 }
 
 function startRenderLoop() {
+  // 防重入：用 animFrameCanvas 取消旧循环，避免多实例叠加导致物理步进倍速
+  if (animFrameId && animFrameCanvas) { try { animFrameCanvas.cancelAnimationFrame(animFrameId) } catch(e) {} animFrameId = null }
+  animFrameCanvas = canvas
   function loop() {
     if (!renderer || !scene || !camera) return
     if (isAnimating) updatePhysics()
@@ -448,7 +457,7 @@ function startRenderLoop() {
 }
 
 function stopRenderLoop() {
-  if (animFrameId && canvas) { canvas.cancelAnimationFrame(animFrameId); animFrameId = null }
+  if (animFrameId && animFrameCanvas) { try { animFrameCanvas.cancelAnimationFrame(animFrameId) } catch(e) {} animFrameId = null }
 }
 
 function updatePhysics() {

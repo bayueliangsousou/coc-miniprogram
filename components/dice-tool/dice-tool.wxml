@@ -1,0 +1,53 @@
+<!-- components/dice-tool/dice-tool.wxml -->
+
+<!-- ===== 骰子模式叠加层 ===== -->
+<view class="dice-overlay {{_overlayVisible ? 'visible' : ''}}" bindtap="onOverlayTap">
+  <!-- WebGL Canvas -->
+  <canvas type="webgl" id="dice-canvas" class="dice-canvas"></canvas>
+
+  <!-- 结果卡片（仅在完整骰子模式下显示） -->
+  <cover-view class="dice-result-panel" wx:if="{{diceResults.length > 0 && diceMode}}">
+    <cover-image class="drp-bg" src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png" bindload="onBgLoaded"/>
+    <cover-view class="drp-body" wx:if="{{bgLoaded}}">
+      <cover-view class="drp-left">
+        <cover-view class="drp-item" wx:for="{{diceResults}}" wx:key="id" wx:for-item="r">
+          <cover-view class="drpi-type">{{r.type}}</cover-view>
+          <cover-view class="drpi-val">{{r.value}}</cover-view>
+        </cover-view>
+      </cover-view>
+      <cover-view class="drp-divider"></cover-view>
+      <cover-view class="drp-right">
+        <cover-view class="drpr-label">总值</cover-view>
+        <cover-view class="drpr-num">{{diceTotalSum}}</cover-view>
+      </cover-view>
+    </cover-view>
+  </cover-view>
+</view>
+
+<!-- ===== 骰子浮动按钮 ===== -->
+<view
+  wx:if="{{!_overlayVisible}}"
+  class="dice-fab"
+  style="right: {{fabRight || 30}}rpx; bottom: {{fabBottom || 200}}rpx; background: {{fabBg}};"
+  catchtouchstart="onFabTouchStart"
+  catchtouchmove="onFabTouchMove"
+  catchtouchend="onFabTouchEnd"
+>
+  <text>🎲</text>
+</view>
+
+<!-- ===== 骰子模式下的底部控制栏（仅完整骰子模式） ===== -->
+<view class="dice-controls" wx:if="{{diceMode}}" catchtap="noop">
+  <block wx:for="{{diceTypes}}" wx:key="type">
+    <view class="dice-btn-wrap" data-type="{{item.type}}" bindtap="onDiceBtnTap">
+      <view class="dice-btn">{{item.label}}</view>
+      <view class="dice-count" wx:if="{{diceCounts[item.type] > 0}}">{{diceCounts[item.type]}}</view>
+    </view>
+  </block>
+  <!-- 右侧收起 + 投掷区域 -->
+  <view class="throw-area" wx:if="{{diceMode}}">
+    <view class="throw-collapse" bindtap="onDiceModeToggle">收起骰子</view>
+    <view class="throw-btn {{diceHasDice ? '' : 'disabled'}}"
+          style="background: {{throwBtnBg}};" bindtap="onDiceThrow">投掷</view>
+  </view>
+</view>
