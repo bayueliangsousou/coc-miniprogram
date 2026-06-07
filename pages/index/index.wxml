@@ -25,26 +25,24 @@
   <!-- 角色卡列表 -->
   <block wx:else>
     <view class="character-list">
-      <!-- 每张卡片用 swipe-wrapper 包裹 -->
       <view
         class="swipe-wrapper"
         wx:for="{{characters}}"
         wx:key="id"
         data-id="{{item.id}}"
-        data-index="{{index}}"
-        bindtouchstart="onTouchStart"
-        bindtouchmove="onTouchMove"
-        bindtouchend="onTouchEnd"
       >
-        <!-- 卡片主体（滑动的内容） -->
+        <!-- 卡片主体 -->
         <view
           class="character-card"
-          style="transform: translateX({{swipeId === item.id ? -120 : 0}}rpx); transition: transform {{swipeId === item.id ? '0s' : '0.3s'}} ease;"
           data-id="{{item.id}}"
           bindtap="onCardTap"
+          bindlongpress="onCardLongPress"
         >
           <view class="card-v2-inner">
-            <!-- 上半部分：信息区 -->
+            <!-- 背景图：整个卡片以 mingce.png 为底 -->
+            <image class="card-v2-bg" src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/mingce.png" mode="widthFix" />
+
+            <!-- 信息区：覆盖在背景图上 -->
             <view class="card-v2-top">
               <view class="card-v2-header">
                 <text class="card-v2-name">{{item.name || '未命名调查员'}}</text>
@@ -59,8 +57,8 @@
               </view>
             </view>
 
-            <!-- 下半部分：属性区 -->
-            <view class="card-v2-bottom">
+            <!-- 属性区：覆盖在背景图底部 -->
+            <view class="card-v2-stats">
               <view class="card-v2-stat">
                 <text class="card-v2-stat-lbl">HP</text>
                 <text class="card-v2-stat-current">{{item.combat.hpCurrent || item.derived.hp}}</text>
@@ -82,16 +80,11 @@
             </view>
           </view>
         </view>
-
-        <!-- 删除按钮（藏在右侧，滑动后露出） -->
-        <view class="swipe-delete-btn" catchtap="onDeleteTap" data-id="{{item.id}}">
-          <text>删除</text>
-        </view>
       </view>
 
       <!-- 提示文字（仅列表有内容时显示） -->
-      <view wx:if="{{index === characters.length - 1}}" class="list-footer-tip">
-        <text>右滑可删除角色 · 最多支持创建5个角色卡</text>
+      <view class="list-footer-tip">
+        <text>长按卡片可删除角色 · 最多支持创建5个角色卡</text>
       </view>
     </view>
   </block>
@@ -107,14 +100,25 @@
     bind:close="onDiceClose"
   />
 
-  <!-- 吸底按钮栏：新建调查员(3/4) + 我的(1/4) -->
-  <view class="bottom-bar">
+  <!-- 正常底部按钮栏 -->
+  <view class="bottom-bar" wx:if="{{!deleteMode}}">
     <view class="bottom-bar-create {{isLoggedIn ? '' : 'bottom-bar-create-disabled'}}" bindtap="onCreateTap">
       <text class="bottom-bar-icon" wx:if="{{isLoggedIn}}">+</text>
       <text>{{isLoggedIn ? '新建调查员' : '登录后可新建人物'}}</text>
     </view>
     <view class="bottom-bar-mine" bindtap="onMineTap">
       <text>我的</text>
+    </view>
+  </view>
+
+  <!-- 删除模式：红色删除栏 -->
+  <view class="bottom-bar-delete" wx:if="{{deleteMode}}">
+    <view class="delete-hint">通往此处可以删除角色</view>
+    <view class="bottom-bar-delete-btn" bindtap="onDeleteConfirm">
+      <text>删除「{{deleteTargetName}}」</text>
+    </view>
+    <view class="delete-cancel" bindtap="onDeleteCancel">
+      <text>取消</text>
     </view>
   </view>
 
