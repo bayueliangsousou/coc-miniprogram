@@ -1,29 +1,32 @@
 /* pages/index/index.wxss */
 
-/* ===== 页面整体：Flex 纵向布局 ===== */
 .page-container {
-  min-height: 100vh;      /* 改掉 height:100vh，避免 Flex 计算异常 */
-  display: flex;
-  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
   position: relative;
-  background: #f5f5f0;
-  padding: 0;             /* 覆盖 app.wxss 全局 24rpx padding */
+  z-index: 0;
 }
 
-/* 全屏背景图 */
+.main-scroll {
+  padding: 32rpx;
+  padding-top: 0;
+  box-sizing: border-box;
+}
+
+/* ── 背景图 ── */
 .page-bg {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  z-index: 0;
+  z-index: -1;
 }
 
-/* ===== 自定义导航栏（固定高度，不参与 Flex 伸缩） ===== */
+/* ── 自定义导航栏 ── */
 .custom-nav {
-  position: relative;
+  position: fixed;
+  top: 0; left: 0; right: 0;
   z-index: 100;
   background: transparent;
-  flex-shrink: 0;
 }
 
 .custom-nav-title {
@@ -40,203 +43,147 @@
   pointer-events: auto;
 }
 
-/* ===== 主体滚动区：Flex 撑满剩余空间 ===== */
-.main-scroll {
-  flex: 1;
-  height: 0;           /* 关键：让 scroll-view 在 Flex 里正确收缩 */
-  min-height: 0;
-  padding: 20rpx 32rpx 0;
-  box-sizing: border-box;
-}
-
-/* ===== 空状态 ===== */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: 200rpx;
-}
-
-.empty-icon { font-size: 120rpx; opacity: 0.3; margin-bottom: 30rpx; }
-.empty-title { font-size: 36rpx; font-weight: bold; color: #252533; margin-bottom: 16rpx; }
-.empty-desc { font-size: 24rpx; color: #888; }
-
-/* ===== 角色列表 ===== */
 .character-list {
-  padding-bottom: 200rpx; /* 给底部按钮栏留空间 */
+  padding-bottom: 200rpx;
 }
 
-/* ===== 角色卡片 ===== */
+/* ── 列表底部提示 ── */
+.list-footer-tip {
+  text-align: center;
+  padding: 16rpx 0 8rpx;
+  font-size: 22rpx;
+  color: #888888;
+}
+
+/* ── 滑动容器 ── */
+.swipe-wrapper {
+  position: relative;
+  margin-bottom: 24rpx;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  width: 100%;
+}
+
+/* ── 角色卡 ── */
 .character-card {
   position: relative;
-  width: 100%;
+  background: none;
+  padding: 0;
+  overflow: hidden;
+  z-index: 1;
   border-radius: var(--radius-md);
+  width: 100%;
+  aspect-ratio: 900 / 303;   /* mingce.png 宽高比，防止图片未加载时卡片塌陷 */
+  margin-bottom: 32rpx;      /* 卡片间距 */
+}
+
+/* 内部容器 */
+.card-v2-inner {
+  position: relative;
+  z-index: 2;
+  border-radius: 10rpx;
   overflow: hidden;
 }
 
-/* 背景图：由图片自然撑开卡片高度 */
-.card-bg {
+/* 背景图：撑开容器高度 */
+.card-v2-bg {
   width: 100%;
-  height: auto;
   display: block;
 }
 
-/* 信息区：绝对定位在卡片顶部 */
-.card-top {
+/* 上半部分：信息区（覆盖在背景图上） */
+.card-v2-top {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  padding: 40rpx 32rpx 16rpx;
-  z-index: 2;
-  max-height: 45%;          /* 限制最大高度，防止与底部属性区重叠 */
-  overflow: hidden;
-  box-sizing: border-box;
+  padding: 36rpx 28rpx 20rpx;
+  z-index: 1;
 }
 
-.card-header {
+.card-v2-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10rpx;
+  margin-bottom: 12rpx;
 }
 
-.card-name {
+.card-v2-name {
   font-size: 36rpx;
   font-weight: 700;
   color: #252533;
   font-family: 'Special Elite';
 }
 
-.card-date {
+.card-v2-date {
   font-size: 26rpx;
-  color: #666;
+  color: #7E4911;
   font-family: 'Special Elite';
 }
 
-.card-meta {
+.card-v2-meta {
   font-size: 26rpx;
-  color: #666;
-  line-height: 1.4;
-  max-height: 60rpx;       /* 职业等信息最多两行 */
-  overflow: hidden;
+  color: #7E4911;
 }
 
-/* 属性区：绝对定位在卡片底部 */
-.card-stats {
+/* 属性区：覆盖在背景图底部（最下方区域） */
+.card-v2-stats {
   position: absolute;
-  bottom: 60rpx;
+  bottom: 0;
   left: 0;
   right: 0;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 0 32rpx;
-  z-index: 2;
+  padding: 18rpx 24rpx;
+  padding-bottom: calc(18rpx + env(safe-area-inset-bottom));
+  z-index: 1;
 }
 
-.card-stat {
+.card-v2-stat {
   display: flex;
   align-items: baseline;
-  gap: 4rpx;
+  gap: 2rpx;
 }
 
-.card-stat-lbl {
+.card-v2-stat-lbl {
   font-size: 28rpx;
   font-weight: 700;
-  color: #252533;
+  color: #000;
   margin-right: 8rpx;
   font-family: 'Special Elite';
 }
 
-.card-stat-current {
+.card-v2-stat-current {
   font-size: 40rpx;
   font-weight: 800;
-  color: #252533;
+  color: #000;
   line-height: 1;
   font-family: 'Special Elite';
 }
 
-.card-stat-sep {
+.card-v2-stat-sep {
   font-size: 24rpx;
-  color: #666;
+  color: #000;
   font-family: 'Special Elite';
 }
 
-.card-stat-max {
+.card-v2-stat-max {
   font-size: 28rpx;
-  color: #666;
+  color: #000;
   font-family: 'Special Elite';
 }
 
-/* ===== 列表底部提示 ===== */
-.list-footer-tip {
-  text-align: center;
-  padding: 20rpx 0 8rpx;
-  font-size: 22rpx;
-  color: #888;
-}
-
-/* ===== 底部按钮栏（正常模式） ===== */
-.bottom-bar {
-  box-sizing: border-box;
-  flex-shrink: 0;
-  z-index: 50;
-  display: flex;
-  gap: 16rpx;
-  padding: 20rpx 32rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: #252533;
-}
-
-.bottom-bar-create {
-  flex: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 88rpx;
-  background: #c9a84c;
-  border-radius: 16rpx;
-  color: #fff;
-  font-size: 30rpx;
-  font-weight: 700;
-  gap: 8rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.15);
-}
-
-.bottom-bar-create:active { opacity: 0.85; transform: scale(0.98); }
-.bottom-bar-create-disabled { background: rgba(201,168,76,0.5); }
-
-.bottom-bar-icon {
-  font-size: 36rpx;
-  font-weight: 300;
-  line-height: 1;
-}
-
-.bottom-bar-mine {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 88rpx;
-  background: #c9a84c;
-  border-radius: 16rpx;
-  color: #fff;
-  font-size: 30rpx;
-  font-weight: 700;
-  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.15);
-}
-
-.bottom-bar-mine:active { opacity: 0.85; transform: scale(0.98); }
-
-/* ===== 删除模式底部栏 ===== */
+/* ── 删除模式底部栏 ── */
 .bottom-bar-delete {
-  box-sizing: border-box;
-  flex-shrink: 0;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 24rpx;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
@@ -264,7 +211,10 @@
   font-weight: 700;
 }
 
-.bottom-bar-delete-btn:active { opacity: 0.85; transform: scale(0.97); }
+.bottom-bar-delete-btn:active {
+  opacity: 0.85;
+  transform: scale(0.97);
+}
 
 .delete-cancel {
   flex-shrink: 0;
@@ -276,13 +226,104 @@
   color: rgba(255,255,255,0.9);
   font-size: 28rpx;
 }
+.empty-state {
+  margin-top: 160rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 
-/* ===== 我的弹窗 ===== */
+.empty-icon {
+  font-size: 120rpx;
+  opacity: 0.3;
+  margin-bottom: 30rpx;
+}
+
+.empty-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #252533;
+  margin-bottom: 16rpx;
+}
+
+.empty-desc {
+  font-size: 24rpx;
+  color: #888888;
+}
+
+/* ── 吸底按钮栏 ── */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  gap: 16rpx;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #252533;
+}
+
+.bottom-bar-create {
+  flex: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  background: #c9a84c;
+  border-radius: 16rpx;
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 700;
+  gap: 8rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+}
+
+.bottom-bar-create:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.bottom-bar-create-disabled {
+  background: rgba(201, 168, 76, 0.5);
+}
+
+.bottom-bar-icon {
+  font-size: 36rpx;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.bottom-bar-mine {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  background: #c9a84c;
+  border-radius: 16rpx;
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 700;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+}
+
+.bottom-bar-mine:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+/* ── 我的弹窗 ── */
 .mine-modal-mask {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 100;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -293,7 +334,7 @@
   background: #fff;
   border-radius: 24rpx;
   padding: 48rpx 40rpx;
-  box-shadow: 0 16rpx 48rpx rgba(0,0,0,0.2);
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.2);
 }
 
 .mine-modal-title {
@@ -316,7 +357,7 @@
 
 .mine-modal-label {
   font-size: 24rpx;
-  color: #888;
+  color: #888888;
   margin-bottom: 8rpx;
 }
 
@@ -336,7 +377,110 @@
   margin-bottom: 16rpx;
 }
 
-.mine-modal-btn.logout { background: #e74c3c; color: #fff; }
-.mine-modal-btn.logout:active { opacity: 0.85; }
-.mine-modal-btn.close { background: #f0f0f0; color: #888; }
-.mine-modal-btn.close:active { opacity: 0.85; }
+.mine-modal-btn.logout {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.mine-modal-btn.logout:active {
+  opacity: 0.85;
+}
+
+.mine-modal-btn.close {
+  background: #f0f0f0;
+  color: #888888;
+}
+
+.mine-modal-btn.close:active {
+  opacity: 0.85;
+}
+
+/* ══════════════════════════════════════════
+   卡片样式（card-* 类名，匹配当前 WXML）
+   ══════════════════════════════════════════ */
+
+.card-bg {
+  width: 100%;
+  height: 100%;            /* 配合 aspect-ratio，填满卡片 */
+  display: block;
+}
+
+.card-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 60rpx 28rpx 12rpx;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
+.card-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #252533;
+  font-family: 'Special Elite';
+}
+
+.card-date {
+  font-size: 26rpx;
+  color: #7E4911;
+  font-family: 'Special Elite';
+}
+
+.card-meta {
+  font-size: 26rpx;
+  color: #7E4911;
+  line-height: 1.4;
+  margin-top: 20rpx;
+}
+
+.card-stats {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 28rpx 16rpx;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+.card-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+}
+
+.card-stat-lbl {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #252533;
+  margin-right: 8rpx;
+  font-family: 'Special Elite';
+}
+
+.card-stat-current {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #252533;
+  line-height: 1;
+  font-family: 'Special Elite';
+}
+
+.card-stat-sep {
+  font-size: 24rpx;
+  color: #252533;
+  font-family: 'Special Elite';
+}
+
+.card-stat-max {
+  font-size: 28rpx;
+  color: #252533;
+  font-family: 'Special Elite';
+}

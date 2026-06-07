@@ -13,7 +13,9 @@ Page({
     navBarHeight: 0,       // statusBarHeight + navHeight（px），供 WXML 用
     deleteMode: false,
     deleteTargetId: '',
-    deleteTargetName: ''
+    deleteTargetName: '',
+    bgImage: '',
+    scrollViewHeight: 0    // scroll-view 精确高度（px）
   },
 
   onLoad() {

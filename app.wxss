@@ -32,7 +32,7 @@ view, text, image, button, input, textarea, scroll-view, swiper, swiper-item {
 /* 通用容器 */
 .page-container {
   min-height: 100vh;
-  padding: 24rpx;
+  padding: 0;
   background-color: var(--color-bg);
 }
 
