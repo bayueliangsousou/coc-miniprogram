@@ -4,95 +4,91 @@
   <image class="page-bg" src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/bg.jpg" mode="aspectFill"/>
 
   <!-- ===== 自定义导航栏 ===== -->
-  <view class="custom-nav" style="height: {{statusBarHeight + navHeight}}px;">
-    <view class="custom-nav-title" style="top: {{statusBarHeight}}px; height: {{navHeight}}px;">
+  <view class="custom-nav" style="height:{{navBarHeight}}px;">
+    <view class="custom-nav-title" style="top:{{statusBarHeight}}px;height:{{navHeight}}px;">
       <text>调查员名册</text>
     </view>
   </view>
-  <scroll-view scroll-y class="main-scroll" enhanced style="height:100vh" bounces="{{false}}">
 
-  <view style="height: {{statusBarHeight + navHeight}}px;"></view>
+  <!-- ===== 主体滚动区 ===== -->
+  <scroll-view scroll-y class="main-scroll" enhanced bounces="{{false}}">
 
-  <!-- 空状态 -->
-  <block wx:if="{{characters.length === 0}}">
-    <view class="empty-state">
+    <!-- 空状态 -->
+    <view wx:if="{{characters.length === 0}}" class="empty-state">
       <view class="empty-icon">📜</view>
       <text class="empty-title">尚无调查员</text>
       <text class="empty-desc">点击底部"＋"按钮创建第一个角色卡</text>
     </view>
-  </block>
 
-  <!-- 角色卡列表 -->
-  <block wx:else>
-    <view class="character-list">
+    <!-- 角色卡列表 -->
+    <view wx:else class="character-list">
+
       <view
-        class="swipe-wrapper"
+        class="character-card"
         wx:for="{{characters}}"
         wx:key="id"
         data-id="{{item.id}}"
+        bindtap="onCardTap"
+        bindlongpress="onCardLongPress"
       >
-        <!-- 卡片主体 -->
-        <view
-          class="character-card"
-          data-id="{{item.id}}"
-          bindtap="onCardTap"
-          bindlongpress="onCardLongPress"
-        >
-          <view class="card-v2-inner">
-            <!-- 背景图：整个卡片以 mingce.png 为底 -->
-            <image class="card-v2-bg" src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/mingce.png" mode="widthFix" />
+        <!-- 背景图：mingce.png 撑开卡片高度 -->
+        <image
+          class="card-bg"
+          src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/mingce.png"
+          mode="widthFix"
+        />
 
-            <!-- 信息区：覆盖在背景图上 -->
-            <view class="card-v2-top">
-              <view class="card-v2-header">
-                <text class="card-v2-name">{{item.name || '未命名调查员'}}</text>
-                <text class="card-v2-date" wx:if="{{item.createdAt}}">{{item.createdAt}}</text>
-              </view>
-              <view class="card-v2-meta">
-                <text wx:if="{{item.age}}">{{item.age}}岁</text>
-                <text wx:if="{{item.age && item.gender}}"> · </text>
-                <text wx:if="{{item.gender}}">{{item.gender}}</text>
-                <text wx:if="{{(item.age || item.gender) && item.occupation}}"> · </text>
-                <text wx:if="{{item.occupation}}">{{item.occupation}}</text>
-              </view>
-            </view>
-
-            <!-- 属性区：覆盖在背景图底部 -->
-            <view class="card-v2-stats">
-              <view class="card-v2-stat">
-                <text class="card-v2-stat-lbl">HP</text>
-                <text class="card-v2-stat-current">{{item.combat.hpCurrent || item.derived.hp}}</text>
-                <text class="card-v2-stat-sep">/</text>
-                <text class="card-v2-stat-max">{{item.derived.hp}}</text>
-              </view>
-              <view class="card-v2-stat">
-                <text class="card-v2-stat-lbl">SAN</text>
-                <text class="card-v2-stat-current">{{item.combat.sanCurrent || item.derived.sanStart}}</text>
-                <text class="card-v2-stat-sep">/</text>
-                <text class="card-v2-stat-max">{{item.derived.sanStart}}</text>
-              </view>
-              <view class="card-v2-stat">
-                <text class="card-v2-stat-lbl">MP</text>
-                <text class="card-v2-stat-current">{{item.combat.mpCurrent || item.derived.mp}}</text>
-                <text class="card-v2-stat-sep">/</text>
-                <text class="card-v2-stat-max">{{item.derived.mp}}</text>
-              </view>
-            </view>
+        <!-- 信息区：绝对定位覆盖在背景图上方 -->
+        <view class="card-top">
+          <view class="card-header">
+            <text class="card-name">{{item.name || '未命名调查员'}}</text>
+            <text class="card-date" wx:if="{{item.createdAt}}">{{item.createdAt}}</text>
+          </view>
+          <view class="card-meta">
+            <text wx:if="{{item.age}}">{{item.age}}岁</text>
+            <text wx:if="{{item.age && item.gender}}"> · </text>
+            <text wx:if="{{item.gender}}">{{item.gender}}</text>
+            <text wx:if="{{(item.age || item.gender) && item.occupation}}"> · </text>
+            <text wx:if="{{item.occupation}}">{{item.occupation}}</text>
           </view>
         </view>
-      </view>
 
-      <!-- 提示文字（仅列表有内容时显示） -->
+        <!-- 属性区：绝对定位覆盖在背景图底部 -->
+        <view class="card-stats">
+          <view class="card-stat">
+            <text class="card-stat-lbl">HP</text>
+            <text class="card-stat-current">{{item.combat.hpCurrent || item.derived.hp}}</text>
+            <text class="card-stat-sep">/</text>
+            <text class="card-stat-max">{{item.derived.hp}}</text>
+          </view>
+          <view class="card-stat">
+            <text class="card-stat-lbl">SAN</text>
+            <text class="card-stat-current">{{item.combat.sanCurrent || item.derived.sanStart}}</text>
+            <text class="card-stat-sep">/</text>
+            <text class="card-stat-max">{{item.derived.sanStart}}</text>
+          </view>
+          <view class="card-stat">
+            <text class="card-stat-lbl">MP</text>
+            <text class="card-stat-current">{{item.combat.mpCurrent || item.derived.mp}}</text>
+            <text class="card-stat-sep">/</text>
+            <text class="card-stat-max">{{item.derived.mp}}</text>
+          </view>
+        </view>
+
+      </view><!-- end character-card -->
+
+      <!-- 提示文字 -->
       <view class="list-footer-tip">
         <text>长按卡片可删除角色 · 最多支持创建5个角色卡</text>
       </view>
-    </view>
-  </block>
+
+    </view><!-- end character-list -->
 
   </scroll-view>
 
   <!-- ===== 骰子工具组件 ===== -->
-  <dice-tool id="diceTool"
+  <dice-tool
+    id="diceTool"
     fab-bottom-default="200"
     fab-bg="#f5f5f0"
     throw-btn-bg="linear-gradient(135deg, #e8b830, #c89a20)"
@@ -100,7 +96,7 @@
     bind:close="onDiceClose"
   />
 
-  <!-- 正常底部按钮栏 -->
+  <!-- ===== 正常底部按钮栏 ===== -->
   <view class="bottom-bar" wx:if="{{!deleteMode}}">
     <view class="bottom-bar-create {{isLoggedIn ? '' : 'bottom-bar-create-disabled'}}" bindtap="onCreateTap">
       <text class="bottom-bar-icon" wx:if="{{isLoggedIn}}">+</text>
@@ -111,7 +107,7 @@
     </view>
   </view>
 
-  <!-- 删除模式：红色删除栏 -->
+  <!-- ===== 删除模式：红色删除栏 ===== -->
   <view class="bottom-bar-delete" wx:if="{{deleteMode}}">
     <view class="delete-hint">通往此处可以删除角色</view>
     <view class="bottom-bar-delete-btn" bindtap="onDeleteConfirm">
@@ -122,7 +118,7 @@
     </view>
   </view>
 
-  <!-- 我的弹窗 -->
+  <!-- ===== 我的弹窗 ===== -->
   <view class="mine-modal-mask" wx:if="{{showMineModal}}" bindtap="onMineModalClose">
     <view class="mine-modal" catchtap="">
       <view class="mine-modal-title">账号管理</view>

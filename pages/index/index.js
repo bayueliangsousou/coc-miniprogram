@@ -10,6 +10,7 @@ Page({
     isLoggedIn: false,
     statusBarHeight: 20,
     navHeight: 44,
+    navBarHeight: 0,       // statusBarHeight + navHeight（px），供 WXML 用
     deleteMode: false,
     deleteTargetId: '',
     deleteTargetName: ''
@@ -18,8 +19,16 @@ Page({
   onLoad() {
     const sys = wx.getSystemInfoSync()
     const navHeight = sys.platform === 'android' ? 48 : 44
-    this.setData({ statusBarHeight: sys.statusBarHeight, navHeight })
+    const statusBarHeight = sys.statusBarHeight
+    const navBarHeight = statusBarHeight + navHeight
+
+    this.setData({
+      statusBarHeight,
+      navHeight,
+      navBarHeight
+    })
     this.loadList()
+
     if (cloud.checkLogin()) {
       pullCharacters().then(merged => {
         const characters = merged.map(c => {
@@ -67,15 +76,14 @@ Page({
       wx.redirectTo({ url: '/pages/login/login' })
       return
     }
-    const maxChars = 5
-    if (this.data.characters.length >= maxChars) {
+    if (this.data.characters.length >= 5) {
       wx.showToast({ title: '最多创建5个角色卡', icon: 'none' })
       return
     }
     wx.navigateTo({ url: '/pages/character-edit/character-edit' })
   },
 
-  // 点击卡片跳转（删除模式下不跳转）
+  // 点击卡片（删除模式下不跳转）
   onCardTap(e) {
     if (this.data.deleteMode) {
       this.setData({ deleteMode: false, deleteTargetId: '', deleteTargetName: '' })
@@ -138,9 +146,11 @@ Page({
     if (user) this.setData({ userInfo: user.userInfo || {} })
     this.setData({ showMineModal: true })
   },
+
   onMineModalClose() {
     this.setData({ showMineModal: false })
   },
+
   onLogoutTap() {
     wx.showModal({
       title: '确认退出',
