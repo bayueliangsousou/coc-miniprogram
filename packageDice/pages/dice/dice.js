@@ -1130,6 +1130,7 @@ function clearAllDice() {
   })
   diceMeshes = []
   dicePhysics = []
+  diceBodies = []
 }
 
 // 辅助：dispose 单个 material（处理 texture）
@@ -1186,6 +1187,16 @@ Page({
   onLoad() { page = this },
 
   onReady() { this._initCanvas() },
+
+  onHide() {
+    // 页面隐藏时强制结束动画，防止手机端 rAF 暂停导致状态锁死
+    isAnimating = false
+    clearAllDice()
+    if (animFrameId && canvas) {
+      canvas.cancelAnimationFrame(animFrameId)
+      animFrameId = null
+    }
+  },
 
   onUnload() {
     page = null
@@ -1284,6 +1295,17 @@ Page({
 
   async onThrowTap() {
     if (!this.data.sceneReady) { this._showToast('3D 场景初始化中…'); return }
+
+    // 兜底：场景中有残留骰子则强制清理（防止手机端页面隐藏后状态锁死）
+    if (diceMeshes.length > 0 || diceBodies.length > 0) {
+      clearAllDice()
+      isAnimating = false
+      if (animFrameId && canvas) {
+        canvas.cancelAnimationFrame(animFrameId)
+        animFrameId = null
+      }
+    }
+
     if (isAnimating) { this._showToast('投掷中…'); return }
     this.setData({ results: [], totalSum: 0 })
     var counts = this.data.diceCounts || {}

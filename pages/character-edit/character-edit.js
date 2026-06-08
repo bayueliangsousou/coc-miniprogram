@@ -171,7 +171,7 @@ Page({
     if (combat.sanCurrent === oldDerived.sanStart) combat.sanCurrent = derived.sanStart
     if (combat.mpCurrent === oldDerived.mp) combat.mpCurrent = derived.mp
     character.combat = combat
-    this.setData({ character, derived }, () => { this.calcSkillPoints() })
+    this.setData({ character, derived }, () => { this.calcSkillPoints(); this.updateCombatSkills() })
   },
 
   // 战斗数值（HP/SAN/MP 当前值）输入
@@ -211,7 +211,7 @@ Page({
           const character = { ...this.data.character, attributes }
           const derived = calcDerived(attributes)
           character.combat = { hpCurrent: derived.hp, sanCurrent: derived.sanStart, mpCurrent: derived.mp }
-          this.setData({ character, derived }, () => { this.calcSkillPoints() })
+          this.setData({ character, derived }, () => { this.calcSkillPoints(); this.updateCombatSkills() })
           wx.showToast({ title: '骰子已投出！', icon: 'success' })
         }
       }
