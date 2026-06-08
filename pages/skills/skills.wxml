@@ -72,7 +72,7 @@
   <view wx:for="{{skillCategories}}" wx:key="category">
     <!-- 分类标题 -->
     <view class="cat-header" data-category="{{item.category}}" bindtap="onToggleCategory">
-      <text class="cat-name">{{item.category}}</text>
+      <text class="cat-name">{{item.category}}<text class="cat-limit" wx:if="{{item.limitText}}">{{item.limitText}}</text></text>
       <text class="cat-count">{{item.skills.length}} 项</text>
       <text class="cat-arrow">{{expandedCategories[item.category] ? '▾' : '▸'}}</text>
     </view>
@@ -83,12 +83,12 @@
         <!-- 搜索过滤 -->
         <view
           id="skill-{{sk.name}}"
-          class="skill-row {{sk.isOccSkill ? 'is-occ' : ''}} {{searchMatches[searchIndex] === sk.name ? 'skill-highlight' : ''}}"
+          class="skill-row {{sk.displayAsOcc ? 'is-occ' : ''}} {{searchMatches[searchIndex] === sk.name ? 'skill-highlight' : ''}}"
           wx:if="{{!searchText || sk.name.indexOf(searchText) !== -1}}"
         >
           <view class="skill-name-wrap">
-            <text class="occ-dot" wx:if="{{sk.isOccSkill}}">★</text>
-            <text class="skill-name">{{sk.name}}</text>
+            <text class="occ-dot" wx:if="{{sk.displayAsOcc}}">★</text>
+            <text class="skill-name {{sk.displayAsOcc ? 'occ-skill-name' : ''}}">{{sk.name}}</text>
             <input
               wx:if="{{sk.name === '其他语言'}}"
               class="language-name-input"
@@ -105,7 +105,7 @@
           </view>
           <view class="skill-inputs">
             <input
-              class="skill-input current {{sk.isOccSkill ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
+              class="skill-input current {{sk.displayAsOcc ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
               type="number"
               value="{{sk.current}}"
               data-name="{{sk.name}}"

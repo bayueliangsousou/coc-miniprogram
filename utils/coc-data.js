@@ -242,15 +242,15 @@ const OCCUPATIONS = [
   },
   {
     id: 'hacker',
-    name: '黑客',
+    name: '黑客（现代）',
     desc: '利用计算机和网络进行干扰或破坏以达成目的的技术人员。',
     creditRating: [10, 70],
     pointFormula: 'EDU × 4',
-    skills: ['计算机', '电气维修', '电子学', '图书馆使用', '侦查', '一项社交技能（魅惑、话术、恐吓、说服）', '点一门技能', '信用评级']
+    skills: ['计算机', '电气维修', '电子学', '图书馆使用', '侦查', '一项社交技能（取悦、话术、恐吓、说服）', '点一门技能', '信用评级']
   },
   {
     id: 'programmer',
-    name: '程序员',
+    name: '程序员（现代）',
     desc: '设计、编写、测试、调试和维护计算机程序源代码的职业。',
     creditRating: [10, 70],
     pointFormula: 'EDU × 4',
@@ -258,11 +258,11 @@ const OCCUPATIONS = [
   },
   {
     id: 'idol',
-    name: '偶像',
+    name: '偶像（现代）',
     desc: '以歌舞表演为职业的艺人。',
     creditRating: [9, 70],
     pointFormula: 'EDU × 2 + APP × 2',
-    skills: ['艺术与手艺（表演）', '艺术与手艺（唱歌）', '乔装', '一项社交技能（魅惑、话术、恐吓、说服）', '聆听', '心理学', '点一门技能', '信用评级']
+    skills: ['艺术与手艺（表演）', '艺术与手艺（唱歌）', '乔装', '一项社交技能（取悦、话术、恐吓、说服）', '聆听', '心理学', '点一门技能', '信用评级']
   },
   {
     id: 'thug',
@@ -270,7 +270,7 @@ const OCCUPATIONS = [
     desc: '犯罪组织的兵卒，被犯罪组织豢养。',
     creditRating: [5, 30],
     pointFormula: 'EDU × 2 + STR × 2',
-    skills: ['驾驶（汽车）', '格斗（斗殴）', '射击', '一项社交技能（魅惑、话术、恐吓、说服）', '心理学', '潜行', '侦查', '信用评级']
+    skills: ['驾驶（汽车）', '格斗（斗殴）', '射击', '一项社交技能（取悦、话术、恐吓、说服）', '心理学', '潜行', '侦查', '信用评级']
   },
   {
     id: 'athlete',
@@ -278,7 +278,7 @@ const OCCUPATIONS = [
     desc: '效力于职业运动队伍的专业运动员。',
     creditRating: [9, 70],
     pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
-    skills: ['攀爬', '跳跃', '格斗（斗殴）', '骑乘', '一项社交技能（魅惑、话术、恐吓、说服）', '游泳', '投掷', '信用评级']
+    skills: ['攀爬', '跳跃', '格斗（斗殴）', '骑乘', '一项社交技能（取悦、话术、恐吓、说服）', '游泳', '投掷', '信用评级']
   },
   {
     id: 'cowboy',
@@ -330,7 +330,7 @@ const SKILLS = [
 
   // 社交类
   { name: '话术', baseValue: 5, category: '社交' },
-  { name: '魅惑', baseValue: 15, category: '社交' },
+  { name: '取悦', baseValue: 15, category: '社交' },
   { name: '恐吓', baseValue: 15, category: '社交' },
   { name: '说服', baseValue: 10, category: '社交' },
 

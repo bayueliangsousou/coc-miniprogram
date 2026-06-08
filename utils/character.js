@@ -126,9 +126,10 @@ function calcSkillThresholds(value) {
  * - 职业技能只能用职业点数提升
  * - 任何技能都可以用兴趣点数提升
  * @param {object} character 角色对象
+ * @param {string[]} extraOccSkills 动态选中的额外职业技能名列表（displayAsOcc=true 的技能）
  * @returns {object} {total, used, remaining, occPoints, intPoints}
  */
-function calcSkillPoints(character) {
+function calcSkillPoints(character, extraOccSkills = []) {
   const { attributes = {}, skills = {}, occupationId } = character
   const { EDU = 0, DEX = 0, APP = 0, STR = 0, INT = 0 } = attributes
 
@@ -200,7 +201,7 @@ function calcSkillPoints(character) {
         const occBaseName = os.split('（')[0].split('(')[0]
         const skillBaseName = skillName.split('（')[0].split('(')[0]
         return occBaseName === skillBaseName
-      })
+      }) || extraOccSkills.includes(skillName)  // 动态选中的技能也视为职业技能
       skillUsage.push({ name: skillName, inputPoints: pointsUsed, isOcc })
     }
   })
@@ -245,19 +246,41 @@ function calcSkillPoints(character) {
     }
   })
 
-  // 5. 计算剩余点数
-  const occRemaining = occTotal - occUsed
-  const intRemaining = intTotal - intUsed
+  // 5. 计算剩余点数（确保不为负，进行借贷平衡）
+  let occRemaining = occTotal - occUsed
+  let intRemaining = intTotal - intUsed
+
+  // 如果兴趣点超支，尝试从职业点"借"
+  if (intRemaining < 0 && occRemaining > 0) {
+    const borrow = Math.min(occRemaining, Math.abs(intRemaining))
+    occRemaining -= borrow
+    intRemaining += borrow
+  }
+
+  // 如果职业点超支，尝试从兴趣点"借"
+  if (occRemaining < 0 && intRemaining > 0) {
+    const borrow = Math.min(intRemaining, Math.abs(occRemaining))
+    intRemaining -= borrow
+    occRemaining += borrow
+  }
+
+  // 最终确保不为负（总消耗超过总可用时，统一显示为0）
+  occRemaining = Math.max(0, occRemaining)
+  intRemaining = Math.max(0, intRemaining)
+
+  // 重新计算 used（和 remaining 保持一致）
+  const finalOccUsed = occTotal - occRemaining
+  const finalIntUsed = intTotal - intRemaining
 
   return {
     occTotal,        // 职业技能总点数
-    occUsed,         // 职业技能已用
+    occUsed: finalOccUsed,         // 职业技能已用
     occRemaining,    // 职业技能剩余
     intTotal,        // 兴趣技能总点数
-    intUsed,         // 兴趣技能已用
+    intUsed: finalIntUsed,         // 兴趣技能已用
     intRemaining,    // 兴趣技能剩余
     total: occTotal + intTotal,  // 总点数
-    used: occUsed + intUsed,     // 总已用
+    used: finalOccUsed + finalIntUsed,     // 总已用
     remaining: occRemaining + intRemaining,  // 总剩余
     pointFormula: occ ? occ.pointFormula : '未选择职业'
   }

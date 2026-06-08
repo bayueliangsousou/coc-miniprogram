@@ -97,7 +97,7 @@
 
     <!-- ── 武器设置卡片 ── -->
     <!-- 只要有武器就显示武器模块 -->
-    <view class="card" wx:if="{{hasEditedSkills || (character.weapons && character.weapons.length > 0)}}">
+    <view class="card">
       <view class="section-title">武器设置</view>
 
       <!-- 已添加的武器列表 -->

@@ -102,26 +102,30 @@ Page({
   // 更新战斗技能列表
   updateCombatSkills() {
     const { character } = this.data
-    if (!character || !character.skills) return
-    
+    if (!character) return
+
     const combatSkills = []
-    
-    // 遍历所有技能，找出战斗相关技能
-    Object.keys(character.skills).forEach(skillName => {
-      // 检查是否是战斗技能（包含格斗、射击、闪避、投掷等关键词）
-      if (skillName.includes('格斗') || 
-          skillName.includes('射击') || 
-          skillName.includes('闪避') || 
-          skillName.includes('投掷')) {
-        const value = character.skills[skillName]
+
+    // 从 SKILLS 定义中获取所有战斗技能（含基础值）
+    SKILLS.forEach(skill => {
+      if (skill.category === '战斗') {
+        let value = skill.baseValue
+        // 如果有编辑过的值，使用编辑后的值
+        if (character.skills && character.skills[skill.name] !== undefined) {
+          value = character.skills[skill.name]
+        }
+        // 闪避特殊处理：基础值 = DEX/2
+        if (skill.name === '闪避' && character.attributes && character.attributes.DEX) {
+          value = Math.floor(character.attributes.DEX / 2)
+        }
         combatSkills.push({
-          name: skillName,
+          name: skill.name,
           value: value,
-          display: `${skillName} ${value}`  // 用于picker显示：技能名+鉴定值
+          display: `${skill.name} ${value}`  // 用于picker显示：技能名+鉴定值
         })
       }
     })
-    
+
     this.setData({ combatSkills })
   },
 

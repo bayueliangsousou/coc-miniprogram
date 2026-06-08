@@ -252,6 +252,12 @@
   color: var(--color-text);
 }
 
+.cat-limit {
+  color: var(--color-primary-dark);
+  font-weight: 700;
+  margin-left: 8rpx;
+}
+
 .cat-count {
   font-size: 20rpx;
   color: #888888;
@@ -298,7 +304,8 @@
   font-family: 'Special Elite';
 }
 
-.skill-row.is-occ .skill-name {
+.skill-row.is-occ .skill-name,
+.occ-skill-name {
   color: #835F2D;
 }
 
