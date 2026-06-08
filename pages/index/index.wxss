@@ -44,7 +44,7 @@
 }
 
 .character-list {
-  padding-bottom: 200rpx;
+  padding-bottom: 240rpx;
 }
 
 /* ── 列表底部提示 ── */
@@ -182,28 +182,19 @@
   right: 0;
   z-index: 50;
   display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 24rpx;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #e74c3c;
-  height: calc(108rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
-.delete-hint {
-  font-size: 24rpx;
-  color: rgba(255,255,255,0.85);
-  flex-shrink: 0;
-}
-
 .bottom-bar-delete-btn {
-  flex: 1;
-  height: 88rpx;
+  flex: 3;
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 88rpx;
   background: rgba(0,0,0,0.25);
   border-radius: 16rpx;
   color: #fff;
@@ -216,15 +207,22 @@
   transform: scale(0.97);
 }
 
-.delete-cancel {
-  flex-shrink: 0;
-  height: 88rpx;
+.delete-cancel-btn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 20rpx;
-  color: rgba(255,255,255,0.9);
-  font-size: 28rpx;
+  height: 88rpx;
+  background: rgba(0,0,0,0.25);
+  border-radius: 16rpx;
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.delete-cancel-btn:active {
+  opacity: 0.85;
+  transform: scale(0.97);
 }
 .empty-state {
   margin-top: 160rpx;
@@ -260,10 +258,22 @@
   right: 0;
   z-index: 50;
   display: flex;
-  gap: 16rpx;
+  flex-direction: column;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #252533;
+}
+
+.bottom-bar-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.bottom-bar-tip {
+  text-align: center;
+  padding-top: 8rpx;
+  font-size: 22rpx;
+  color: rgba(255,255,255,0.45);
 }
 
 .bottom-bar-create {
@@ -408,7 +418,7 @@
 .card-top {
   position: absolute;
   top: 0; left: 0; right: 0;
-  padding: 60rpx 28rpx 12rpx;
+  padding: 50rpx 28rpx 12rpx;
   box-sizing: border-box;
   z-index: 2;
 }
@@ -434,10 +444,10 @@
 }
 
 .card-meta {
-  font-size: 26rpx;
+  font-size: 30rpx;
   color: #7E4911;
   line-height: 1.4;
-  margin-top: 20rpx;
+  margin-top: 0rpx;
 }
 
 .card-stats {
@@ -446,7 +456,7 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 0 28rpx 16rpx;
+  padding: 0 28rpx 6rpx;
   box-sizing: border-box;
   z-index: 2;
 }

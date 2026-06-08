@@ -14,7 +14,8 @@ Page({
     deleteMode: false,
     deleteTargetId: '',
     deleteTargetName: '',
-    bgImage: '',
+    bgImage: 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/bg.jpg',
+    cardBgImage: 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/mingce.png',
     scrollViewHeight: 0    // scroll-view 精确高度（px）
   },
 
@@ -23,11 +24,14 @@ Page({
     const navHeight = sys.platform === 'android' ? 48 : 44
     const statusBarHeight = sys.statusBarHeight
     const navBarHeight = statusBarHeight + navHeight
+    // scroll-view 填满屏幕，导航栏和底部栏都是 fixed 叠在上面
+    const scrollViewHeight = sys.windowHeight
 
     this.setData({
       statusBarHeight,
       navHeight,
-      navBarHeight
+      navBarHeight,
+      scrollViewHeight
     })
     this.loadList()
 

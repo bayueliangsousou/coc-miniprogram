@@ -333,10 +333,10 @@ const SKILLS = [
   { name: '魅惑', baseValue: 15, category: '社交' },
   { name: '恐吓', baseValue: 15, category: '社交' },
   { name: '说服', baseValue: 10, category: '社交' },
-  { name: '心理学', baseValue: 10, category: '社交' },
 
   // 知识类
   { name: '神秘学', baseValue: 5, category: '知识' },
+  { name: '心理学', baseValue: 10, category: '知识' },
   { name: '历史', baseValue: 5, category: '知识' },
   { name: '法律', baseValue: 5, category: '知识' },
   { name: '会计', baseValue: 5, category: '知识' },
