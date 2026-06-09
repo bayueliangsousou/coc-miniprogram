@@ -33,24 +33,6 @@
 
   <scroll-view scroll-y class="skills-scroll" scroll-into-view="{{scrollToSkill}}" scroll-with-animation>
 
-  <!-- 社会信用评级 -->
-  <view class="credit-rating-section" wx:if="{{creditRatingRange}}">
-    <view class="credit-rating-header">
-      <text class="credit-rating-title {{creditRatingError ? 'credit-rating-error-text' : ''}}">社会信用评级</text>
-      <view class="credit-rating-right">
-        <input
-          class="credit-rating-input {{creditRatingError ? 'credit-rating-input-error' : ''}}"
-          type="number"
-          value="{{creditRatingValue}}"
-          bindinput="onCreditRatingInput"
-          bindblur="onCreditRatingBlur"
-          placeholder="0"
-        />
-        <text class="credit-rating-range {{creditRatingError ? 'credit-rating-error-text' : ''}}">{{creditRatingRange[0]}} — {{creditRatingRange[1]}}</text>
-      </view>
-    </view>
-  </view>
-
   <!-- 搜索 -->
   <view class="search-bar">
     <text class="search-icon">🔍</text>
@@ -66,6 +48,24 @@
   <!-- 职业技能提示 -->
   <view class="occ-hint" wx:if="{{occupationSkills.length > 0}}">
     <text>★ 金色标记为职业技能</text>
+  </view>
+
+  <!-- 社会信用评级（放在调查分类上方） -->
+  <view class="credit-rating-section" wx:if="{{creditRatingRange}}">
+    <view class="credit-rating-header">
+      <text class="credit-rating-title {{creditRatingError ? 'credit-rating-error-text' : ''}}">社会信用评级</text>
+      <view class="credit-rating-right">
+        <input
+          class="credit-rating-input {{creditRatingError ? 'credit-rating-input-error' : ''}}"
+          type="number"
+          value="{{creditRatingValue}}"
+          bindinput="onCreditRatingInput"
+          bindblur="onCreditRatingBlur"
+          placeholder="0"
+        />
+        <text class="credit-rating-range {{creditRatingError ? 'credit-rating-error-text' : ''}}">{{creditRatingRange[0]}} — {{creditRatingRange[1]}}</text>
+      </view>
+    </view>
   </view>
 
   <!-- 技能分类列表 -->

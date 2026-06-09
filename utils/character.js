@@ -250,6 +250,10 @@ function calcSkillPoints(character, extraOccSkills = []) {
   let occRemaining = occTotal - occUsed
   let intRemaining = intTotal - intUsed
 
+  // 保存原始剩余（截断前），用于前端实时截断判断
+  const rawOccRemaining = occRemaining
+  const rawIntRemaining = intRemaining
+
   // 如果兴趣点超支，尝试从职业点"借"
   if (intRemaining < 0 && occRemaining > 0) {
     const borrow = Math.min(occRemaining, Math.abs(intRemaining))
@@ -275,10 +279,12 @@ function calcSkillPoints(character, extraOccSkills = []) {
   return {
     occTotal,        // 职业技能总点数
     occUsed: finalOccUsed,         // 职业技能已用
-    occRemaining,    // 职业技能剩余
+    occRemaining,    // 职业技能剩余（截断后，>=0）
     intTotal,        // 兴趣技能总点数
     intUsed: finalIntUsed,         // 兴趣技能已用
-    intRemaining,    // 兴趣技能剩余
+    intRemaining,    // 兴趣技能剩余（截断后，>=0）
+    rawOccRemaining, // 职业技能原始剩余（未截断，可能为负）
+    rawIntRemaining, // 兴趣技能原始剩余（未截断，可能为负）
     total: occTotal + intTotal,  // 总点数
     used: finalOccUsed + finalIntUsed,     // 总已用
     remaining: occRemaining + intRemaining,  // 总剩余

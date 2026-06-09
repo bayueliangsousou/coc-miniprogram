@@ -230,7 +230,7 @@ const OCCUPATIONS = [
     desc: '会计师可能在企业工作或作为自由会计师，为个体经营者和企业客户担任顾问。',
     creditRating: [30, 70],
     pointFormula: 'EDU × 4',
-    skills: ['会计', '法律', '图书馆使用', '聆听', '说服', '侦查', '点一门技能', '信用评级']
+    skills: ['会计', '法律', '图书馆使用', '聆听', '说服', '调查', '点一门技能', '信用评级']
   },
   {
     id: 'animal_trainer',
@@ -246,7 +246,7 @@ const OCCUPATIONS = [
     desc: '利用计算机和网络进行干扰或破坏以达成目的的技术人员。',
     creditRating: [10, 70],
     pointFormula: 'EDU × 4',
-    skills: ['计算机', '电气维修', '电子学', '图书馆使用', '侦查', '一项社交技能（取悦、话术、恐吓、说服）', '点一门技能', '信用评级']
+    skills: ['计算机', '电气维修', '电子学', '图书馆使用', '调查', '一项社交技能（取悦、话术、恐吓、说服）', '点一门技能', '信用评级']
   },
   {
     id: 'programmer',
@@ -254,7 +254,7 @@ const OCCUPATIONS = [
     desc: '设计、编写、测试、调试和维护计算机程序源代码的职业。',
     creditRating: [10, 70],
     pointFormula: 'EDU × 4',
-    skills: ['计算机', '电气维修', '电子学', '图书馆使用', '科学（数学）', '侦查', '点一门技能', '信用评级']
+    skills: ['计算机', '电气维修', '电子学', '图书馆使用', '科学（数学）', '调查', '点一门技能', '信用评级']
   },
   {
     id: 'idol',
@@ -270,7 +270,7 @@ const OCCUPATIONS = [
     desc: '犯罪组织的兵卒，被犯罪组织豢养。',
     creditRating: [5, 30],
     pointFormula: 'EDU × 2 + STR × 2',
-    skills: ['驾驶（汽车）', '格斗（斗殴）', '射击', '一项社交技能（取悦、话术、恐吓、说服）', '心理学', '潜行', '侦查', '信用评级']
+    skills: ['驾驶（汽车）', '格斗（斗殴）', '射击', '一项社交技能（取悦、话术、恐吓、说服）', '心理学', '潜行', '调查', '信用评级']
   },
   {
     id: 'athlete',
@@ -320,13 +320,13 @@ const SKILLS = [
   { name: '爆破', baseValue: 1, category: '战斗' },
   { name: '闪避', baseValue: 0, category: '战斗', note: '等于DEX/2' },
 
-  // 侦查类
-  { name: '侦察', baseValue: 25, category: '侦查' },
-  { name: '聆听', baseValue: 20, category: '侦查' },
-  { name: '追踪', baseValue: 10, category: '侦查' },
-  { name: '图书馆使用', baseValue: 20, category: '侦查' },
-  { name: '导航', baseValue: 10, category: '侦查' },
-  { name: '乔装', baseValue: 5, category: '侦查' },
+  // 调查类
+  { name: '侦察', baseValue: 25, category: '调查' },
+  { name: '聆听', baseValue: 20, category: '调查' },
+  { name: '追踪', baseValue: 10, category: '调查' },
+  { name: '图书馆使用', baseValue: 20, category: '调查' },
+  { name: '导航', baseValue: 10, category: '调查' },
+  { name: '乔装', baseValue: 5, category: '调查' },
 
   // 社交类
   { name: '话术', baseValue: 5, category: '社交' },

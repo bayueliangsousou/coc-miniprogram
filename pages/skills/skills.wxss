@@ -240,8 +240,8 @@
   align-items: center;
   padding: 16rpx 12rpx;
   background: rgba(201,168,76,0.08);
-  border-radius: var(--radius-sm);
-  margin-bottom: 4rpx;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  margin-bottom: 0;
   margin-top: 12rpx;
 }
 

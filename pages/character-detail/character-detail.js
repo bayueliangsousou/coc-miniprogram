@@ -31,7 +31,7 @@ function dbNeg(db) {
 // ─── 技能分类映射（CoC 七版 → 归组展示）─────────────────────────────
 // coc-data.js 里的 category → UI 展示分组
 const SKILL_GROUP_MAP = {
-  '侦查':   { key: 'detect',    label: '🔍 侦查',       order: 0 },
+  '调查':   { key: 'detect',    label: '🔍 调查',       order: 0 },
   '社交':   { key: 'social',    label: '💬 社交',       order: 1 },
   '知识':   { key: 'knowledge', label: '📚 知识',       order: 2 },
   '技术':   { key: 'tech',      label: '🛠 技术',       order: 3 },

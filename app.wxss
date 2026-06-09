@@ -24,9 +24,9 @@ page {
   box-sizing: border-box;
 }
 
-/* 移除 * 选择器，小程序不支持 */
-view, text, image, button, input, textarea, scroll-view, swiper, swiper-item {
-  box-sizing: border-box;
+/* 全局输入框圆角统一 12px */
+input {
+  border-radius: 24rpx;
 }
 
 /* 通用容器 */
