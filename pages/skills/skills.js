@@ -221,9 +221,12 @@ Page({
     })
 
     const tempCharacter = { ...character, skills: tempSkills }
-    const extraOccSkills = skillCategories.flatMap(cat =>
-      cat.skills.filter(sk => sk.displayAsOcc).map(sk => sk.name)
-    )
+    const extraOccSkills = []
+    skillCategories.forEach(cat => {
+      cat.skills.forEach(sk => {
+        if (sk.displayAsOcc) extraOccSkills.push(sk.name)
+      })
+    })
     const points = calcSkillPoints(tempCharacter, extraOccSkills)
 
     this.setData({ points })
@@ -242,9 +245,9 @@ Page({
     occ.skills.forEach(skill => {
       // 解析 "点X门技能"
       if (skill.includes('点') && skill.includes('门技能')) {
-        const match = skill.match(/点(\d+)门技能/)
+        const match = skill.match(/点([一二三四五六七八九十\d]+)门技能/)
         if (match) {
-          optionalCount = parseInt(match[1])
+          optionalCount = this.parseChineseNum(match[1])
         }
       } else if (skill.includes('社交技能')) {
         // 解析 "一项社交技能（取悦、话术、恐吓、说服）"
@@ -422,9 +425,12 @@ Page({
     skillCategories.forEach(cat => {
       cat.skills.forEach(sk => { tempSkills[sk.name] = sk.current })
     })
-    const extraOccSkills = skillCategories.flatMap(cat =>
-      cat.skills.filter(sk => sk.displayAsOcc).map(sk => sk.name)
-    )
+    const extraOccSkills = []
+    skillCategories.forEach(cat => {
+      cat.skills.forEach(sk => {
+        if (sk.displayAsOcc) extraOccSkills.push(sk.name)
+      })
+    })
     const newPoints = calcSkillPoints({ ...character, skills: tempSkills }, extraOccSkills)
 
     this.setData({ skillCategories, points: newPoints, invalidSkills: newInvalidSkills })
@@ -477,7 +483,12 @@ Page({
       }))
       // 计算更新后的 displayAsOcc
       const updatedCats = this.updateSkillDisplayState(simulatedCats)
-      const updatedSkill = updatedCats.flatMap(c => c.skills).find(sk => sk.name === name)
+      let updatedSkill = null
+      updatedCats.forEach(c => {
+        c.skills.forEach(sk => {
+          if (sk.name === name) updatedSkill = sk
+        })
+      })
       if (updatedSkill && updatedSkill.displayAsOcc) {
         max = 85
       }
@@ -557,9 +568,12 @@ Page({
     skillCategories.forEach(cat => {
       cat.skills.forEach(sk => { tempSkills[sk.name] = sk.current })
     })
-    const extraOccSkills = skillCategories.flatMap(cat =>
-      cat.skills.filter(sk => sk.displayAsOcc).map(sk => sk.name)
-    )
+    const extraOccSkills = []
+    skillCategories.forEach(cat => {
+      cat.skills.forEach(sk => {
+        if (sk.displayAsOcc) extraOccSkills.push(sk.name)
+      })
+    })
     const newPoints = calcSkillPoints({ ...character, skills: tempSkills }, extraOccSkills)
 
     // 更新错误标记（支持多个技能同时标红）
