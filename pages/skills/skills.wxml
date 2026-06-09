@@ -113,6 +113,7 @@
               bindblur="onSkillBlur"
               bindfocus="onSkillFocus"
               placeholder="0"
+              adjust-position="{{false}}"
             />
             <view class="skill-thresholds">
               <text class="threshold">{{sk.hard}}</text>

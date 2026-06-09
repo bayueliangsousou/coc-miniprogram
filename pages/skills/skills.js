@@ -402,13 +402,13 @@ Page({
   },
 
   // ── 输入中：实时截断 + 标红 ──
+  // 步骤：1.先用剩余点数截断  2.点数够的话再用50/85上限校验
   onSkillInput(e) {
     const { name } = e.currentTarget.dataset
     let value = parseInt(e.detail.value) || 0
 
     const { skillCategories: oldCats, points, character, invalidSkills } = this.data
 
-    // 找到当前技能
     let baseValue = 0, oldCurrent = 0, isLocked = false
     oldCats.forEach(cat => {
       cat.skills.forEach(sk => {
@@ -420,20 +420,14 @@ Page({
       })
     })
 
+    const oldUsed = Math.max(0, oldCurrent - baseValue)
     let finalValue = value
     let error = ''
+    let pointsTriggered = false
 
-    // 校验1：不能低于基础值
-    if (value < baseValue) {
-      finalValue = baseValue
-      error = `不能低于基础值 ${baseValue}`
-    }
-
-    // 校验2：超过技能上限（50/85）
-    let max = 50
-    if (isLocked) {
-      max = 85
-    } else {
+    // 判断是否为职业技能
+    let isOccLevel = isLocked
+    if (!isLocked) {
       const simulatedCats = oldCats.map(cat => ({
         ...cat,
         skills: cat.skills.map(sk =>
@@ -445,39 +439,43 @@ Page({
       updatedCats.forEach(c =>
         c.skills.forEach(sk => { if (sk.name === name) updatedSkill = sk })
       )
-      if (updatedSkill && updatedSkill.displayAsOcc) max = 85
+      if (updatedSkill && updatedSkill.displayAsOcc) isOccLevel = true
     }
 
-    if (!error && value > max) {
-      finalValue = max
-      error = `${max === 85 ? '职业' : '兴趣'}技能最大${max}点`
+    const maxSkillCap = isOccLevel ? 85 : 50
+
+    // 步骤1：下限校验
+    if (value < baseValue) {
+      finalValue = baseValue
+      error = `不能低于基础值 ${baseValue}`
+      pointsTriggered = true
     }
 
-    // 校验3：点数不足时截断
-    const oldUsed = Math.max(0, oldCurrent - baseValue)
-    const newUsed = Math.max(0, finalValue - baseValue)
-    const delta = newUsed - oldUsed
-
-    if (!error && delta > 0) {
-      const isOccLevel = max === 85
+    // 步骤2：先用剩余点数截断（剩多少用多少）
+    if (!pointsTriggered) {
       if (isOccLevel) {
-        // 职业技能：可用 = 职业剩余 + 兴趣剩余（兴趣可挪用）
-        const totalRemaining = points.rawOccRemaining + points.rawIntRemaining
-        if (delta > totalRemaining) {
-          const maxDelta = Math.max(0, totalRemaining)
-          finalValue = baseValue + oldUsed + maxDelta
-          if (finalValue > max) finalValue = max
+        const available = Math.max(0, points.rawOccRemaining + points.rawIntRemaining)
+        const maxByPoints = baseValue + oldUsed + available
+        if (value > maxByPoints) {
+          finalValue = maxByPoints
           error = '技能点不足'
+          pointsTriggered = true
         }
       } else {
-        // 兴趣技能：只能用兴趣点
-        if (delta > points.rawIntRemaining) {
-          const maxDelta = Math.max(0, points.rawIntRemaining)
-          finalValue = baseValue + oldUsed + maxDelta
-          if (finalValue > max) finalValue = max
+        const available = Math.max(0, points.rawIntRemaining)
+        const maxByPoints = baseValue + oldUsed + available
+        if (value > maxByPoints) {
+          finalValue = maxByPoints
           error = '兴趣技能点不足'
+          pointsTriggered = true
         }
       }
+    }
+
+    // 步骤3：剩余点数没触发，再用技能上限50/85校验
+    if (!pointsTriggered && value > maxSkillCap) {
+      finalValue = maxSkillCap
+      error = `${isOccLevel ? '职业' : '兴趣'}技能最大${maxSkillCap}点`
     }
 
     // 更新值

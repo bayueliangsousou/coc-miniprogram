@@ -16,7 +16,7 @@
   height: 0;
   min-height: 0;
   padding: 0 24rpx;
-  padding-bottom: 140rpx;
+  padding-bottom: 240rpx;
 }
 
 /* 社会信用评级 */
