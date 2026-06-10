@@ -401,12 +401,57 @@ Page({
     this.setData({ creditRatingValue: value, character: newCharacter }, () => this.calcPoints())
   },
 
-  // ── 输入中：实时截断 + 标红 ──
+  // ── 输入中：只更新显示值，不截断不校验（失焦时统一处理）──
   onSkillInput(e) {
     const { name } = e.currentTarget.dataset
-    let value = parseInt(e.detail.value) || 0
+    const value = parseInt(e.detail.value) || 0
 
-    const { skillCategories: oldCats, points, character, invalidSkills } = this.data
+    const { skillCategories: oldCats, character } = this.data
+
+    // 找到当前技能的基础值
+    let baseValue = 0, oldCurrent = 0
+    oldCats.forEach(cat => {
+      cat.skills.forEach(sk => {
+        if (sk.name === name) {
+          baseValue = sk.baseValue
+          oldCurrent = sk.current
+        }
+      })
+    })
+
+    // 基础值是硬下限，输入中仅此一项保护
+    const current = Math.max(value, baseValue)
+    const thresholds = calcSkillThresholds(current)
+
+    const skillCategories = oldCats.map(cat => ({
+      ...cat,
+      skills: cat.skills.map(sk => {
+        if (sk.name !== name) return sk
+        return { ...sk, current, hard: thresholds.hard, extreme: thresholds.extreme }
+      })
+    }))
+
+    // 轻量刷新剩余点数（使用编辑前的 displayAsOcc，不重排序）
+    const tempSkills = {}
+    const extraOccSkills = []
+    oldCats.forEach(cat => {
+      cat.skills.forEach(sk => {
+        // 被编辑技能的当前值已在上方更新
+        const skillName = sk.name === name ? name : sk.name
+        tempSkills[sk.name] = sk.name === name ? current : sk.current
+        if (sk.displayAsOcc) extraOccSkills.push(sk.name)
+      })
+    })
+    const points = calcSkillPoints({ ...character, skills: tempSkills }, extraOccSkills)
+
+    this.setData({ skillCategories, points })
+  },
+
+  // ── 输入框失焦时：统一执行校验 + 截断 + 标红 ──
+  onSkillBlur(e) {
+    const { name } = e.currentTarget.dataset
+
+    const { skillCategories: oldCats, points, character, occConfig, invalidSkills } = this.data
 
     // 找到当前技能
     let baseValue = 0, oldCurrent = 0, isLocked = false
@@ -420,67 +465,62 @@ Page({
       })
     })
 
-    let finalValue = value
+    const inputValue = oldCurrent
+    let finalValue = inputValue
     let error = ''
 
     // 校验1：不能低于基础值
-    if (value < baseValue) {
+    if (inputValue < baseValue) {
       finalValue = baseValue
       error = `不能低于基础值 ${baseValue}`
     }
 
-    // 校验2：超过技能上限（50/85）
-    let max = 50
-    if (isLocked) {
-      max = 85
-    } else {
+    // 判断职业/兴趣上限
+    let isOccLevel = isLocked
+    if (!isLocked && occConfig) {
       const simulatedCats = oldCats.map(cat => ({
         ...cat,
         skills: cat.skills.map(sk =>
-          sk.name !== name ? sk : { ...sk, current: value }
+          sk.name !== name ? sk : { ...sk, current: inputValue }
         )
       }))
-      const updatedCats = this.updateSkillDisplayState(simulatedCats, this.data.occConfig)
+      const updatedCats = this.updateSkillDisplayState(simulatedCats, occConfig)
       let updatedSkill = null
       updatedCats.forEach(c =>
         c.skills.forEach(sk => { if (sk.name === name) updatedSkill = sk })
       )
-      if (updatedSkill && updatedSkill.displayAsOcc) max = 85
+      if (updatedSkill && updatedSkill.displayAsOcc) isOccLevel = true
     }
 
-    if (!error && value > max) {
-      finalValue = max
-      error = `${max === 85 ? '职业' : '兴趣'}技能最大${max}点`
-    }
+    const maxSkillCap = isOccLevel ? 85 : 50
 
-    // 校验3：点数不足时截断
-    const oldUsed = Math.max(0, oldCurrent - baseValue)
-    const newUsed = Math.max(0, finalValue - baseValue)
-    const delta = newUsed - oldUsed
-
-    if (!error && delta > 0) {
-      const isOccLevel = max === 85
+    // 校验2：点数不足时截断
+    if (!error && inputValue > baseValue) {
+      const oldUsed = Math.max(0, inputValue - baseValue)
       if (isOccLevel) {
-        // 职业技能：可用 = 职业剩余 + 兴趣剩余（兴趣可挪用）
-        const totalRemaining = points.rawOccRemaining + points.rawIntRemaining
-        if (delta > totalRemaining) {
-          const maxDelta = Math.max(0, totalRemaining)
-          finalValue = baseValue + oldUsed + maxDelta
-          if (finalValue > max) finalValue = max
+        const available = points.rawOccRemaining + points.rawIntRemaining
+        if (oldUsed > available) {
+          finalValue = baseValue + available
+          if (finalValue > maxSkillCap) finalValue = maxSkillCap
           error = '技能点不足'
         }
       } else {
-        // 兴趣技能：只能用兴趣点
-        if (delta > points.rawIntRemaining) {
-          const maxDelta = Math.max(0, points.rawIntRemaining)
-          finalValue = baseValue + oldUsed + maxDelta
-          if (finalValue > max) finalValue = max
+        const available = points.rawIntRemaining
+        if (oldUsed > available) {
+          finalValue = baseValue + available
+          if (finalValue > maxSkillCap) finalValue = maxSkillCap
           error = '兴趣技能点不足'
         }
       }
     }
 
-    // 更新值
+    // 校验3：超过技能上限
+    if (!error && inputValue > maxSkillCap) {
+      finalValue = maxSkillCap
+      error = `${isOccLevel ? '职业' : '兴趣'}技能最大${maxSkillCap}点`
+    }
+
+    // 更新值（含 updateSkillDisplayState 重排序）
     let skillCategories = oldCats.map(cat => ({
       ...cat,
       skills: cat.skills.map(sk => {
@@ -490,7 +530,7 @@ Page({
       })
     }))
 
-    skillCategories = this.updateSkillDisplayState(skillCategories, this.data.occConfig)
+    skillCategories = this.updateSkillDisplayState(skillCategories, occConfig)
 
     // 同步计算剩余点数
     const tempSkills = {}
@@ -514,17 +554,6 @@ Page({
     }
 
     this.setData({ skillCategories, points: newPoints, invalidSkills: newInvalidSkills })
-  },
-
-  // ── 输入框失焦时：清除错误标记 ──
-  onSkillBlur(e) {
-    const { name } = e.currentTarget.dataset
-    const { invalidSkills } = this.data
-    if (invalidSkills[name]) {
-      const newInvalidSkills = { ...invalidSkills }
-      delete newInvalidSkills[name]
-      this.setData({ invalidSkills: newInvalidSkills })
-    }
   },
 
   // ── 输入框聚焦时：清除该技能的错误标记 ──
