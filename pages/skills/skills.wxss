@@ -409,6 +409,16 @@
   gap: 8rpx;
 }
 
+.btn-clear {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+
 .dice-icon {
   width: 36rpx;
   height: 36rpx;

@@ -140,8 +140,8 @@
 <!-- 底部保存 -->
 <view class="bottom-bar safe-bottom">
   <view class="bottom-btns">
-    <button class="btn btn-ghost btn-random" bindtap="onRandomDistribute">
-      <text>随机</text>
+    <button class="btn btn-ghost {{isRandomized ? 'btn-clear' : 'btn-random'}}" bindtap="onRandomDistribute">
+      <text>{{isRandomized ? '清除' : '随机'}}</text>
     </button>
     <button class="btn btn-ghost btn-new-skill" bindtap="onShowNewSkill">
       <text>新技能</text>

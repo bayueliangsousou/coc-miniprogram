@@ -39,7 +39,9 @@ Page({
     showNewSkillModal: false,
     newSkillName: '',
     newSkillValue: '',
-    creditRatingError: false
+    creditRatingError: false,
+    isRandomized: false,      // 随机按钮状态：false=随机, true=清除
+    preRandomState: null      // 随机前的快照 { skillCategories, creditRatingValue, character }
   },
 
   onLoad(options) {
@@ -189,7 +191,7 @@ Page({
     })
 
     // 重新计算 displayAsOcc 和 limitText（包含自定义技能）
-    skillCategories = this.updateSkillDisplayState(skillCategories, this.data.occConfig)
+    skillCategories = this.updateSkillDisplayState(skillCategories, occConfig)
 
     // 默认展开所有分类
     const expandedCategories = {}
@@ -203,7 +205,9 @@ Page({
       pointFormula,
       creditRatingRange,
       creditRatingValue,
-      occConfig
+      occConfig,
+      isRandomized: false,
+      preRandomState: null
     })
     // 计算技能点数
     this.calcPoints()
@@ -482,62 +486,56 @@ Page({
     let finalValue = inputValue
     let error = ''
 
-    // 校验1：不能低于基础值
+    // 用当前数据跑一次 updateSkillDisplayState，获取该技能是否拿到职业技能名额
+    let displayAsOcc = false
+    if (occConfig) {
+      const catsWithDisplay = this.updateSkillDisplayState(
+        oldCats.map(cat => ({ ...cat, skills: cat.skills.map(sk => ({ ...sk })) })),
+        occConfig
+      )
+      catsWithDisplay.forEach(cat => {
+        cat.skills.forEach(sk => {
+          if (sk.name === name) displayAsOcc = sk.displayAsOcc
+        })
+      })
+    }
+
+    // 上限：锁定 或 有名额（displayAsOcc）→ 85；否则 兴趣上限50
+    const maxCap = (isLocked || displayAsOcc) ? 85 : 50
+    const capLabel = maxCap === 85 ? '职业' : '兴趣'
+
+    // 校验：不能低于基础值
     if (finalValue < baseValue) {
       finalValue = baseValue
       error = `不能低于基础值 ${baseValue}`
     }
 
-    // 判断职业/兴趣上限
-    let isOccLevel = isLocked
-    if (!isLocked && occConfig) {
-      const simulatedCats = oldCats.map(cat => ({
-        ...cat,
-        skills: cat.skills.map(sk =>
-          sk.name !== name ? sk : { ...sk, current: finalValue }
-        )
-      }))
-      const updatedCats = this.updateSkillDisplayState(simulatedCats, occConfig)
-      let updatedSkill = null
-      updatedCats.forEach(c =>
-        c.skills.forEach(sk => { if (sk.name === name) updatedSkill = sk })
-      )
-      if (updatedSkill && updatedSkill.displayAsOcc) isOccLevel = true
-    }
-
-    const maxCap = isOccLevel ? 85 : 50
-
-    // 校验2：超过技能上限
-    if (!error && finalValue > maxCap) {
-      finalValue = maxCap
-      error = `${isOccLevel ? '职业' : '兴趣'}技能最大${maxCap}点`
-    }
-
-    // 校验3：技能点不足（delta 差量，与 f9cf3cf 一致）
-    if (!error && finalValue > oldValue) {
+    // 校验：不能超过 min(上限, 基础值 + oldUsed + 真正可用池子)
+    // points.remaining 已包含当前技能消耗（onSkillInput 更新过），需加回 currentAlloc，减去 oldUsed
+    if (!error) {
       const oldUsed = Math.max(0, oldValue - baseValue)
-      const newUsed = Math.max(0, finalValue - baseValue)
-      const delta = newUsed - oldUsed
 
-      if (delta > 0) {
-        if (isOccLevel) {
-          // 职业技能：可用 = 职业剩余 + 兴趣剩余（兴趣可挪用）
-          const totalRemaining = points.rawOccRemaining + points.rawIntRemaining
-          if (delta > totalRemaining) {
-            const maxDelta = Math.max(0, totalRemaining)
-            finalValue = baseValue + oldUsed + maxDelta
-            if (finalValue > maxCap) finalValue = maxCap
-            error = '技能点不足'
-          }
-        } else {
-          // 兴趣技能：只能用兴趣点
-          if (delta > points.rawIntRemaining) {
-            const maxDelta = Math.max(0, points.rawIntRemaining)
-            finalValue = baseValue + oldUsed + maxDelta
-            if (finalValue > maxCap) finalValue = maxCap
-            error = '兴趣技能点不足'
-          }
-        }
+      // 找到当前技能在 oldCats 中的 current，用于还原被 points 多扣的消费
+      let currentAlloc = 0
+      oldCats.forEach(cat => {
+        cat.skills.forEach(sk => {
+          if (sk.name === name) currentAlloc = Math.max(0, (sk.current || 0) - baseValue)
+        })
+      })
+
+      // poolForThis = 池子剩余 + 当前技能已扣 - 编辑前已扣 = 真正可用于此次增量的点数
+      let poolForThis = 0
+      if (isLocked || displayAsOcc) {
+        poolForThis = points.occRemaining + points.intRemaining + currentAlloc - oldUsed
+      } else {
+        poolForThis = points.intRemaining + currentAlloc - oldUsed
+      }
+      const maxPossible = baseValue + oldUsed + poolForThis
+      const maxAllowed = Math.min(maxCap, maxPossible)
+
+      if (finalValue > maxAllowed) {
+        finalValue = maxAllowed
+        error = maxAllowed < maxCap ? '技能点不足' : `${capLabel}技能最大${maxCap}点`
       }
     }
 
@@ -581,11 +579,10 @@ Page({
     this.setData({ skillCategories, points: newPoints, invalidSkills: newInvalidSkills, _editingStart: newEditingStart })
   },
 
-  // ── 输入框聚焦时：清除该技能的错误标记 ──
-  // ── 聚焦时：记录编辑前的值，供 onBlur delta 计算 ──
+  // ── 聚焦时：记录编辑前的值，供 onBlur delta 计算；清空全部红色框 ──
   onSkillFocus(e) {
     const { name } = e.currentTarget.dataset
-    const { invalidSkills, skillCategories, _editingStart } = this.data
+    const { skillCategories, _editingStart } = this.data
 
     // 记录编辑前的值
     let editingStart = _editingStart || {}
@@ -595,23 +592,33 @@ Page({
       })
     })
 
-    // 清除当前技能的错误标记
-    if (invalidSkills[name]) {
-      const newInvalidSkills = { ...invalidSkills }
-      delete newInvalidSkills[name]
-      this.setData({ invalidSkills: newInvalidSkills, _editingStart: editingStart })
-    } else {
-      this.setData({ _editingStart: editingStart })
-    }
+    // 清除所有技能错误标记（永远只有一个红色框，且只在上次操作的框上）
+    this.setData({ invalidSkills: {}, _editingStart: editingStart })
   },
 
-  // 随机分配技能点
+  // 随机分配技能点（点击后按钮变「清除」，再点还原）
   onRandomDistribute() {
+    const { isRandomized } = this.data
+
+    // 已是随机状态 → 执行清除
+    if (isRandomized) {
+      return this._onClearRandom()
+    }
+
     const { points, skillCategories } = this.data
     if (!points || (points.occTotal === 0 && points.intTotal === 0)) {
       wx.showToast({ title: '请先选择职业并设置属性', icon: 'none' })
       return
     }
+
+    // 保存随机前的快照
+    this.setData({
+      preRandomState: {
+        skillCategories: JSON.parse(JSON.stringify(skillCategories)),
+        creditRatingValue: this.data.creditRatingValue,
+        character: JSON.parse(JSON.stringify(this.data.character))
+      }
+    })
 
     wx.showModal({
       title: '随机分配技能点',
@@ -658,7 +665,7 @@ Page({
 
         // 第二步：随机分配职业技能点（只分给职业技能）
         if (occLeft > 0 && occSkills.length > 0) {
-          occLeft = this._randomDistributePoints(cats, occSkills, occLeft)
+          occLeft = this._randomDistributePoints(cats, occSkills, occLeft, true)
         }
 
         // 第三步：随机分配兴趣技能点（只分给非职业技能）
@@ -688,9 +695,38 @@ Page({
         const newSkills = { ...character.skills, '信用评级': newCreditRating }
         const newCharacter = { ...character, skills: newSkills }
 
-        this.setData({ skillCategories: cats, creditRatingValue: newCreditRating, character: newCharacter, invalidSkills: {}, creditRatingError: false }, () => {
+        this.setData({ skillCategories: cats, creditRatingValue: newCreditRating, character: newCharacter, invalidSkills: {}, creditRatingError: false, isRandomized: true }, () => {
           this.calcPoints()
-          wx.showToast({ title: '随机分配完成！', icon: 'success' })
+          wx.showToast({ title: '随机分配完成！可点清除还原', icon: 'success' })
+        })
+      }
+    })
+  },
+
+  // 清除随机：还原到随机前的状态
+  _onClearRandom() {
+    const { preRandomState } = this.data
+    if (!preRandomState) return
+
+    wx.showModal({
+      title: '清除随机分配',
+      content: '将还原到随机之前的技能数值，确定？',
+      confirmText: '还原',
+      confirmColor: '#e74c3c',
+      success: (res) => {
+        if (!res.confirm) return
+
+        this.setData({
+          skillCategories: preRandomState.skillCategories,
+          creditRatingValue: preRandomState.creditRatingValue,
+          character: preRandomState.character,
+          isRandomized: false,
+          preRandomState: null,
+          invalidSkills: {},
+          creditRatingError: false
+        }, () => {
+          this.calcPoints()
+          wx.showToast({ title: '已还原！', icon: 'success' })
         })
       }
     })
@@ -844,10 +880,10 @@ Page({
       return
     }
 
-    this._doSave(character, skillCategories, occConfig)
+    this._doSave(character, skillCategories)
   },
 
-  _doSave(character, skillCategories, occConfig) {
+  _doSave(character, skillCategories) {
     // 收集所有技能值
     const skills = {}
     skillCategories.forEach(cat => {
