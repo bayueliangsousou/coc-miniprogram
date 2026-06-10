@@ -485,6 +485,7 @@ Page({
     const inputValue = parseInt(e.detail.value) || 0
     let finalValue = inputValue
     let error = ''
+    let pointsTriggered = false
 
     // 用当前数据跑一次 updateSkillDisplayState，获取该技能是否拿到职业技能名额
     let displayAsOcc = false
