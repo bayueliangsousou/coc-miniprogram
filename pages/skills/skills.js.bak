@@ -12,6 +12,7 @@ Page({
     searchText: '',
     searchMatches: [],   // 匹配的技能名列表，按分类顺序排列
     searchIndex: -1,     // 当前定位到第几个（0-based），-1表示无定位
+    scrollToSkill: '',   // scroll-into-view 目标 id
     expandedCategories: {}, // {category: true/false}
     pointFormula: '',      // 职业技能点数公式
     points: {             // 技能点数信息（与 calcSkillPoints 返回值匹配）
@@ -40,15 +41,7 @@ Page({
     newSkillValue: '',
     creditRatingError: false,
     isRandomized: false,      // 随机按钮状态：false=随机, true=清除
-    preRandomState: null,     // 随机前的快照 { skillCategories, creditRatingValue, character }
-    // 底纹输入功能
-    focusedSkill: '',         // 当前聚焦的技能名
-    ghostValue: 0,            // 聚焦前旧值，用于底纹显示
-    // 自定义数字键盘
-    numpadVisible: false,
-    numpadTarget: '',         // 当前编辑的技能名
-    numpadValue: '',          // 键盘输入值（字符串）
-    numpadOldValue: 0,        // 编辑前的值
+    preRandomState: null      // 随机前的快照 { skillCategories, creditRatingValue, character }
   },
 
   onLoad(options) {
@@ -186,8 +179,8 @@ Page({
       })
     })
 
-    // 固定分类展示顺序（战斗类放最前面）
-    const CATEGORY_ORDER = ['战斗', '调查', '社交', '知识', '技术', '运动', '科学', '艺术', '其他']
+    // 固定分类展示顺序
+    const CATEGORY_ORDER = ['调查', '社交', '知识', '技术', '运动', '科学', '艺术', '战斗', '其他']
     skillCategories.sort((a, b) => {
       const idxA = CATEGORY_ORDER.indexOf(a.category)
       const idxB = CATEGORY_ORDER.indexOf(b.category)
@@ -232,8 +225,6 @@ Page({
         tempSkills[sk.name] = sk.current
       })
     })
-    // 补回信用评级（不在 skillCategories 中，但消耗职业点）
-    tempSkills['信用评级'] = character.skills['信用评级'] || 0
 
     const tempCharacter = { ...character, skills: tempSkills }
     const extraOccSkills = []
@@ -311,7 +302,7 @@ Page({
       const limit = occConfig.categoryLimits[cat.category]
       if (limit) {
         const over50 = cat.skills
-          .filter(sk => sk.current > 50 && !sk.isLocked && sk.name !== '母语')
+          .filter(sk => sk.current > 50 && !sk.isLocked)
           .sort((a, b) => b.current - a.current)
         over50.slice(0, limit).forEach(sk => categoryOccupied.add(sk.name))
       }
@@ -323,7 +314,7 @@ Page({
       const allOver50 = []
       skillCategories.forEach(cat => {
         cat.skills.forEach(sk => {
-          if (sk.current > 50 && !sk.isLocked && !categoryOccupied.has(sk.name) && sk.name !== '母语') {
+          if (sk.current > 50 && !sk.isLocked && !categoryOccupied.has(sk.name)) {
             allOver50.push(sk)
           }
         })
@@ -379,18 +370,7 @@ Page({
     // 输入中只更新显示值，不做校验拦截
     const raw = e.detail.value
     const value = raw === '' ? '' : parseInt(raw)
-
-    // 同步到 character.skills 让 calcPoints 感知消耗
-    const { character } = this.data
-    if (character) {
-      const skills = { ...character.skills, '信用评级': value === '' ? 0 : value }
-      const newCharacter = { ...character, skills }
-      this.setData({ creditRatingValue: value, creditRatingError: false, character: newCharacter }, () => {
-        this.calcPoints()
-      })
-    } else {
-      this.setData({ creditRatingValue: value, creditRatingError: false })
-    }
+    this.setData({ creditRatingValue: value, creditRatingError: false })
   },
 
   // 社会信用评级失去焦点时校验修正
@@ -435,14 +415,11 @@ Page({
   onSkillInput(e) {
     const { name } = e.currentTarget.dataset
 
-    // 🔍 调试日志：记录输入开始时的状态
-    console.log('[onSkillInput]', name, '| _lastScrollTop:', this._lastScrollTop, '| value:', e.detail.value)
-
     // 1. 过滤用户输入：只允许数字，最多2位
     let filtered = String(e.detail.value).replace(/[^\d]/g, '').slice(0, 2)
     const value = parseInt(filtered) || 0
 
-    const { skillCategories: oldCats, character, occConfig, ghostValue } = this.data
+    const { skillCategories: oldCats, character, occConfig } = this.data
 
     // 2. 找到当前技能在嵌套数组中的索引
     let catIdx = -1, skIdx = -1
@@ -476,11 +453,10 @@ Page({
     })
     const points = calcSkillPoints({ ...character, skills: tempSkills }, extraOccSkills)
 
-    // 6. 更新点数 + 路径更新当前技能值 + 首次输入时清除底纹（一次 setData 避免闪烁）
+    // 6. 更新点数 + 路径更新当前技能值（保持 data 与输入框同步，避免重渲染覆盖）
     this.setData({
       points,
-      [`skillCategories[${catIdx}].skills[${skIdx}].current`]: value,
-      ghostValue: 0  // 用户已输入，清除底纹
+      [`skillCategories[${catIdx}].skills[${skIdx}].current`]: value
     })
 
     // 7. return 过滤后的字符串，框架原生替换（不触发 setData 重渲染）
@@ -488,43 +464,31 @@ Page({
   },
 
   // ── 失焦时：统一执行校验 + 截断 + 标红（delta 差量） ──
-  // 保留此方法用于底层兼容（新建技能弹窗等场景仍使用原生 input）
   onSkillBlur(e) {
     const { name } = e.currentTarget.dataset
-    const inputValue = parseInt(e.detail.value) || 0
-    const { ghostValue, skillCategories: oldCats } = this.data
 
-    // 底纹恢复：聚焦后未输入就失焦 → 还原旧值
-    if (inputValue === 0 && ghostValue > 0) {
-      this._updateSkillValue(name, ghostValue)
-      let ci = -1, si = -1
-      oldCats.forEach((c, i) => c.skills.forEach((_, j) => { if (c.skills[j].name === name) { ci = i; si = j } }))
-      const setDataObj = { focusedSkill: '', ghostValue: 0 }
-      if (ci >= 0) setDataObj[`skillCategories[${ci}].skills[${si}].current`] = ghostValue
-      this.setData(setDataObj)
-      return
-    }
-
-    this._validateAndApply(name, inputValue)
-  },
-
-  // 共享校验：数字键盘「确定」和原生 onSkillBlur 共用此方法
-  _validateAndApply(name, inputValue) {
-    const { skillCategories: oldCats, character, occConfig, invalidSkills, _editingStart } = this.data
+    const { skillCategories: oldCats, points, character, occConfig, invalidSkills, _editingStart } = this.data
 
     // 找到当前技能
     let baseValue = 0, isLocked = false
     oldCats.forEach(cat => {
       cat.skills.forEach(sk => {
-        if (sk.name === name) { baseValue = sk.baseValue; isLocked = sk.isLocked }
+        if (sk.name === name) {
+          baseValue = sk.baseValue
+          isLocked = sk.isLocked
+        }
       })
     })
 
+    // 编辑前的值（由 onSkillFocus 保存）
     const oldValue = (_editingStart && _editingStart[name]) || baseValue
+    const inputValue = parseInt(e.detail.value) || 0
     let finalValue = inputValue
     let error = ''
+    let pointsTriggered = false
 
     // ── 用 oldValue 状态跑 updateSkillDisplayState，判定：剩余自选名额 > 0？──
+    // 关键：排除当前技能计数，只看「别人占了多少座」
     const catsAtOld = oldCats.map(cat => ({
       ...cat,
       skills: cat.skills.map(sk => ({
@@ -537,6 +501,7 @@ Page({
     const occSkillNames = []
     oldDisplayCats.forEach(cat => {
       cat.skills.forEach(sk => {
+        // 只数「自选」的职业技能（isLocked 的锁定技能不占自选名额）
         if (sk.displayAsOcc && !sk.isLocked) {
           occSkillNames.push(sk.name)
           if (sk.name !== name) occupiedExcludingThis++
@@ -550,6 +515,16 @@ Page({
     const maxCap = isOcc ? 85 : 50
 
     // ── 用 baseValue 状态重算可用点数池子 ──
+    // 核心逻辑（按你的描述）：
+    //   职业技能：基础值 + 职业点够到85 → 生效85
+    //             不够 → 基础值 + 职业点 + 兴趣点够到85 → 生效85
+    //             还不够 → 生效 基础值+职业点+兴趣点，框变红
+    //   兴趣技能：基础值 + 兴趣点够到50 → 生效50
+    //             不够 → 生效 基础值+兴趣点，框变红
+    //   输入值小于基础值 → 生效基础值（硬下限，不标红）
+    //
+    // 实现方式：把本技能设回 baseValue（相当于把已分配点数返还池子），
+    // 用 baseValue 状态跑 calcSkillPoints，得到真实的剩余池子。
     const skillsAtBase = {}
     oldCats.forEach(cat => {
       cat.skills.forEach(sk => {
@@ -567,16 +542,20 @@ Page({
 
     // ── 三段校验 ──
     // 1. 上限截断（硬限制，不标红）
-    if (finalValue > maxCap) { finalValue = maxCap }
+    if (finalValue > maxCap) {
+      finalValue = maxCap
+    }
 
-    // 2. 点数够不够（截断到最大可达值，标红）
+    // 2. 点数够不够（从基础值出发算最大可达值，不够就截断到最大可达值，标红）
     if (finalValue > maxFromBase) {
       finalValue = maxFromBase
       error = '技能点不足'
     }
 
     // 3. 基础值兜底（硬下限，不标红）
-    if (finalValue < baseValue) { finalValue = baseValue }
+    if (finalValue < baseValue) {
+      finalValue = baseValue
+    }
 
     // 更新值（含 updateSkillDisplayState 重排序）
     let skillCategories = oldCats.map(cat => ({
@@ -615,78 +594,24 @@ Page({
     const newEditingStart = { ..._editingStart }
     delete newEditingStart[name]
 
-    this.setData({ skillCategories, points: newPoints, invalidSkills: newInvalidSkills, _editingStart: newEditingStart, focusedSkill: '', ghostValue: 0 })
+    this.setData({ skillCategories, points: newPoints, invalidSkills: newInvalidSkills, _editingStart: newEditingStart })
   },
 
-  // ═══════════════════════════════════════════════════════════
-  // 自定义数字键盘事件
-  // ═══════════════════════════════════════════════════════════
-  onNumpadTap(e) {
-    const key = e.currentTarget.dataset.key
-    let { numpadValue } = this.data
-    if (numpadValue.length >= 2) return   // 最多2位（0-99）
-    numpadValue += key
-    this.setData({ numpadValue })
-  },
-
-  onNumpadBackspace() {
-    let { numpadValue } = this.data
-    numpadValue = numpadValue.slice(0, -1)
-    this.setData({ numpadValue })
-  },
-
-  onNumpadConfirm() {
-    const { numpadTarget, numpadValue } = this.data
-    const inputValue = numpadValue === '' ? 0 : parseInt(numpadValue)
-    // 执行与原生 onSkillBlur 完全相同的校验逻辑
-    this._validateAndApply(numpadTarget, inputValue)
-    this.setData({ numpadVisible: false, numpadTarget: '', numpadValue: '', numpadOldValue: 0 })
-  },
-
-  onNumpadCancel() {
-    this.setData({ numpadVisible: false, numpadTarget: '', numpadValue: '', numpadOldValue: 0 })
-  },
-
-  // 底纹辅助：直接写入技能值（不走校验）
-  _updateSkillValue(name, value) {
-    const { skillCategories } = this.data
-    skillCategories.forEach(cat => {
-      cat.skills.forEach(sk => {
-        if (sk.name === name) {
-          sk.current = value
-          const thresholds = calcSkillThresholds(value)
-          sk.hard = thresholds.hard
-          sk.extreme = thresholds.extreme
-        }
-      })
-    })
-  },
-
-  // ── 点击技能值：弹出自定义数字键盘 ──
-  onSkillTap(e) {
+  // ── 聚焦时：记录编辑前的值，供 onBlur delta 计算；清空全部红色框 ──
+  onSkillFocus(e) {
     const { name } = e.currentTarget.dataset
-    console.log('[onSkillTap] 技能:', name)
     const { skillCategories, _editingStart } = this.data
 
     // 记录编辑前的值
-    let oldValue = 0
+    let editingStart = _editingStart || {}
     skillCategories.forEach(cat => {
       cat.skills.forEach(sk => {
-        if (sk.name === name) oldValue = sk.current
+        if (sk.name === name) editingStart[name] = sk.current
       })
     })
 
-    // 保存到 _editingStart 供后续校验使用
-    const newEditingStart = { ...(_editingStart || {}), [name]: oldValue }
-
-    this.setData({
-      invalidSkills: {},
-      _editingStart: newEditingStart,
-      numpadVisible: true,
-      numpadTarget: name,
-      numpadValue: '',
-      numpadOldValue: oldValue
-    })
+    // 清除所有技能错误标记（永远只有一个红色框，且只在上次操作的框上）
+    this.setData({ invalidSkills: {}, _editingStart: editingStart })
   },
 
   // 随机分配技能点（点击后按钮变「清除」，再点还原）
@@ -868,7 +793,7 @@ Page({
   onSearch(e) {
     const text = e.detail.value.trim()
     if (!text) {
-      this.setData({ searchText: '', searchMatches: [], searchIndex: -1 })
+      this.setData({ searchText: '', searchMatches: [], searchIndex: -1, scrollToSkill: '' })
       return
     }
     const matches = this._buildSearchMatches(text)
@@ -876,7 +801,8 @@ Page({
     this.setData({
       searchText: text,
       searchMatches: matches,
-      searchIndex: newIndex
+      searchIndex: newIndex,
+      scrollToSkill: newIndex >= 0 ? 'skill-' + matches[newIndex] : ''
     })
   },
 
@@ -886,7 +812,8 @@ Page({
     if (searchMatches.length === 0) return
     const next = (searchIndex + 1) % searchMatches.length
     this.setData({
-      searchIndex: next
+      searchIndex: next,
+      scrollToSkill: 'skill-' + searchMatches[next]
     })
   },
 
@@ -909,7 +836,25 @@ Page({
     const { skillCategories, points, creditRatingRange, creditRatingValue } = this.data
     const errors = []
 
-    // 1. 检查信用评级（唯一拦截项）
+    // 1. 检查已标记的技能错误
+    const { invalidSkills } = this.data
+    Object.keys(invalidSkills).forEach(name => {
+      errors.push(`「${name}」${invalidSkills[name]}`)
+    })
+
+    // 2. 检查总消耗是否超过总可用（核心防负数校验）
+    const totalAvailable = points.occTotal + points.intTotal
+    let totalUsed = 0
+    skillCategories.forEach(cat => {
+      cat.skills.forEach(sk => {
+        totalUsed += Math.max(0, sk.current - sk.baseValue)
+      })
+    })
+    if (totalUsed > totalAvailable) {
+      errors.push(`技能总消耗 ${totalUsed} 超过可用点数 ${totalAvailable}，超出 ${totalUsed - totalAvailable} 点`)
+    }
+
+    // 3. 检查信用评级
     if (creditRatingRange) {
       if (creditRatingValue === '' || creditRatingValue === undefined || creditRatingValue === null) {
         errors.push('社会信用评级不能为空')
@@ -921,6 +866,18 @@ Page({
         }
       }
     }
+
+    // 4. 逐技能重新校验（防止漏检）
+    skillCategories.forEach(cat => {
+      cat.skills.forEach(sk => {
+        if (sk.current < sk.baseValue) {
+          const err = `「${sk.name}」低于基础值 ${sk.baseValue}`
+          if (!errors.some(e => e.includes(`「${sk.name}」`))) {
+            errors.push(err)
+          }
+        }
+      })
+    })
 
     return errors
   },
@@ -957,8 +914,7 @@ Page({
         skills[name] = sk.current
       })
     })
-    // 补回信用评级（不在 skillCategories 中）
-    skills['信用评级'] = this.data.creditRatingValue
+    // 保存可选技能信息
     const updated = {
       ...character,
       skills
@@ -1069,6 +1025,7 @@ Page({
       newSkillValue: ''
     }, () => {
       this.calcPoints()
+      this.setData({ scrollToSkill: `skill-${name}` })
     })
   },
 
@@ -1100,5 +1057,5 @@ Page({
     })
   },
 
-  preventBubble() {},
+  preventBubble() {}
 })

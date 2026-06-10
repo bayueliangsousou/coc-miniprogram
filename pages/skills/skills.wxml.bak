@@ -36,7 +36,7 @@
   <!-- 搜索 -->
   <view class="search-bar">
     <text class="search-icon">🔍</text>
-    <input class="search-input" adjust-position="{{false}}" placeholder="搜索技能..." value="{{searchText}}" bindinput="onSearch" confirm-type="search"/>
+    <input class="search-input" placeholder="搜索技能..." value="{{searchText}}" bindinput="onSearch" confirm-type="search"/>
     <view class="search-nav" wx:if="{{searchMatches.length > 0}}" bindtap="onSearchNext">
       <text class="search-count">{{searchIndex + 1}}/{{searchMatches.length}}</text>
     </view>
@@ -50,12 +50,6 @@
     <text>★ 金色标记为职业技能</text>
   </view>
 
-  <!-- 列表表头 -->
-  <view class="skills-header-hint">
-    <text>当前值</text>
-    <text style="margin-left:20rpx">困难 / 极难</text>
-  </view>
-
   <!-- 社会信用评级（放在调查分类上方） -->
   <view class="credit-rating-section" wx:if="{{creditRatingRange}}">
     <view class="credit-rating-header">
@@ -63,7 +57,6 @@
       <view class="credit-rating-right">
         <input
           class="credit-rating-input {{creditRatingError ? 'credit-rating-input-error' : ''}}"
-          adjust-position="{{false}}"
           type="number"
           value="{{creditRatingValue}}"
           bindinput="onCreditRatingInput"
@@ -85,7 +78,7 @@
     </view>
 
     <!-- 技能行 -->
-    <block wx:if="{{expandedCategories[item.category]}}">
+    <view wx:if="{{expandedCategories[item.category]}}">
       <block wx:for="{{item.skills}}" wx:key="name" wx:for-item="sk">
         <!-- 搜索过滤 -->
         <view
@@ -99,7 +92,6 @@
             <input
               wx:if="{{sk.name === '其他语言'}}"
               class="language-name-input"
-              adjust-position="{{false}}"
               placeholder="语言名"
               value="{{sk.languageName}}"
               data-name="{{sk.name}}"
@@ -112,15 +104,17 @@
             </view>
           </view>
           <view class="skill-inputs">
-            <view
-              class="skill-num-view {{sk.displayAsOcc ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
+            <input
+              class="skill-input current {{sk.displayAsOcc ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
+              type="number"
+              maxlength="2"
+              value="{{sk.current}}"
               data-name="{{sk.name}}"
-              bindtap="onSkillTap"
-              hover-class="skill-num-view-hover"
-              hover-stay-time="80"
-            >
-              <text>{{sk.current}}</text>
-            </view>
+              bindinput="onSkillInput"
+              bindblur="onSkillBlur"
+              bindfocus="onSkillFocus"
+              placeholder="0"
+            />
             <view class="skill-thresholds">
               <text class="threshold">{{sk.hard}}</text>
               <text class="threshold-sep">/</text>
@@ -130,11 +124,14 @@
         </view>
       </block>
 
-    </block>
+    </view>
   </view>
 
-  <!-- 底部占位：防止最后一行被底部按钮栏遮住 -->
-  <view class="scroll-bottom-spacer"></view>
+  <!-- 表头说明（悬浮） -->
+  <view class="skills-header-hint">
+    <text>当前值</text>
+    <text style="margin-left:20rpx">困难 / 极难</text>
+  </view>
 
   </scroll-view>
 
@@ -178,36 +175,6 @@
     <view class="modal-btns">
       <button class="btn btn-ghost" bindtap="onCancelNewSkill">取消</button>
       <button class="btn btn-primary" bindtap="onConfirmNewSkill">保存</button>
-    </view>
-  </view>
-</view>
-
-<!-- 自定义数字键盘 -->
-<view class="numpad-overlay" wx:if="{{numpadVisible}}" catchtap="onNumpadCancel">
-  <view class="numpad-panel" catchtap="preventBubble">
-    <!-- 标题栏：技能名 + 当前输入值 -->
-    <view class="numpad-header">
-      <text class="numpad-title">{{numpadTarget}}</text>
-      <text class="numpad-value">{{numpadValue || '0'}}</text>
-    </view>
-
-    <!-- 按键区：3列网格，12键 -->
-    <view class="numpad-keys">
-      <view class="numpad-key" data-key="1" bindtap="onNumpadTap">1</view>
-      <view class="numpad-key" data-key="2" bindtap="onNumpadTap">2</view>
-      <view class="numpad-key" data-key="3" bindtap="onNumpadTap">3</view>
-
-      <view class="numpad-key" data-key="4" bindtap="onNumpadTap">4</view>
-      <view class="numpad-key" data-key="5" bindtap="onNumpadTap">5</view>
-      <view class="numpad-key" data-key="6" bindtap="onNumpadTap">6</view>
-
-      <view class="numpad-key" data-key="7" bindtap="onNumpadTap">7</view>
-      <view class="numpad-key" data-key="8" bindtap="onNumpadTap">8</view>
-      <view class="numpad-key" data-key="9" bindtap="onNumpadTap">9</view>
-
-      <view class="numpad-key numpad-key-back" bindtap="onNumpadBackspace">⌫</view>
-      <view class="numpad-key" data-key="0" bindtap="onNumpadTap">0</view>
-      <view class="numpad-key numpad-key-confirm" bindtap="onNumpadConfirm">确定</view>
     </view>
   </view>
 </view>

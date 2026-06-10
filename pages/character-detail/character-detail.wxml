@@ -194,12 +194,6 @@
 
     <!-- ═══ 技能 Tab ═══ -->
     <view wx:if="{{activeTab === 'skills'}}">
-      <!-- 社会信用评级 -->
-      <view class="credit-rating-display" wx:if="{{creditRatingValue > 0}}">
-        <text class="credit-rating-label">社会信用评级</text>
-        <text class="credit-rating-value">{{creditRatingValue}}</text>
-      </view>
-
       <!-- 搜索栏 + 表头 吸顶 -->
       <view class="skill-sticky-wrap">
         <view class="skill-search-bar" wx:if="{{skillList.length > 0}}">
@@ -248,8 +242,8 @@
       <!-- 技能分组列表 -->
       <view wx:else>
         <block wx:for="{{skillGroupedList}}" wx:key="key">
-          <!-- 分组头部（可折叠） -->
-          <view class="skill-group-header" bindtap="onToggleSkillGroup" data-group="{{item.key}}">
+          <!-- 分组头部（可折叠，credits 组无标题不显示） -->
+          <view class="skill-group-header" bindtap="onToggleSkillGroup" data-group="{{item.key}}" wx:if="{{item.label}}">
             <text class="skill-group-title">{{item.label}}</text>
             <view class="skill-group-meta">
               <text class="skill-group-count">{{item.count}}项</text>
