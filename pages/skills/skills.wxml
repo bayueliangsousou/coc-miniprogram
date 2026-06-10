@@ -107,6 +107,7 @@
             <input
               class="skill-input current {{sk.displayAsOcc ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
               type="number"
+              maxlength="2"
               value="{{sk.current}}"
               data-name="{{sk.name}}"
               bindinput="onSkillInput"

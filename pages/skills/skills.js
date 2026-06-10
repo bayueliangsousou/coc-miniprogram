@@ -402,76 +402,52 @@ Page({
     this.setData({ creditRatingValue: value, character: newCharacter }, () => this.calcPoints())
   },
 
-  // ── 输入中：完整计算链，不截断（失焦时统一截断）──
+  // ═══════════════════════════════════════════════════════════
+  // 铁律：此函数中绝不调用 this.setData({ skillCategories })
+  // 原因：WXML 中 input 绑了 value="{{sk.current}}"
+  //       setData 回写会触发框架全量重渲染，覆盖用户正在输入的值
+  //       → 导致"底纹值删不掉"和"3位4位数字"两个 bug
+  // 替代：所有校验/截断统一在 onBlur 完成
+  //       displayAsOcc + 剩余点数用临时拷贝计算，仅 setData points
+  // ═══════════════════════════════════════════════════════════
   onSkillInput(e) {
     const { name } = e.currentTarget.dataset
-    let value = parseInt(e.detail.value) || 0
 
-    const { skillCategories: oldCats, character, invalidSkills } = this.data
+    // 1. 过滤用户输入：只允许数字，最多2位
+    let filtered = String(e.detail.value).replace(/[^\d]/g, '').slice(0, 2)
+    const value = parseInt(filtered) || 0
 
-    // 找到当前技能
-    let baseValue = 0, isLocked = false
-    oldCats.forEach(cat => {
-      cat.skills.forEach(sk => {
-        if (sk.name === name) {
-          baseValue = sk.baseValue
-          isLocked = sk.isLocked
-        }
-      })
-    })
+    const { skillCategories: oldCats, character, occConfig } = this.data
 
-    // 硬下限保护（基础值是不可逾越的物理下限）
-    const finalValue = Math.max(value, baseValue)
-
-    // 判断当前值是否达到职业级（用于 displayAsOcc + 后续上限判断）
-    let isOccLevel = isLocked
-    if (!isLocked) {
-      const simulatedCats = oldCats.map(cat => ({
-        ...cat,
-        skills: cat.skills.map(sk =>
-          sk.name !== name ? sk : { ...sk, current: finalValue }
-        )
-      }))
-      const updatedCats = this.updateSkillDisplayState(simulatedCats, this.data.occConfig)
-      let updatedSkill = null
-      updatedCats.forEach(c =>
-        c.skills.forEach(sk => { if (sk.name === name) updatedSkill = sk })
-      )
-      if (updatedSkill && updatedSkill.displayAsOcc) isOccLevel = true
-    }
-
-    // ── 输入中不截断！上限校验和点数校验统一在 onBlur 处理 ──
-
-    // 更新值
-    let skillCategories = oldCats.map(cat => ({
+    // 2. 构建临时拷贝（不影响 data 中的 skillCategories）
+    const tempCats = oldCats.map(cat => ({
       ...cat,
       skills: cat.skills.map(sk => {
         if (sk.name !== name) return sk
-        const thresholds = calcSkillThresholds(finalValue)
-        return { ...sk, current: finalValue, hard: thresholds.hard, extreme: thresholds.extreme }
+        const thresholds = calcSkillThresholds(value)
+        return { ...sk, current: value, hard: thresholds.hard, extreme: thresholds.extreme }
       })
     }))
 
-    skillCategories = this.updateSkillDisplayState(skillCategories, this.data.occConfig)
+    // 3. 在临时拷贝上跑 displayAsOcc（自选职业逻辑）
+    const updatedCats = this.updateSkillDisplayState(tempCats, occConfig)
 
-    // 同步计算剩余点数
+    // 4. 用临时拷贝的结果计算剩余点数
     const tempSkills = {}
-    skillCategories.forEach(cat => {
-      cat.skills.forEach(sk => { tempSkills[sk.name] = sk.current })
-    })
     const extraOccSkills = []
-    skillCategories.forEach(cat => {
+    updatedCats.forEach(cat => {
       cat.skills.forEach(sk => {
+        tempSkills[sk.name] = sk.current
         if (sk.displayAsOcc) extraOccSkills.push(sk.name)
       })
     })
     const points = calcSkillPoints({ ...character, skills: tempSkills }, extraOccSkills)
 
-    // 清除当前技能的错误标记（输入中不标红）
-    const newInvalidSkills = { ...invalidSkills }
-    delete newInvalidSkills[name]
+    // 5. 只更新点数，不回写 skillCategories
+    this.setData({ points })
 
-    this.setData({ skillCategories, points, invalidSkills: newInvalidSkills })
+    // 6. return 过滤后的字符串，框架原生替换（不触发 setData 重渲染）
+    return filtered
   },
 
   // ── 失焦时：统一执行校验 + 截断 + 标红（delta 差量） ──
