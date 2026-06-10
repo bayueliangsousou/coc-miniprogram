@@ -401,50 +401,26 @@ Page({
     this.setData({ creditRatingValue: value, character: newCharacter }, () => this.calcPoints())
   },
 
-  // ── 输入中：只更新显示值，不截断不校验（失焦时统一处理）──
+  // ── 输入中：只实时刷新剩余点数，不回写 input 值（失焦时统一校验）──
   onSkillInput(e) {
     const { name } = e.currentTarget.dataset
     const value = parseInt(e.detail.value) || 0
 
     const { skillCategories: oldCats, character } = this.data
 
-    // 找到当前技能的基础值
-    let baseValue = 0, oldCurrent = 0
-    oldCats.forEach(cat => {
-      cat.skills.forEach(sk => {
-        if (sk.name === name) {
-          baseValue = sk.baseValue
-          oldCurrent = sk.current
-        }
-      })
-    })
-
-    // 基础值是硬下限，输入中仅此一项保护
-    const current = Math.max(value, baseValue)
-    const thresholds = calcSkillThresholds(current)
-
-    const skillCategories = oldCats.map(cat => ({
-      ...cat,
-      skills: cat.skills.map(sk => {
-        if (sk.name !== name) return sk
-        return { ...sk, current, hard: thresholds.hard, extreme: thresholds.extreme }
-      })
-    }))
-
-    // 轻量刷新剩余点数（使用编辑前的 displayAsOcc，不重排序）
+    // 用用户原始输入临时替换当前技能值，计算剩余点数
     const tempSkills = {}
     const extraOccSkills = []
     oldCats.forEach(cat => {
       cat.skills.forEach(sk => {
-        // 被编辑技能的当前值已在上方更新
-        const skillName = sk.name === name ? name : sk.name
-        tempSkills[sk.name] = sk.name === name ? current : sk.current
+        tempSkills[sk.name] = sk.name === name ? value : sk.current
         if (sk.displayAsOcc) extraOccSkills.push(sk.name)
       })
     })
     const points = calcSkillPoints({ ...character, skills: tempSkills }, extraOccSkills)
 
-    this.setData({ skillCategories, points })
+    // 只更新 points，不回写 skillCategories（不回写 = 不干扰 input 的 value 渲染）
+    this.setData({ points })
   },
 
   // ── 输入框失焦时：统一执行校验 + 截断 + 标红 ──
@@ -454,18 +430,17 @@ Page({
     const { skillCategories: oldCats, points, character, occConfig, invalidSkills } = this.data
 
     // 找到当前技能
-    let baseValue = 0, oldCurrent = 0, isLocked = false
+    let baseValue = 0, isLocked = false
     oldCats.forEach(cat => {
       cat.skills.forEach(sk => {
         if (sk.name === name) {
           baseValue = sk.baseValue
-          oldCurrent = sk.current
           isLocked = sk.isLocked
         }
       })
     })
 
-    const inputValue = oldCurrent
+    const inputValue = parseInt(e.detail.value) || 0
     let finalValue = inputValue
     let error = ''
 
