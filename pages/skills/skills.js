@@ -487,8 +487,8 @@ Page({
     let error = ''
     let pointsTriggered = false
 
-    // ── 用 oldValue 状态跑 updateSkillDisplayState，判定是否已有职业技能名额 ──
-    // 关键：用 oldValue 而不是 finalValue，防止当前技能用输入值"偷"别的技能的名额
+    // ── 用 oldValue 状态跑 updateSkillDisplayState，判定：剩余自选名额 > 0？──
+    // 关键：排除当前技能计数，只看「别人占了多少座」
     const catsAtOld = oldCats.map(cat => ({
       ...cat,
       skills: cat.skills.map(sk => ({
@@ -497,16 +497,21 @@ Page({
       }))
     }))
     const oldDisplayCats = this.updateSkillDisplayState(catsAtOld, occConfig)
-    let displayAsOcc = false
+    let occupiedExcludingThis = 0
     const occSkillNames = []
     oldDisplayCats.forEach(cat => {
       cat.skills.forEach(sk => {
-        if (sk.displayAsOcc) occSkillNames.push(sk.name)
-        if (sk.name === name) displayAsOcc = sk.displayAsOcc
+        // 只数「自选」的职业技能（isLocked 的锁定技能不占自选名额）
+        if (sk.displayAsOcc && !sk.isLocked) {
+          occSkillNames.push(sk.name)
+          if (sk.name !== name) occupiedExcludingThis++
+        }
       })
     })
+    const remainingSlots = Math.max(0, (occConfig.optionalCount || 0) - occupiedExcludingThis)
 
-    const isOcc = isLocked || displayAsOcc
+    // 输入 > 50 且有空位 → 职业技能；否则 → 兴趣技能
+    const isOcc = isLocked || (finalValue > 50 && remainingSlots > 0)
     const maxCap = isOcc ? 85 : 50
 
     // ── 用 baseValue 状态重算可用点数池子 ──
