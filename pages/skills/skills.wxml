@@ -31,7 +31,7 @@
     </view>
   </view>
 
-  <scroll-view scroll-y class="skills-scroll" scroll-into-view="{{scrollToSkill}}" scroll-with-animation>
+  <scroll-view scroll-y class="skills-scroll">
 
   <!-- 搜索 -->
   <view class="search-bar">

@@ -251,7 +251,7 @@ Page({
     occ.skills.forEach(skill => {
       // 解析 "点X门技能"
       if (skill.includes('点') && skill.includes('门技能')) {
-        const match = skill.match(/点([一二三四五六七八九十\d]+)门技能/)
+        const match = skill.match(/点([一二两三四五六七八九十\d]+)门技能/)
         if (match) {
           optionalCount = this.parseChineseNum(match[1])
         }
