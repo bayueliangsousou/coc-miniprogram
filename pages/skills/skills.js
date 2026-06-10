@@ -403,12 +403,10 @@ Page({
   },
 
   // ═══════════════════════════════════════════════════════════
-  // 铁律：此函数中绝不调用 this.setData({ skillCategories })
-  // 原因：WXML 中 input 绑了 value="{{sk.current}}"
-  //       setData 回写会触发框架全量重渲染，覆盖用户正在输入的值
-  //       → 导致"底纹值删不掉"和"3位4位数字"两个 bug
-  // 替代：所有校验/截断统一在 onBlur 完成
-  //       displayAsOcc + 剩余点数用临时拷贝计算，仅 setData points
+  // 铁律：此函数中绝不 this.setData({ skillCategories: 全量数组 })
+  //      全量 setData 会导致所有 input 重渲染，覆盖用户输入
+  // 允许：this.setData({ points, ['skillCategories[i].skills[j].current']: val })
+  //      路径更新只影响单个 input，且值 = 用户输入，不会覆盖
   // ═══════════════════════════════════════════════════════════
   onSkillInput(e) {
     const { name } = e.currentTarget.dataset
@@ -419,7 +417,15 @@ Page({
 
     const { skillCategories: oldCats, character, occConfig } = this.data
 
-    // 2. 构建临时拷贝（不影响 data 中的 skillCategories）
+    // 2. 找到当前技能在嵌套数组中的索引
+    let catIdx = -1, skIdx = -1
+    oldCats.forEach((cat, ci) => {
+      cat.skills.forEach((sk, si) => {
+        if (sk.name === name) { catIdx = ci; skIdx = si }
+      })
+    })
+
+    // 3. 构建临时拷贝（不影响 data 中的 skillCategories）
     const tempCats = oldCats.map(cat => ({
       ...cat,
       skills: cat.skills.map(sk => {
@@ -429,10 +435,10 @@ Page({
       })
     }))
 
-    // 3. 在临时拷贝上跑 displayAsOcc（自选职业逻辑）
+    // 4. 在临时拷贝上跑 displayAsOcc（自选职业逻辑）
     const updatedCats = this.updateSkillDisplayState(tempCats, occConfig)
 
-    // 4. 用临时拷贝的结果计算剩余点数
+    // 5. 用临时拷贝的结果计算剩余点数
     const tempSkills = {}
     const extraOccSkills = []
     updatedCats.forEach(cat => {
@@ -443,10 +449,13 @@ Page({
     })
     const points = calcSkillPoints({ ...character, skills: tempSkills }, extraOccSkills)
 
-    // 5. 只更新点数，不回写 skillCategories
-    this.setData({ points })
+    // 6. 更新点数 + 路径更新当前技能值（保持 data 与输入框同步，避免重渲染覆盖）
+    this.setData({
+      points,
+      [`skillCategories[${catIdx}].skills[${skIdx}].current`]: value
+    })
 
-    // 6. return 过滤后的字符串，框架原生替换（不触发 setData 重渲染）
+    // 7. return 过滤后的字符串，框架原生替换（不触发 setData 重渲染）
     return filtered
   },
 
