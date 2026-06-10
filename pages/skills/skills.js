@@ -487,48 +487,69 @@ Page({
     let error = ''
     let pointsTriggered = false
 
-    // ── 用 oldValue 状态重算可用点数池子（不凭空造点）──
-    const skillsAtOld = {}
+    // ── 用 oldValue 状态跑 updateSkillDisplayState，判定是否已有职业技能名额 ──
+    // 关键：用 oldValue 而不是 finalValue，防止当前技能用输入值"偷"别的技能的名额
     const catsAtOld = oldCats.map(cat => ({
       ...cat,
-      skills: cat.skills.map(sk => {
-        const val = sk.name === name ? oldValue : sk.current
-        skillsAtOld[sk.name] = val
-        return { ...sk, current: val }
-      })
+      skills: cat.skills.map(sk => ({
+        ...sk,
+        current: sk.name === name ? oldValue : sk.current
+      }))
     }))
     const oldDisplayCats = this.updateSkillDisplayState(catsAtOld, occConfig)
-    const oldExtraOcc = []
+    let displayAsOcc = false
+    const occSkillNames = []
     oldDisplayCats.forEach(cat => {
       cat.skills.forEach(sk => {
-        if (sk.displayAsOcc) oldExtraOcc.push(sk.name)
+        if (sk.displayAsOcc) occSkillNames.push(sk.name)
+        if (sk.name === name) displayAsOcc = sk.displayAsOcc
       })
     })
-    const oldPoints = calcSkillPoints({ ...character, skills: skillsAtOld }, oldExtraOcc)
 
-    const isOcc = isLocked || finalValue >= 51
+    const isOcc = isLocked || displayAsOcc
     const maxCap = isOcc ? 85 : 50
-    const poolAvailable = isOcc
-      ? oldPoints.occRemaining + oldPoints.intRemaining
-      : oldPoints.intRemaining
 
-    // ── 三段校验（优先级：上限 → 点数 → 基础值）──
-    // 1. 上限截断
+    // ── 用 baseValue 状态重算可用点数池子 ──
+    // 核心逻辑（按你的描述）：
+    //   职业技能：基础值 + 职业点够到85 → 生效85
+    //             不够 → 基础值 + 职业点 + 兴趣点够到85 → 生效85
+    //             还不够 → 生效 基础值+职业点+兴趣点，框变红
+    //   兴趣技能：基础值 + 兴趣点够到50 → 生效50
+    //             不够 → 生效 基础值+兴趣点，框变红
+    //   输入值小于基础值 → 生效基础值（硬下限，不标红）
+    //
+    // 实现方式：把本技能设回 baseValue（相当于把已分配点数返还池子），
+    // 用 baseValue 状态跑 calcSkillPoints，得到真实的剩余池子。
+    const skillsAtBase = {}
+    oldCats.forEach(cat => {
+      cat.skills.forEach(sk => {
+        skillsAtBase[sk.name] = sk.name === name ? baseValue : sk.current
+      })
+    })
+    const basePoints = calcSkillPoints(
+      { ...character, skills: skillsAtBase },
+      occSkillNames
+    )
+
+    const maxFromBase = isOcc
+      ? baseValue + basePoints.occRemaining + basePoints.intRemaining
+      : baseValue + basePoints.intRemaining
+
+    // ── 三段校验 ──
+    // 1. 上限截断（硬限制，不标红）
     if (finalValue > maxCap) {
       finalValue = maxCap
-      error = `${isOcc ? '职业' : '兴趣'}技能最大${maxCap}点`
     }
 
-    // 2. 点数够不够（oldValue + 真实剩余）
-    if (!error && finalValue > oldValue + poolAvailable) {
-      finalValue = oldValue + poolAvailable
+    // 2. 点数够不够（从基础值出发算最大可达值，不够就截断到最大可达值，标红）
+    if (finalValue > maxFromBase) {
+      finalValue = maxFromBase
       error = '技能点不足'
     }
 
-    // 3. 基础值兜底（唯一用基础值的地方）
-    if (!error && finalValue < baseValue) {
+    // 3. 基础值兜底（硬下限，不标红）
+    if (finalValue < baseValue) {
       finalValue = baseValue
-      error = `不能低于基础值 ${baseValue}`
     }
 
     // 更新值（含 updateSkillDisplayState 重排序）
