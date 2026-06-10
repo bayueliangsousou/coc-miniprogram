@@ -487,57 +487,48 @@ Page({
     let error = ''
     let pointsTriggered = false
 
-    // 用当前数据跑一次 updateSkillDisplayState，获取该技能是否拿到职业技能名额
-    let displayAsOcc = false
-    if (occConfig) {
-      const catsWithDisplay = this.updateSkillDisplayState(
-        oldCats.map(cat => ({ ...cat, skills: cat.skills.map(sk => ({ ...sk })) })),
-        occConfig
-      )
-      catsWithDisplay.forEach(cat => {
-        cat.skills.forEach(sk => {
-          if (sk.name === name) displayAsOcc = sk.displayAsOcc
-        })
+    // ── 用 oldValue 状态重算可用点数池子（不凭空造点）──
+    const skillsAtOld = {}
+    const catsAtOld = oldCats.map(cat => ({
+      ...cat,
+      skills: cat.skills.map(sk => {
+        const val = sk.name === name ? oldValue : sk.current
+        skillsAtOld[sk.name] = val
+        return { ...sk, current: val }
       })
+    }))
+    const oldDisplayCats = this.updateSkillDisplayState(catsAtOld, occConfig)
+    const oldExtraOcc = []
+    oldDisplayCats.forEach(cat => {
+      cat.skills.forEach(sk => {
+        if (sk.displayAsOcc) oldExtraOcc.push(sk.name)
+      })
+    })
+    const oldPoints = calcSkillPoints({ ...character, skills: skillsAtOld }, oldExtraOcc)
+
+    const isOcc = isLocked || finalValue >= 51
+    const maxCap = isOcc ? 85 : 50
+    const poolAvailable = isOcc
+      ? oldPoints.occRemaining + oldPoints.intRemaining
+      : oldPoints.intRemaining
+
+    // ── 三段校验（优先级：上限 → 点数 → 基础值）──
+    // 1. 上限截断
+    if (finalValue > maxCap) {
+      finalValue = maxCap
+      error = `${isOcc ? '职业' : '兴趣'}技能最大${maxCap}点`
     }
 
-    // 上限：锁定 或 有名额（displayAsOcc）→ 85；否则 兴趣上限50
-    const maxCap = (isLocked || displayAsOcc) ? 85 : 50
-    const capLabel = maxCap === 85 ? '职业' : '兴趣'
+    // 2. 点数够不够（oldValue + 真实剩余）
+    if (!error && finalValue > oldValue + poolAvailable) {
+      finalValue = oldValue + poolAvailable
+      error = '技能点不足'
+    }
 
-    // 校验：不能低于基础值
-    if (finalValue < baseValue) {
+    // 3. 基础值兜底（唯一用基础值的地方）
+    if (!error && finalValue < baseValue) {
       finalValue = baseValue
       error = `不能低于基础值 ${baseValue}`
-    }
-
-    // 校验：不能超过 min(上限, 基础值 + oldUsed + 真正可用池子)
-    // points.remaining 已包含当前技能消耗（onSkillInput 更新过），需加回 currentAlloc，减去 oldUsed
-    if (!error) {
-      const oldUsed = Math.max(0, oldValue - baseValue)
-
-      // 找到当前技能在 oldCats 中的 current，用于还原被 points 多扣的消费
-      let currentAlloc = 0
-      oldCats.forEach(cat => {
-        cat.skills.forEach(sk => {
-          if (sk.name === name) currentAlloc = Math.max(0, (sk.current || 0) - baseValue)
-        })
-      })
-
-      // poolForThis = 池子剩余 + 当前技能已扣 - 编辑前已扣 = 真正可用于此次增量的点数
-      let poolForThis = 0
-      if (isLocked || displayAsOcc) {
-        poolForThis = points.occRemaining + points.intRemaining + currentAlloc - oldUsed
-      } else {
-        poolForThis = points.intRemaining + currentAlloc - oldUsed
-      }
-      const maxPossible = baseValue + oldUsed + poolForThis
-      const maxAllowed = Math.min(maxCap, maxPossible)
-
-      if (finalValue > maxAllowed) {
-        finalValue = maxAllowed
-        error = maxAllowed < maxCap ? '技能点不足' : `${capLabel}技能最大${maxCap}点`
-      }
     }
 
     // 更新值（含 updateSkillDisplayState 重排序）
