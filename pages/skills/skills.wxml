@@ -36,7 +36,7 @@
   <!-- 搜索 -->
   <view class="search-bar">
     <text class="search-icon">🔍</text>
-    <input class="search-input" placeholder="搜索技能..." value="{{searchText}}" bindinput="onSearch" confirm-type="search"/>
+    <input class="search-input" adjust-position="{{false}}" placeholder="搜索技能..." value="{{searchText}}" bindinput="onSearch" confirm-type="search"/>
     <view class="search-nav" wx:if="{{searchMatches.length > 0}}" bindtap="onSearchNext">
       <text class="search-count">{{searchIndex + 1}}/{{searchMatches.length}}</text>
     </view>
@@ -57,6 +57,7 @@
       <view class="credit-rating-right">
         <input
           class="credit-rating-input {{creditRatingError ? 'credit-rating-input-error' : ''}}"
+          adjust-position="{{false}}"
           type="number"
           value="{{creditRatingValue}}"
           bindinput="onCreditRatingInput"
@@ -92,6 +93,7 @@
             <input
               wx:if="{{sk.name === '其他语言'}}"
               class="language-name-input"
+              adjust-position="{{false}}"
               placeholder="语言名"
               value="{{sk.languageName}}"
               data-name="{{sk.name}}"
@@ -106,6 +108,7 @@
           <view class="skill-inputs">
             <input
               class="skill-input current {{sk.displayAsOcc ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
+              adjust-position="{{false}}"
               type="number"
               maxlength="2"
               value="{{focusedSkill === sk.name && ghostValue > 0 ? '' : sk.current}}"

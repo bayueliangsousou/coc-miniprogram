@@ -12,7 +12,6 @@ Page({
     searchText: '',
     searchMatches: [],   // 匹配的技能名列表，按分类顺序排列
     searchIndex: -1,     // 当前定位到第几个（0-based），-1表示无定位
-    scrollToSkill: '',   // scroll-into-view 目标 id
     expandedCategories: {}, // {category: true/false}
     pointFormula: '',      // 职业技能点数公式
     points: {             // 技能点数信息（与 calcSkillPoints 返回值匹配）
@@ -842,7 +841,7 @@ Page({
   onSearch(e) {
     const text = e.detail.value.trim()
     if (!text) {
-      this.setData({ searchText: '', searchMatches: [], searchIndex: -1, scrollToSkill: '' })
+      this.setData({ searchText: '', searchMatches: [], searchIndex: -1 })
       return
     }
     const matches = this._buildSearchMatches(text)
@@ -850,8 +849,7 @@ Page({
     this.setData({
       searchText: text,
       searchMatches: matches,
-      searchIndex: newIndex,
-      scrollToSkill: newIndex >= 0 ? 'skill-' + matches[newIndex] : ''
+      searchIndex: newIndex
     })
   },
 
@@ -861,8 +859,7 @@ Page({
     if (searchMatches.length === 0) return
     const next = (searchIndex + 1) % searchMatches.length
     this.setData({
-      searchIndex: next,
-      scrollToSkill: 'skill-' + searchMatches[next]
+      searchIndex: next
     })
   },
 
@@ -1075,7 +1072,6 @@ Page({
       newSkillValue: ''
     }, () => {
       this.calcPoints()
-      this.setData({ scrollToSkill: `skill-${name}` })
     })
   },
 

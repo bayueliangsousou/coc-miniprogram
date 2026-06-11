@@ -31,6 +31,7 @@ function dbNeg(db) {
 // ─── 技能分类映射（CoC 七版 → 归组展示）─────────────────────────────
 // coc-data.js 里的 category → UI 展示分组
 const SKILL_GROUP_MAP = {
+  'credits':  { key: 'credits',   label: '',              order: -1 },
   '调查':   { key: 'detect',    label: '🔍 调查',       order: 0 },
   '社交':   { key: 'social',    label: '💬 社交',       order: 1 },
   '知识':   { key: 'knowledge', label: '📚 知识',       order: 2 },
@@ -55,9 +56,10 @@ const CATEGORY_OVERRIDE = {
   '自然学':   '科学',
   '心理学':   '知识',
   '乔装':     '技术',
+  '信用评级':  'credits',
 }
-// 记事本中不需要单独显示的技能（已在顶部展示）
-const SKILL_EXCLUDE_FROM_LIST = ['信用评级']
+// 不需要在技能列表中显示的技能
+const SKILL_EXCLUDE_FROM_LIST = []
 
 Page({
   data: {
@@ -189,21 +191,56 @@ Page({
       }
     })
 
-    // 整理技能列表（只显示有值的），按分类分组
-    const rawSkillList = Object.entries(character.skills || {})
-      .filter(([name, val]) => val > 0 && !SKILL_EXCLUDE_FROM_LIST.includes(name))
-      .map(([name, val]) => {
-        const t = calcSkillThresholds(val)
-        // 从 coc-data.js 的 SKILLS 找 category，找不到则归入"其他"
-        const skillDef = SKILLS.find(s => s.name === name)
-        // 应用展示层分类覆盖
-        let category = (skillDef && skillDef.category) || '其他'
-        if (CATEGORY_OVERRIDE[name]) {
-          category = CATEGORY_OVERRIDE[name]
+    // 整理技能列表（展示全部标准技能 + 自定义技能），按分类分组
+    const skillsObj = character.skills || {}
+    const dex = (character.attributes && character.attributes.DEX) || 0
+    const edu = (character.attributes && character.attributes.EDU) || 0
+
+    // 1. 标准技能：从 SKILLS 遍历，优先用玩家编辑值，否则用基础值
+    const rawSkillList = SKILLS
+      .filter(sk => !SKILL_EXCLUDE_FROM_LIST.includes(sk.name))
+      .map(sk => {
+        // 闪避特殊基础值 = DEX/2，母语 = EDU
+        let baseValue = sk.baseValue
+        if (sk.name === '闪避') baseValue = Math.floor(dex / 2)
+        if (sk.name === '母语') baseValue = edu
+
+        // 玩家编辑过的值覆盖基础值
+        const val = skillsObj[sk.name] !== undefined ? skillsObj[sk.name] : baseValue
+
+        // 展示层分类覆盖优先，其次用技能定义
+        let category
+        if (CATEGORY_OVERRIDE[sk.name]) {
+          category = CATEGORY_OVERRIDE[sk.name]
+        } else {
+          category = sk.category
         }
-        return { name, current: val, hard: t.hard, extreme: t.extreme, category }
+
+        const t = calcSkillThresholds(val)
+        return { name: sk.name, current: val, hard: t.hard, extreme: t.extreme, category }
       })
-      .sort((a, b) => b.current - a.current)
+
+    // 2. 自定义技能（character.skills 中有但 SKILLS 中没有的）
+    //    包括「其他语言（XX）」和「新技能」创建的自定义职业技能
+    const customSkillNames = Object.keys(skillsObj).filter(name => {
+      return !SKILLS.some(sk => sk.name === name)
+        && !SKILL_EXCLUDE_FROM_LIST.includes(name)
+    })
+    customSkillNames.forEach(name => {
+      const val = skillsObj[name]
+      if (val <= 0) return
+
+      // 其他语言（XX）归入「知识」类，其余归入「credits」组
+      let category = 'credits'
+      if (name.match(/^其他语言（.+）$/)) {
+        category = '知识'
+      }
+
+      const t = calcSkillThresholds(val)
+      rawSkillList.push({ name, current: val, hard: t.hard, extreme: t.extreme, category })
+    })
+
+    rawSkillList.sort((a, b) => b.current - a.current)
 
     const skillList = rawSkillList
     const skillGroupedList = this.buildGroupedSkills(rawSkillList)
@@ -379,9 +416,12 @@ Page({
 
   refreshGroupedSkills(keyword) {
     const rawList = (this.data.skillList || []).map(s => {
-      // 从原始列表中恢复 category（skillList 已包含）
+      // 尊重已有的 category 覆盖和自定义技能
+      if (CATEGORY_OVERRIDE[s.name]) {
+        return { ...s, category: CATEGORY_OVERRIDE[s.name] }
+      }
       const skillDef = SKILLS.find(sk => sk.name === s.name)
-      return { ...s, category: (skillDef && skillDef.category) || '其他' }
+      return { ...s, category: (skillDef && skillDef.category) || 'credits' }
     })
     this.setData({ skillGroupedList: this.buildGroupedSkills(rawList, keyword) })
   },

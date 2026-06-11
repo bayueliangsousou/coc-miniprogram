@@ -599,6 +599,7 @@
   font-weight: 800;
   color: var(--color-primary-dark);
   line-height: 1.2;
+  font-family: 'Special Elite';
 }
 
 /* 战斗属性：闪避 */
@@ -698,12 +699,14 @@
   text-align: center;
   font-size: 24rpx;
   color: var(--color-text-sub);
+  font-family: 'Special Elite';
 }
 
 .skv-val.primary {
   font-weight: 700;
   color: var(--color-primary-dark);
-  font-size: 28rpx;
+  font-size: 32rpx;
+  font-family: 'Special Elite';
 }
 
 .skv-threshold-val {
@@ -711,6 +714,7 @@
   text-align: center;
   font-size: 24rpx;
   color: var(--color-text-sub);
+  font-family: 'Special Elite';
 }
 
 .skv-dice-btn {
