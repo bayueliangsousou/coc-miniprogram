@@ -108,14 +108,12 @@
               class="skill-input current {{sk.displayAsOcc ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
               type="number"
               maxlength="2"
-              value="{{focusedSkill === sk.name && ghostValue > 0 ? '' : sk.current}}"
-              placeholder="{{focusedSkill === sk.name && ghostValue > 0 ? ghostValue : '0'}}"
-              placeholder-style="color:rgba(0,0,0,0.35);font-weight:600"
+              value="{{sk.current}}"
               data-name="{{sk.name}}"
               bindinput="onSkillInput"
               bindblur="onSkillBlur"
               bindfocus="onSkillFocus"
-              hold-keyboard="{{true}}"
+              placeholder="0"
             />
             <view class="skill-thresholds">
               <text class="threshold">{{sk.hard}}</text>

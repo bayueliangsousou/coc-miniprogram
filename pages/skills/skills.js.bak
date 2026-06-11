@@ -41,10 +41,7 @@ Page({
     newSkillValue: '',
     creditRatingError: false,
     isRandomized: false,      // 随机按钮状态：false=随机, true=清除
-    preRandomState: null,     // 随机前的快照 { skillCategories, creditRatingValue, character }
-    // 底纹输入功能
-    focusedSkill: '',         // 当前聚焦的技能名
-    ghostValue: 0             // 聚焦前旧值，用于底纹显示
+    preRandomState: null      // 随机前的快照 { skillCategories, creditRatingValue, character }
   },
 
   onLoad(options) {
@@ -228,8 +225,6 @@ Page({
         tempSkills[sk.name] = sk.current
       })
     })
-    // 补回信用评级（不在 skillCategories 中，但消耗职业点）
-    tempSkills['信用评级'] = character.skills['信用评级'] || 0
 
     const tempCharacter = { ...character, skills: tempSkills }
     const extraOccSkills = []
@@ -375,18 +370,7 @@ Page({
     // 输入中只更新显示值，不做校验拦截
     const raw = e.detail.value
     const value = raw === '' ? '' : parseInt(raw)
-
-    // 同步到 character.skills 让 calcPoints 感知消耗
-    const { character } = this.data
-    if (character) {
-      const skills = { ...character.skills, '信用评级': value === '' ? 0 : value }
-      const newCharacter = { ...character, skills }
-      this.setData({ creditRatingValue: value, creditRatingError: false, character: newCharacter }, () => {
-        this.calcPoints()
-      })
-    } else {
-      this.setData({ creditRatingValue: value, creditRatingError: false })
-    }
+    this.setData({ creditRatingValue: value, creditRatingError: false })
   },
 
   // 社会信用评级失去焦点时校验修正
@@ -435,7 +419,7 @@ Page({
     let filtered = String(e.detail.value).replace(/[^\d]/g, '').slice(0, 2)
     const value = parseInt(filtered) || 0
 
-    const { skillCategories: oldCats, character, occConfig, ghostValue } = this.data
+    const { skillCategories: oldCats, character, occConfig } = this.data
 
     // 2. 找到当前技能在嵌套数组中的索引
     let catIdx = -1, skIdx = -1
@@ -469,11 +453,10 @@ Page({
     })
     const points = calcSkillPoints({ ...character, skills: tempSkills }, extraOccSkills)
 
-    // 6. 更新点数 + 路径更新当前技能值 + 首次输入时清除底纹（一次 setData 避免闪烁）
+    // 6. 更新点数 + 路径更新当前技能值（保持 data 与输入框同步，避免重渲染覆盖）
     this.setData({
       points,
-      [`skillCategories[${catIdx}].skills[${skIdx}].current`]: value,
-      ghostValue: 0  // 用户已输入，清除底纹
+      [`skillCategories[${catIdx}].skills[${skIdx}].current`]: value
     })
 
     // 7. return 过滤后的字符串，框架原生替换（不触发 setData 重渲染）
@@ -484,7 +467,7 @@ Page({
   onSkillBlur(e) {
     const { name } = e.currentTarget.dataset
 
-    const { skillCategories: oldCats, points, character, occConfig, invalidSkills, _editingStart, ghostValue } = this.data
+    const { skillCategories: oldCats, points, character, occConfig, invalidSkills, _editingStart } = this.data
 
     // 找到当前技能
     let baseValue = 0, isLocked = false
@@ -500,19 +483,6 @@ Page({
     // 编辑前的值（由 onSkillFocus 保存）
     const oldValue = (_editingStart && _editingStart[name]) || baseValue
     const inputValue = parseInt(e.detail.value) || 0
-
-    // 底纹恢复：聚焦后未输入就失焦 → 还原旧值，清理底纹状态
-    if (inputValue === 0 && ghostValue > 0) {
-      this._updateSkillValue(name, ghostValue)
-      // 找到路径确保 WXML 重渲染
-      let ci = -1, si = -1
-      oldCats.forEach((c, i) => c.skills.forEach((_, j) => { if (c.skills[j].name === name) { ci = i; si = j } }))
-      const setDataObj = { focusedSkill: '', ghostValue: 0 }
-      if (ci >= 0) setDataObj[`skillCategories[${ci}].skills[${si}].current`] = ghostValue
-      this.setData(setDataObj)
-      return
-    }
-
     let finalValue = inputValue
     let error = ''
     let pointsTriggered = false
@@ -624,22 +594,7 @@ Page({
     const newEditingStart = { ..._editingStart }
     delete newEditingStart[name]
 
-    this.setData({ skillCategories, points: newPoints, invalidSkills: newInvalidSkills, _editingStart: newEditingStart, focusedSkill: '', ghostValue: 0 })
-  },
-
-  // 底纹辅助：直接写入技能值（不走校验）
-  _updateSkillValue(name, value) {
-    const { skillCategories } = this.data
-    skillCategories.forEach(cat => {
-      cat.skills.forEach(sk => {
-        if (sk.name === name) {
-          sk.current = value
-          const thresholds = calcSkillThresholds(value)
-          sk.hard = thresholds.hard
-          sk.extreme = thresholds.extreme
-        }
-      })
-    })
+    this.setData({ skillCategories, points: newPoints, invalidSkills: newInvalidSkills, _editingStart: newEditingStart })
   },
 
   // ── 聚焦时：记录编辑前的值，供 onBlur delta 计算；清空全部红色框 ──
@@ -649,18 +604,14 @@ Page({
 
     // 记录编辑前的值
     let editingStart = _editingStart || {}
-    let oldValue = 0
     skillCategories.forEach(cat => {
       cat.skills.forEach(sk => {
-        if (sk.name === name) {
-          editingStart[name] = sk.current
-          oldValue = sk.current
-        }
+        if (sk.name === name) editingStart[name] = sk.current
       })
     })
 
-    // 清除所有技能错误标记，设置底纹
-    this.setData({ invalidSkills: {}, _editingStart: editingStart, focusedSkill: name, ghostValue: oldValue })
+    // 清除所有技能错误标记（永远只有一个红色框，且只在上次操作的框上）
+    this.setData({ invalidSkills: {}, _editingStart: editingStart })
   },
 
   // 随机分配技能点（点击后按钮变「清除」，再点还原）
@@ -963,8 +914,7 @@ Page({
         skills[name] = sk.current
       })
     })
-    // 补回信用评级（不在 skillCategories 中）
-    skills['信用评级'] = this.data.creditRatingValue
+    // 保存可选技能信息
     const updated = {
       ...character,
       skills

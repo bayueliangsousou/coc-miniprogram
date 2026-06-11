@@ -480,12 +480,12 @@
 .attr-cell {
   background: var(--color-card, #fff);
   border-radius: var(--radius-sm);
-  padding: 28rpx 10rpx 24rpx;
+  padding: 21rpx 10rpx 18rpx;
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:14rpx;
-  min-height:160rpx;
+  gap:10rpx;
+  min-height:120rpx;
   cursor: pointer;
   /* MacBook 键盘键帽——凸起状态 */
   box-shadow:
@@ -529,7 +529,7 @@
   align-items: center;
   justify-content: center;
   gap: 16rpx;
-  margin-top: 12rpx;
+  margin-top: 9rpx;
 }
 
 .attr-cell-val {
