@@ -44,7 +44,6 @@ Page({
     // 底纹输入功能
     focusedSkill: '',         // 当前聚焦的技能名
     ghostValue: 0,            // 聚焦前旧值，用于底纹显示
-    scrollTop: 0             // scroll-view 滚动位置（用于程序化恢复）
   },
 
   onLoad(options) {
@@ -54,10 +53,6 @@ Page({
     wx.enableAlertBeforeUnload({
       message: '您有未保存的修改，确定要离开吗？'
     })
-    // 滚动位置追踪（不放在 data 里，避免触发重渲染）
-    this._lastScrollTop = 0
-    this._pendingRestore = false
-    this._isRestoring = false
   },
 
   onShow() {
@@ -186,8 +181,8 @@ Page({
       })
     })
 
-    // 固定分类展示顺序
-    const CATEGORY_ORDER = ['调查', '社交', '知识', '技术', '运动', '科学', '艺术', '战斗', '其他']
+    // 固定分类展示顺序（战斗类放最前面）
+    const CATEGORY_ORDER = ['战斗', '调查', '社交', '知识', '技术', '运动', '科学', '艺术', '其他']
     skillCategories.sort((a, b) => {
       const idxA = CATEGORY_ORDER.indexOf(a.category)
       const idxB = CATEGORY_ORDER.indexOf(b.category)
@@ -311,7 +306,7 @@ Page({
       const limit = occConfig.categoryLimits[cat.category]
       if (limit) {
         const over50 = cat.skills
-          .filter(sk => sk.current > 50 && !sk.isLocked)
+          .filter(sk => sk.current > 50 && !sk.isLocked && sk.name !== '母语')
           .sort((a, b) => b.current - a.current)
         over50.slice(0, limit).forEach(sk => categoryOccupied.add(sk.name))
       }
@@ -323,7 +318,7 @@ Page({
       const allOver50 = []
       skillCategories.forEach(cat => {
         cat.skills.forEach(sk => {
-          if (sk.current > 50 && !sk.isLocked && !categoryOccupied.has(sk.name)) {
+          if (sk.current > 50 && !sk.isLocked && !categoryOccupied.has(sk.name) && sk.name !== '母语') {
             allOver50.push(sk)
           }
         })
@@ -492,11 +487,7 @@ Page({
     const { name } = e.currentTarget.dataset
 
     // 🔍 调试日志：记录失焦时的状态
-    console.log('[onSkillBlur]', name, '| _lastScrollTop:', this._lastScrollTop, '| inputValue:', e.detail.value)
-
-    // 失焦后不再需要滚动恢复
-    this._pendingRestore = false
-    clearTimeout(this._restoreTimer)
+    console.log('[onSkillBlur]', name, '| inputValue:', e.detail.value)
 
     const { skillCategories: oldCats, points, character, occConfig, invalidSkills, _editingStart, ghostValue } = this.data
 
@@ -672,22 +663,6 @@ Page({
         }
       })
     })
-
-    // 保存当前滚动位置，设置恢复标志（scroll-view 自动滚动后 onScrollViewScroll 会恢复）
-    // 【关键】加 300ms 超时：如果 scroll-view 没有立刻自动滚动，说明不需要恢复，标志自动失效
-    // 防止反复点同一个 input 后 _pendingRestore 一直粘着，导致后续正常滚动也被误恢复
-    this._restoreScrollTop = this._lastScrollTop || 0
-    this._pendingRestore = true
-    clearTimeout(this._restoreTimer)
-    this._restoreTimer = setTimeout(() => {
-      if (this._pendingRestore) {
-        console.log('[onSkillFocus] ⏰ 超时清除 _pendingRestore（scroll-view 未触发自动滚动）')
-        this._pendingRestore = false
-      }
-    }, 300)
-
-    // 🔍 调试日志：记录 focus 时的状态
-    console.log('[onSkillFocus]', name, '| _lastScrollTop:', this._lastScrollTop, '| _restoreScrollTop:', this._restoreScrollTop)
 
     // 清除所有技能错误标记，设置底纹
     this.setData({ invalidSkills: {}, _editingStart: editingStart, focusedSkill: name, ghostValue: oldValue })
@@ -1132,36 +1107,6 @@ Page({
         })
       }
     })
-  },
-
-  onScrollViewScroll(e) {
-    const newTop = e.detail.scrollTop
-    // 🔍 调试日志：记录每次滚动
-    console.log('[onScrollViewScroll] newTop:', newTop, '| _lastScrollTop:', this._lastScrollTop, '| _pendingRestore:', this._pendingRestore, '| _isRestoring:', this._isRestoring)
-
-    // 自动滚动恢复：onSkillFocus 设了 _pendingRestore 后，
-    // scroll-view 原生自动滚动会触发此事件，此时把位置扳回去
-    // 【关键】差值检查：只有跳变 > 100 才认为是被自动滚动了（防止误恢复正常滚动）
-    if (this._pendingRestore) {
-      const delta = Math.abs(newTop - this._restoreScrollTop)
-      if (delta > 100) {
-        this._pendingRestore = false
-        this._isRestoring = true
-        console.log('[onScrollViewScroll] 🚨 触发恢复！delta:', delta, '| 将 scrollTop 从', newTop, '恢复到', this._restoreScrollTop)
-        this.setData({ scrollTop: this._restoreScrollTop }, () => {
-          this._isRestoring = false
-          console.log('[onScrollViewScroll] ✅ 恢复完成，当前 scrollTop:', this.data.scrollTop)
-        })
-        return
-      }
-      // 差值小 → 正常滚动/惯性滚动 → 清除标志，不恢复
-      console.log('[onScrollViewScroll] 🔕 delta 太小 (' + delta + ')，忽略恢复')
-      this._pendingRestore = false
-    }
-    // 正常追踪
-    if (!this._isRestoring) {
-      this._lastScrollTop = newTop
-    }
   },
 
   preventBubble() {},

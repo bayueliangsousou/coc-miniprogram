@@ -335,6 +335,16 @@
   padding: 0;
   background: #fafafa;
   font-family: 'Special Elite';
+  /* 阻止长按选中文字导致 scroll-view 锚定 */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 阻止技能行内的文字被长按选中（防止 scroll-view 滚动锚定） */
+.skill-row {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .skill-input.input-occ {
