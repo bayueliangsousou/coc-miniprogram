@@ -665,6 +665,7 @@ Page({
   // ── 点击技能值：弹出自定义数字键盘 ──
   onSkillTap(e) {
     const { name } = e.currentTarget.dataset
+    console.log('[onSkillTap] 技能:', name)
     const { skillCategories, _editingStart } = this.data
 
     // 记录编辑前的值
@@ -908,25 +909,7 @@ Page({
     const { skillCategories, points, creditRatingRange, creditRatingValue } = this.data
     const errors = []
 
-    // 1. 检查已标记的技能错误
-    const { invalidSkills } = this.data
-    Object.keys(invalidSkills).forEach(name => {
-      errors.push(`「${name}」${invalidSkills[name]}`)
-    })
-
-    // 2. 检查总消耗是否超过总可用（核心防负数校验）
-    const totalAvailable = points.occTotal + points.intTotal
-    let totalUsed = 0
-    skillCategories.forEach(cat => {
-      cat.skills.forEach(sk => {
-        totalUsed += Math.max(0, sk.current - sk.baseValue)
-      })
-    })
-    if (totalUsed > totalAvailable) {
-      errors.push(`技能总消耗 ${totalUsed} 超过可用点数 ${totalAvailable}，超出 ${totalUsed - totalAvailable} 点`)
-    }
-
-    // 3. 检查信用评级
+    // 1. 检查信用评级（唯一拦截项）
     if (creditRatingRange) {
       if (creditRatingValue === '' || creditRatingValue === undefined || creditRatingValue === null) {
         errors.push('社会信用评级不能为空')
@@ -938,18 +921,6 @@ Page({
         }
       }
     }
-
-    // 4. 逐技能重新校验（防止漏检）
-    skillCategories.forEach(cat => {
-      cat.skills.forEach(sk => {
-        if (sk.current < sk.baseValue) {
-          const err = `「${sk.name}」低于基础值 ${sk.baseValue}`
-          if (!errors.some(e => e.includes(`「${sk.name}」`))) {
-            errors.push(err)
-          }
-        }
-      })
-    })
 
     return errors
   },

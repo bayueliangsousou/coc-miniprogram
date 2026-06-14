@@ -116,6 +116,8 @@
               class="skill-num-view {{sk.displayAsOcc ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
               data-name="{{sk.name}}"
               bindtap="onSkillTap"
+              hover-class="skill-num-view-hover"
+              hover-stay-time="80"
             >
               <text>{{sk.current}}</text>
             </view>
@@ -183,35 +185,29 @@
 <!-- 自定义数字键盘 -->
 <view class="numpad-overlay" wx:if="{{numpadVisible}}" catchtap="onNumpadCancel">
   <view class="numpad-panel" catchtap="preventBubble">
-    <!-- 标题栏 -->
+    <!-- 标题栏：技能名 + 当前输入值 -->
     <view class="numpad-header">
       <text class="numpad-title">{{numpadTarget}}</text>
-      <text class="numpad-hint" wx:if="{{numpadOldValue > 0}}">原值 {{numpadOldValue}}</text>
+      <text class="numpad-value">{{numpadValue || '0'}}</text>
     </view>
 
-    <!-- 显示区 -->
-    <view class="numpad-display">
-      <text class="numpad-display-value {{numpadValue === '' ? 'numpad-display-empty' : ''}}">{{numpadValue || '0'}}</text>
-    </view>
-
-    <!-- 按键区：4列网格 -->
+    <!-- 按键区：3列网格，12键 -->
     <view class="numpad-keys">
       <view class="numpad-key" data-key="1" bindtap="onNumpadTap">1</view>
       <view class="numpad-key" data-key="2" bindtap="onNumpadTap">2</view>
       <view class="numpad-key" data-key="3" bindtap="onNumpadTap">3</view>
-      <view class="numpad-key numpad-key-back" bindtap="onNumpadBackspace">⌫</view>
 
       <view class="numpad-key" data-key="4" bindtap="onNumpadTap">4</view>
       <view class="numpad-key" data-key="5" bindtap="onNumpadTap">5</view>
       <view class="numpad-key" data-key="6" bindtap="onNumpadTap">6</view>
-      <view class="numpad-key numpad-key-confirm" bindtap="onNumpadConfirm">确定</view>
 
       <view class="numpad-key" data-key="7" bindtap="onNumpadTap">7</view>
       <view class="numpad-key" data-key="8" bindtap="onNumpadTap">8</view>
       <view class="numpad-key" data-key="9" bindtap="onNumpadTap">9</view>
-      <view class="numpad-key numpad-key-cancel" bindtap="onNumpadCancel">取消</view>
 
-      <view class="numpad-key numpad-key-zero" data-key="0" bindtap="onNumpadTap">0</view>
+      <view class="numpad-key numpad-key-back" bindtap="onNumpadBackspace">⌫</view>
+      <view class="numpad-key" data-key="0" bindtap="onNumpadTap">0</view>
+      <view class="numpad-key numpad-key-confirm" bindtap="onNumpadConfirm">确定</view>
     </view>
   </view>
 </view>

@@ -1047,9 +1047,9 @@ Page({
 
     // 大失败判定
     if (skill >= 50) {
-      if (roll >= 96) return { text: '大失败', class: 'fumble' }
-    } else {
       if (roll === 100) return { text: '大失败', class: 'fumble' }
+    } else {
+      if (roll >= 95) return { text: '大失败', class: 'fumble' }
     }
 
     // 普通失败
