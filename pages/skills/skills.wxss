@@ -16,7 +16,7 @@
   height: 0;
   min-height: 0;
   padding: 0 24rpx;
-  padding-bottom: 240rpx;
+  padding-bottom: 0;
   box-sizing: border-box;
 }
 
@@ -567,4 +567,10 @@
 
 .modal-btns .btn {
   flex: 1;
+}
+
+/* 滚动区域底部占位（防止最后一行被底部按钮栏遮住） */
+.scroll-bottom-spacer {
+  height: 160rpx;
+  width: 100%;
 }

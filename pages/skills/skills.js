@@ -44,6 +44,11 @@ Page({
     // 底纹输入功能
     focusedSkill: '',         // 当前聚焦的技能名
     ghostValue: 0,            // 聚焦前旧值，用于底纹显示
+    // 自定义数字键盘
+    numpadVisible: false,
+    numpadTarget: '',         // 当前编辑的技能名
+    numpadValue: '',          // 键盘输入值（字符串）
+    numpadOldValue: 0,        // 编辑前的值
   },
 
   onLoad(options) {
@@ -483,33 +488,15 @@ Page({
   },
 
   // ── 失焦时：统一执行校验 + 截断 + 标红（delta 差量） ──
+  // 保留此方法用于底层兼容（新建技能弹窗等场景仍使用原生 input）
   onSkillBlur(e) {
     const { name } = e.currentTarget.dataset
-
-    // 🔍 调试日志：记录失焦时的状态
-    console.log('[onSkillBlur]', name, '| inputValue:', e.detail.value)
-
-    const { skillCategories: oldCats, points, character, occConfig, invalidSkills, _editingStart, ghostValue } = this.data
-
-    // 找到当前技能
-    let baseValue = 0, isLocked = false
-    oldCats.forEach(cat => {
-      cat.skills.forEach(sk => {
-        if (sk.name === name) {
-          baseValue = sk.baseValue
-          isLocked = sk.isLocked
-        }
-      })
-    })
-
-    // 编辑前的值（由 onSkillFocus 保存）
-    const oldValue = (_editingStart && _editingStart[name]) || baseValue
     const inputValue = parseInt(e.detail.value) || 0
+    const { ghostValue, skillCategories: oldCats } = this.data
 
-    // 底纹恢复：聚焦后未输入就失焦 → 还原旧值，清理底纹状态
+    // 底纹恢复：聚焦后未输入就失焦 → 还原旧值
     if (inputValue === 0 && ghostValue > 0) {
       this._updateSkillValue(name, ghostValue)
-      // 找到路径确保 WXML 重渲染
       let ci = -1, si = -1
       oldCats.forEach((c, i) => c.skills.forEach((_, j) => { if (c.skills[j].name === name) { ci = i; si = j } }))
       const setDataObj = { focusedSkill: '', ghostValue: 0 }
@@ -518,12 +505,26 @@ Page({
       return
     }
 
+    this._validateAndApply(name, inputValue)
+  },
+
+  // 共享校验：数字键盘「确定」和原生 onSkillBlur 共用此方法
+  _validateAndApply(name, inputValue) {
+    const { skillCategories: oldCats, character, occConfig, invalidSkills, _editingStart } = this.data
+
+    // 找到当前技能
+    let baseValue = 0, isLocked = false
+    oldCats.forEach(cat => {
+      cat.skills.forEach(sk => {
+        if (sk.name === name) { baseValue = sk.baseValue; isLocked = sk.isLocked }
+      })
+    })
+
+    const oldValue = (_editingStart && _editingStart[name]) || baseValue
     let finalValue = inputValue
     let error = ''
-    let pointsTriggered = false
 
     // ── 用 oldValue 状态跑 updateSkillDisplayState，判定：剩余自选名额 > 0？──
-    // 关键：排除当前技能计数，只看「别人占了多少座」
     const catsAtOld = oldCats.map(cat => ({
       ...cat,
       skills: cat.skills.map(sk => ({
@@ -536,7 +537,6 @@ Page({
     const occSkillNames = []
     oldDisplayCats.forEach(cat => {
       cat.skills.forEach(sk => {
-        // 只数「自选」的职业技能（isLocked 的锁定技能不占自选名额）
         if (sk.displayAsOcc && !sk.isLocked) {
           occSkillNames.push(sk.name)
           if (sk.name !== name) occupiedExcludingThis++
@@ -550,16 +550,6 @@ Page({
     const maxCap = isOcc ? 85 : 50
 
     // ── 用 baseValue 状态重算可用点数池子 ──
-    // 核心逻辑（按你的描述）：
-    //   职业技能：基础值 + 职业点够到85 → 生效85
-    //             不够 → 基础值 + 职业点 + 兴趣点够到85 → 生效85
-    //             还不够 → 生效 基础值+职业点+兴趣点，框变红
-    //   兴趣技能：基础值 + 兴趣点够到50 → 生效50
-    //             不够 → 生效 基础值+兴趣点，框变红
-    //   输入值小于基础值 → 生效基础值（硬下限，不标红）
-    //
-    // 实现方式：把本技能设回 baseValue（相当于把已分配点数返还池子），
-    // 用 baseValue 状态跑 calcSkillPoints，得到真实的剩余池子。
     const skillsAtBase = {}
     oldCats.forEach(cat => {
       cat.skills.forEach(sk => {
@@ -577,20 +567,16 @@ Page({
 
     // ── 三段校验 ──
     // 1. 上限截断（硬限制，不标红）
-    if (finalValue > maxCap) {
-      finalValue = maxCap
-    }
+    if (finalValue > maxCap) { finalValue = maxCap }
 
-    // 2. 点数够不够（从基础值出发算最大可达值，不够就截断到最大可达值，标红）
+    // 2. 点数够不够（截断到最大可达值，标红）
     if (finalValue > maxFromBase) {
       finalValue = maxFromBase
       error = '技能点不足'
     }
 
     // 3. 基础值兜底（硬下限，不标红）
-    if (finalValue < baseValue) {
-      finalValue = baseValue
-    }
+    if (finalValue < baseValue) { finalValue = baseValue }
 
     // 更新值（含 updateSkillDisplayState 重排序）
     let skillCategories = oldCats.map(cat => ({
@@ -632,6 +618,35 @@ Page({
     this.setData({ skillCategories, points: newPoints, invalidSkills: newInvalidSkills, _editingStart: newEditingStart, focusedSkill: '', ghostValue: 0 })
   },
 
+  // ═══════════════════════════════════════════════════════════
+  // 自定义数字键盘事件
+  // ═══════════════════════════════════════════════════════════
+  onNumpadTap(e) {
+    const key = e.currentTarget.dataset.key
+    let { numpadValue } = this.data
+    if (numpadValue.length >= 2) return   // 最多2位（0-99）
+    numpadValue += key
+    this.setData({ numpadValue })
+  },
+
+  onNumpadBackspace() {
+    let { numpadValue } = this.data
+    numpadValue = numpadValue.slice(0, -1)
+    this.setData({ numpadValue })
+  },
+
+  onNumpadConfirm() {
+    const { numpadTarget, numpadValue } = this.data
+    const inputValue = numpadValue === '' ? 0 : parseInt(numpadValue)
+    // 执行与原生 onSkillBlur 完全相同的校验逻辑
+    this._validateAndApply(numpadTarget, inputValue)
+    this.setData({ numpadVisible: false, numpadTarget: '', numpadValue: '', numpadOldValue: 0 })
+  },
+
+  onNumpadCancel() {
+    this.setData({ numpadVisible: false, numpadTarget: '', numpadValue: '', numpadOldValue: 0 })
+  },
+
   // 底纹辅助：直接写入技能值（不走校验）
   _updateSkillValue(name, value) {
     const { skillCategories } = this.data
@@ -647,25 +662,30 @@ Page({
     })
   },
 
-  // ── 聚焦时：记录编辑前的值，供 onBlur delta 计算；清空全部红色框 ──
-  onSkillFocus(e) {
+  // ── 点击技能值：弹出自定义数字键盘 ──
+  onSkillTap(e) {
     const { name } = e.currentTarget.dataset
     const { skillCategories, _editingStart } = this.data
 
     // 记录编辑前的值
-    let editingStart = _editingStart || {}
     let oldValue = 0
     skillCategories.forEach(cat => {
       cat.skills.forEach(sk => {
-        if (sk.name === name) {
-          editingStart[name] = sk.current
-          oldValue = sk.current
-        }
+        if (sk.name === name) oldValue = sk.current
       })
     })
 
-    // 清除所有技能错误标记，设置底纹
-    this.setData({ invalidSkills: {}, _editingStart: editingStart, focusedSkill: name, ghostValue: oldValue })
+    // 保存到 _editingStart 供后续校验使用
+    const newEditingStart = { ...(_editingStart || {}), [name]: oldValue }
+
+    this.setData({
+      invalidSkills: {},
+      _editingStart: newEditingStart,
+      numpadVisible: true,
+      numpadTarget: name,
+      numpadValue: '',
+      numpadOldValue: oldValue
+    })
   },
 
   // 随机分配技能点（点击后按钮变「清除」，再点还原）

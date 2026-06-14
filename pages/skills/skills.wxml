@@ -50,6 +50,12 @@
     <text>★ 金色标记为职业技能</text>
   </view>
 
+  <!-- 列表表头 -->
+  <view class="skills-header-hint">
+    <text>当前值</text>
+    <text style="margin-left:20rpx">困难 / 极难</text>
+  </view>
+
   <!-- 社会信用评级（放在调查分类上方） -->
   <view class="credit-rating-section" wx:if="{{creditRatingRange}}">
     <view class="credit-rating-header">
@@ -79,7 +85,7 @@
     </view>
 
     <!-- 技能行 -->
-    <view wx:if="{{expandedCategories[item.category]}}">
+    <block wx:if="{{expandedCategories[item.category]}}">
       <block wx:for="{{item.skills}}" wx:key="name" wx:for-item="sk">
         <!-- 搜索过滤 -->
         <view
@@ -106,20 +112,13 @@
             </view>
           </view>
           <view class="skill-inputs">
-            <input
-              class="skill-input current {{sk.displayAsOcc ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
-              adjust-position="{{false}}"
-              type="number"
-              maxlength="2"
-              value="{{focusedSkill === sk.name && ghostValue > 0 ? '' : sk.current}}"
-              placeholder="{{focusedSkill === sk.name && ghostValue > 0 ? ghostValue : '0'}}"
-              placeholder-style="color:rgba(0,0,0,0.35);font-weight:600"
+            <view
+              class="skill-num-view {{sk.displayAsOcc ? 'input-occ' : 'input-int'}} {{invalidSkills[sk.name] ? 'input-error' : ''}}"
               data-name="{{sk.name}}"
-              bindinput="onSkillInput"
-              bindblur="onSkillBlur"
-              bindfocus="onSkillFocus"
-              hold-keyboard="{{true}}"
-            />
+              bindtap="onSkillTap"
+            >
+              <text>{{sk.current}}</text>
+            </view>
             <view class="skill-thresholds">
               <text class="threshold">{{sk.hard}}</text>
               <text class="threshold-sep">/</text>
@@ -129,14 +128,11 @@
         </view>
       </block>
 
-    </view>
+    </block>
   </view>
 
-  <!-- 表头说明（悬浮） -->
-  <view class="skills-header-hint">
-    <text>当前值</text>
-    <text style="margin-left:20rpx">困难 / 极难</text>
-  </view>
+  <!-- 底部占位：防止最后一行被底部按钮栏遮住 -->
+  <view class="scroll-bottom-spacer"></view>
 
   </scroll-view>
 
@@ -180,6 +176,42 @@
     <view class="modal-btns">
       <button class="btn btn-ghost" bindtap="onCancelNewSkill">取消</button>
       <button class="btn btn-primary" bindtap="onConfirmNewSkill">保存</button>
+    </view>
+  </view>
+</view>
+
+<!-- 自定义数字键盘 -->
+<view class="numpad-overlay" wx:if="{{numpadVisible}}" catchtap="onNumpadCancel">
+  <view class="numpad-panel" catchtap="preventBubble">
+    <!-- 标题栏 -->
+    <view class="numpad-header">
+      <text class="numpad-title">{{numpadTarget}}</text>
+      <text class="numpad-hint" wx:if="{{numpadOldValue > 0}}">原值 {{numpadOldValue}}</text>
+    </view>
+
+    <!-- 显示区 -->
+    <view class="numpad-display">
+      <text class="numpad-display-value {{numpadValue === '' ? 'numpad-display-empty' : ''}}">{{numpadValue || '0'}}</text>
+    </view>
+
+    <!-- 按键区：4列网格 -->
+    <view class="numpad-keys">
+      <view class="numpad-key" data-key="1" bindtap="onNumpadTap">1</view>
+      <view class="numpad-key" data-key="2" bindtap="onNumpadTap">2</view>
+      <view class="numpad-key" data-key="3" bindtap="onNumpadTap">3</view>
+      <view class="numpad-key numpad-key-back" bindtap="onNumpadBackspace">⌫</view>
+
+      <view class="numpad-key" data-key="4" bindtap="onNumpadTap">4</view>
+      <view class="numpad-key" data-key="5" bindtap="onNumpadTap">5</view>
+      <view class="numpad-key" data-key="6" bindtap="onNumpadTap">6</view>
+      <view class="numpad-key numpad-key-confirm" bindtap="onNumpadConfirm">确定</view>
+
+      <view class="numpad-key" data-key="7" bindtap="onNumpadTap">7</view>
+      <view class="numpad-key" data-key="8" bindtap="onNumpadTap">8</view>
+      <view class="numpad-key" data-key="9" bindtap="onNumpadTap">9</view>
+      <view class="numpad-key numpad-key-cancel" bindtap="onNumpadCancel">取消</view>
+
+      <view class="numpad-key numpad-key-zero" data-key="0" bindtap="onNumpadTap">0</view>
     </view>
   </view>
 </view>
