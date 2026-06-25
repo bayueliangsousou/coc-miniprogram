@@ -89,7 +89,19 @@ Component({
     // ─── 公共方法（供父页面 selectComponent 调用） ───
 
     open() {
+      // 如果已经在自由投掷模式，不重复打开
       if (this.data.diceMode) return
+      // 清理上一个模式的状态（鉴定模式 → 自由模式切换时必须清理）
+      if (this.data._skillCheckMode) {
+        dice.clearAllDice()
+        this.setData({ _skillCheckMode: false })
+      }
+      // 强制重置 dice 就绪状态，确保 _diceInit 会重新初始化
+      // 防止 dice-engine 内部状态损坏导致 init 不被调用
+      if (this._diceReady) {
+        try { dice.stopRenderLoop() } catch (e) {}
+        this._diceReady = false
+      }
       this.setData({ diceMode: true }, () => {
         this._diceInit()
       })
@@ -207,7 +219,19 @@ Component({
     },
 
     async onDiceThrow() {
-      if (dice.getIsAnimating()) return
+      // 如果动画还在进行中，等待最多 8 秒，超时则强制重置状态（防止状态损坏导致永久卡死）
+      if (dice.getIsAnimating()) {
+        console.warn('[dice-tool] 上一次投掷动画未结束，等待重置...')
+        let waited = 0
+        while (dice.getIsAnimating() && waited < 8000) {
+          await new Promise(resolve => setTimeout(resolve, 200))
+          waited += 200
+        }
+        if (dice.getIsAnimating()) {
+          console.warn('[dice-tool] 动画超时，强制重置 isAnimating')
+          dice.clearAllDice()  // clearAllDice 会重置 isAnimating = false
+        }
+      }
       const counts = this.data.diceCounts
       dice.clearAllDice()
       this.setData({ diceResults: [], diceTotalSum: 0 })
