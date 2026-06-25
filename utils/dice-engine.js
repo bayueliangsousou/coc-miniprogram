@@ -416,10 +416,24 @@ function getResultByVertexIntersection(type,mesh){
    ============================================================ */
 
 function init(cvs, cssWidth, cssHeight) {
+  // 幂等保护：如果已经用同一个 canvas 初始化过，直接返回（防止重复调用 createScopedThreejs 报错）
+  if (renderer && canvas === cvs) {
+    startRenderLoop()
+    return true
+  }
   // 切换 canvas 前先用旧 canvas 取消旧的 animFrame，防止残留循环叠加
   if (animFrameId && animFrameCanvas) {
     try { animFrameCanvas.cancelAnimationFrame(animFrameId) } catch(e) {}
     animFrameId = null
+  }
+  // 如果用的是不同的 canvas，先清理旧状态
+  if (renderer && canvas && canvas !== cvs) {
+    stopRenderLoop()
+    try {
+      if (renderer) { renderer.dispose(); renderer = null }
+      scene = null
+      camera = null
+    } catch(e) {}
   }
   canvas = cvs
   animFrameCanvas = cvs
