@@ -4,6 +4,12 @@
   "functions": [
     {
       "name": "createRoom",
+      "type": "Event",
+      "handler": "index.main",
+      "timeout": 15,
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "installDependency": true,
       "envVariables": {
         "TCB_ENV": "mastermind-5grqnmdu0d3a7d81"
       }
