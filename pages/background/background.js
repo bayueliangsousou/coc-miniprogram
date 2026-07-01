@@ -1,5 +1,5 @@
 // pages/background/background.js
-const { getCharacterById, saveCharacter } = require('../../utils/character')
+const { getCharacterById, saveCharacter, saveDraft, loadDraft, clearDraft, isDraftNewer } = require('../../utils/character')
 const { saveThenBack } = require('../../utils/nav')
 
 Page({
@@ -29,6 +29,11 @@ Page({
     const { id } = options
     const character = getCharacterById(id)
     if (character) {
+      // 草稿优先：用草稿里的 background 覆盖存档
+      const draft = loadDraft(id)
+      if (draft && draft.character && isDraftNewer(draft, character)) {
+        character.background = draft.character.background
+      }
       this.setData({
         characterId: id,
         background: { ...this.data.background, ...character.background }
@@ -49,6 +54,15 @@ Page({
     if (!character) return
     character.background = background
     saveCharacter(character)
+    clearDraft(characterId)
     saveThenBack({ title: '背景已保存' })
+  },
+
+  // 页面隐藏/关闭时落草稿，防未保存丢失
+  onHide() {
+    const { characterId, background } = this.data
+    if (!characterId) return
+    const character = getCharacterById(characterId) || { id: characterId }
+    saveDraft({ ...character, background })
   }
 })

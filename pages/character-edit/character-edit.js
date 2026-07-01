@@ -1,6 +1,6 @@
 // pages/character-edit/character-edit.js
-const { createEmptyCharacter, saveCharacter, getCharacterById, calcDerived, calcSkillPoints } = require('../../utils/character')
-const { ATTR_NAMES, ATTR_DICE_RULES, rollAttributes, SKILLS } = require('../../utils/coc-data')
+const { createEmptyCharacter, saveCharacter, getCharacterById, calcDerived, calcSkillPoints, saveDraft, saveNewDraft, loadDraft, loadNewDraft, clearDraft, clearNewDraft, isDraftNewer } = require('../../utils/character')
+const { ATTR_NAMES, ATTR_DICE_RULES, rollAttributes, rollDice, SKILLS } = require('../../utils/coc-data')
 const { WEAPONS_BY_SKILL } = require('../../utils/weapons-data')
 const { saveThenBack } = require('../../utils/nav')
 
@@ -12,6 +12,7 @@ Page({
     attrKeys: ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU', 'LUK'],
     attrNames: ATTR_NAMES,
     attrDiceRules: ATTR_DICE_RULES,
+    attrSum: 0,
     isNew: true,
     skillPoints: { occTotal: 0, intTotal: 0 },
     // 武器相关
@@ -74,28 +75,65 @@ Page({
   },
 
   onShow() {
-    const { character, isNew } = this.data
+    const { character } = this.data
     if (!character) return
     const latest = getCharacterById(character.id)
     if (latest) {
-      if (!latest.combat) {
-        const d = calcDerived(latest.attributes)
-        latest.combat = { hpCurrent: d.hp, sanCurrent: d.sanStart, mpCurrent: d.mp }
+      // 已存档角色：优先用比存档更新的未保存草稿
+      const draft = loadDraft(character.id)
+      const useDraft = !!(draft && isDraftNewer(draft, latest))
+      this.restoreCharacterData(useDraft ? draft.character : latest, useDraft)
+    } else {
+      // 尚未首次存档的新角色：尝试恢复新建草稿
+      const newDraft = loadNewDraft()
+      if (newDraft && newDraft.character) {
+        this.restoreCharacterData(newDraft.character, true)
       }
-      if (!latest.weapons) latest.weapons = []
-      // 检查是否已编辑过技能（只要保存过技能就显示武器模块）
-      const hasEditedSkills = !!(latest.skills && Object.keys(latest.skills).length > 0)
-      // 设置性别索引
-      const genderIndex = latest.gender ? this.data.genderOptions.indexOf(latest.gender) : -1
-      this.setData({
-        character: latest,
-        derived: calcDerived(latest.attributes),
-        hasEditedSkills,
-        genderIndex
-      }, () => {
-        this.calcSkillPoints()
-        this.updateCombatSkills()
-      })
+    }
+  },
+
+  // 应用角色数据到页面（兼容旧数据 + 重算衍生/技能点），可选提示已恢复草稿
+  restoreCharacterData(character, showToast) {
+    if (!character) return
+    if (!character.combat) {
+      const d = calcDerived(character.attributes)
+      character.combat = { hpCurrent: d.hp, sanCurrent: d.sanStart, mpCurrent: d.mp }
+    }
+    if (!character.weapons) character.weapons = []
+    const hasEditedSkills = !!(character.skills && Object.keys(character.skills).length > 0)
+    const genderIndex = character.gender ? this.data.genderOptions.indexOf(character.gender) : -1
+    this.setData({
+      character,
+      derived: calcDerived(character.attributes),
+      hasEditedSkills,
+      genderIndex
+    }, () => {
+      this.calcSkillPoints()
+      this.updateCombatSkills()
+      this.recalcAttrSum()
+      if (showToast) wx.showToast({ title: '已恢复未保存的草稿', icon: 'none' })
+    })
+  },
+
+  // 页面隐藏/卸载时落地未存档草稿（App 进后台、跳转子页、返回关闭都会触发）
+  onHide() {
+    this.flushDraft()
+  },
+
+  onUnload() {
+    this.flushDraft()
+  },
+
+  // 将当前编辑态写入本地草稿；已存档角色清掉可能残留的新建草稿
+  flushDraft() {
+    if (this._justSaved) return
+    const character = this.data.character
+    if (!character || !character.id) return
+    if (getCharacterById(character.id)) {
+      saveDraft(character)
+      clearNewDraft()
+    } else {
+      saveNewDraft(character)
     }
   },
 
@@ -171,7 +209,7 @@ Page({
     if (combat.sanCurrent === oldDerived.sanStart) combat.sanCurrent = derived.sanStart
     if (combat.mpCurrent === oldDerived.mp) combat.mpCurrent = derived.mp
     character.combat = combat
-    this.setData({ character, derived }, () => { this.calcSkillPoints(); this.updateCombatSkills() })
+    this.setData({ character, derived }, () => { this.calcSkillPoints(); this.updateCombatSkills(); this.recalcAttrSum() })
   },
 
   // 战斗数值（HP/SAN/MP 当前值）输入
@@ -200,6 +238,22 @@ Page({
     })
   },
 
+  // 重算属性总和（不含幸运），新角色编辑时实时展示
+  recalcAttrSum() {
+    const attrs = (this.data.character && this.data.character.attributes) || {}
+    const keys = ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU']
+    const sum = keys.reduce((acc, k) => acc + (Number(attrs[k]) || 0), 0)
+    this.setData({ attrSum: sum })
+  },
+
+  // 单独投掷幸运值：3d6 × 5，直接填入，无动画无过程
+  onRollLuck() {
+    const luck = rollDice(3, 6) * 5
+    const attributes = { ...this.data.character.attributes, LUK: luck }
+    const character = { ...this.data.character, attributes }
+    this.setData({ character }, () => { this.recalcAttrSum() })
+  },
+
   // 随机骰所有属性
   onRollAll() {
     wx.showModal({
@@ -211,7 +265,7 @@ Page({
           const character = { ...this.data.character, attributes }
           const derived = calcDerived(attributes)
           character.combat = { hpCurrent: derived.hp, sanCurrent: derived.sanStart, mpCurrent: derived.mp }
-          this.setData({ character, derived }, () => { this.calcSkillPoints(); this.updateCombatSkills() })
+          this.setData({ character, derived }, () => { this.calcSkillPoints(); this.updateCombatSkills(); this.recalcAttrSum() })
           wx.showToast({ title: '骰子已投出！', icon: 'success' })
         }
       }
@@ -450,7 +504,10 @@ Page({
       wx.showToast({ title: '请填写调查员姓名', icon: 'none' })
       return
     }
-    saveCharacter(this.data.character)
+    const saved = saveCharacter(this.data.character)
+    clearDraft(saved.id)
+    clearNewDraft()
+    this._justSaved = true
     saveThenBack({ title: '保存成功' })
   }
 })

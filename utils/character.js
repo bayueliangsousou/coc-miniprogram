@@ -131,19 +131,16 @@ function calcSkillThresholds(value) {
  */
 function calcSkillPoints(character, extraOccSkills = []) {
   const { attributes = {}, skills = {}, occupationId } = character
-  const { EDU = 0, DEX = 0, APP = 0, STR = 0, INT = 0 } = attributes
+  const { EDU = 0, DEX = 0, APP = 0, STR = 0, INT = 0, POW = 0 } = attributes
 
   // 1. 找到职业信息
-  const { OCCUPATIONS } = require('./coc-data')
+  const { OCCUPATIONS, getOccupationSkillNames } = require('./coc-data')
   const occ = OCCUPATIONS.find(o => o.id === occupationId)
 
-  // 获取职业技能名列表，过滤掉"点X门技能"这类说明
+  // 获取职业技能名列表（声明式 skillSpec → 基础名/分类占位串，供 isOcc 前缀匹配）
   let occSkillNames = []
-  if (occ && occ.skills) {
-    occSkillNames = occ.skills
-      .map(s => Array.isArray(s) ? s : [s])
-      .reduce((acc, arr) => acc.concat(arr), [])
-      .filter(s => typeof s === 'string' && !(s.includes('点') && s.includes('门')))
+  if (occ && occ.skillSpec) {
+    occSkillNames = getOccupationSkillNames(occ.skillSpec)
   }
 
   // 2. 计算职业技能点数（根据职业公式）
@@ -154,7 +151,7 @@ function calcSkillPoints(character, extraOccSkills = []) {
       occTotal = EDU * 4
     } else if (formula === 'DEX × 2 + EDU × 2') {
       occTotal = DEX * 2 + EDU * 2
-    } else if (formula === 'APP × 2 + EDU × 2') {
+    } else if (formula === 'APP × 2 + EDU × 2' || formula === 'EDU × 2 + APP × 2') {
       occTotal = APP * 2 + EDU * 2
     } else if (formula === 'STR × 2 + DEX × 2') {
       occTotal = STR * 2 + DEX * 2
@@ -164,9 +161,21 @@ function calcSkillPoints(character, extraOccSkills = []) {
     } else if (formula === 'EDU × 2 + STR × 2 或 DEX × 2') {
       // 军人/私人侦探：取 STR 和 DEX 中较大的
       occTotal = EDU * 2 + Math.max(STR, DEX) * 2
+    } else if (formula === 'EDU × 2 + DEX × 2 或 STR × 2') {
+      // 罪犯：取 STR 和 DEX 中较大的（与上一分支数值等价）
+      occTotal = EDU * 2 + Math.max(STR, DEX) * 2
     } else if (formula === 'EDU × 2 + APP × 2 或 DEX × 2') {
       // 间谍：取 APP 和 DEX 中较大的
       occTotal = EDU * 2 + Math.max(APP, DEX) * 2
+    } else if (formula === 'EDU × 2 + DEX × 2 或 POW × 2') {
+      // 艺术家等：取 DEX 和 POW 中较大的
+      occTotal = EDU * 2 + Math.max(DEX, POW) * 2
+    } else if (formula === 'EDU × 2 + APP × 2 或 POW × 2') {
+      // 狂热者等：取 APP 和 POW 中较大的
+      occTotal = EDU * 2 + Math.max(APP, POW) * 2
+    } else if (formula === 'EDU × 2 + APP × 2 或 DEX × 2 或 STR × 2') {
+      // 流浪者：取 APP、DEX、STR 中较大的
+      occTotal = EDU * 2 + Math.max(APP, DEX, STR) * 2
     } else {
       // 默认公式：EDU × 4
       occTotal = EDU * 4
@@ -360,6 +369,57 @@ function getCharacterById(id) {
   return list.find(c => c.id === id) || null
 }
 
+// ─── 草稿（未存档自动保存，防退出丢失） ──────────────────────────────────────
+// 草稿仅存本地，不触发云端同步。已存档角色用 coc_draft_<id>，尚未首次存档的
+// 新角色用固定 key coc_draft_new（同一时刻只可能有一个待存档新角色）。
+
+const DRAFT_PREFIX = 'coc_draft_'
+const NEW_DRAFT_KEY = 'coc_draft_new'
+
+// 合并式保存：基于已有草稿（或存档）merge，而非整覆盖。
+// 原因：character-edit 主页与 skills/background/occupation 三个子页共用同一个
+// coc_draft_<id>，若整存整取，子页之间会互相覆盖彼此已落盘的字段。
+// character 只需携带本页负责的字段（如 {id, skills}），其余字段由 base 保留。
+function saveDraft(character) {
+  if (!character || !character.id) return
+  const key = DRAFT_PREFIX + character.id
+  const existing = wx.getStorageSync(key)
+  const base = (existing && existing.character) || getCharacterById(character.id) || {}
+  const merged = { ...base, ...character }
+  wx.setStorageSync(key, { character: merged, savedAt: Date.now() })
+}
+
+function saveNewDraft(character) {
+  if (!character) return
+  wx.setStorageSync(NEW_DRAFT_KEY, { character, savedAt: Date.now() })
+}
+
+function loadDraft(id) {
+  if (!id) return null
+  return wx.getStorageSync(DRAFT_PREFIX + id) || null
+}
+
+function loadNewDraft() {
+  return wx.getStorageSync(NEW_DRAFT_KEY) || null
+}
+
+function clearDraft(id) {
+  if (!id) return
+  wx.removeStorageSync(DRAFT_PREFIX + id)
+}
+
+function clearNewDraft() {
+  wx.removeStorageSync(NEW_DRAFT_KEY)
+}
+
+// 草稿是否比已存档版本更新（严格大于，避免时间戳相等时误恢复）
+function isDraftNewer(draft, character) {
+  if (!draft || !draft.character) return false
+  const draftTime = draft.savedAt || 0
+  const committedTime = (character && character.updatedAt) || 0
+  return draftTime > committedTime
+}
+
 // ─── 状态系统（与桌面端同步） ────────────────────────────────────────────────
 
 /**
@@ -545,6 +605,14 @@ module.exports = {
   deleteCharacter,
   getCharacterById,
   pullCharacters,
+  // 草稿（未存档自动保存）
+  saveDraft,
+  saveNewDraft,
+  loadDraft,
+  loadNewDraft,
+  clearDraft,
+  clearNewDraft,
+  isDraftNewer,
   // 状态系统
   CharacterStatus,
   StatusLabels,

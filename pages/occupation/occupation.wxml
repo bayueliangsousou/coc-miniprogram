@@ -28,7 +28,7 @@
           <text class="occ-tag" style="margin-left:12rpx">{{item.pointFormula}}</text>
         </view>
         <view class="occ-skills">
-          <text class="skill-chip" wx:for="{{item.skills}}" wx:key="*this" wx:for-item="sk">{{sk}}</text>
+          <text class="skill-chip" wx:for="{{item.skillChips}}" wx:key="*this" wx:for-item="sk">{{sk}}</text>
         </view>
       </view>
       <view class="occ-check" wx:if="{{selectedId === item.id}}">✓</view>

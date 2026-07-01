@@ -215,6 +215,23 @@
   padding: 0;
 }
 
+/* 属性总和（仅新角色编辑时展示，与「随机」同标题行） */
+.attr-sum {
+  font-size: 24rpx;
+  color: var(--color-text-sub);
+  margin-left: 16rpx;
+}
+
+/* 幸运单独投掷按钮（仅新角色，嵌在幸运格输入框右侧） */
+.luck-roll-btn {
+  font-size: 24rpx;
+  color: #fff;
+  background: var(--color-primary-dark);
+  padding: 6rpx 14rpx;
+  border-radius: 16rpx;
+  font-weight: 600;
+}
+
 .roll-dot {
   width: 36rpx;
   height: 36rpx;
