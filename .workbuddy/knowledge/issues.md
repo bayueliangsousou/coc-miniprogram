@@ -16,6 +16,12 @@
 - 大失败（skill≥50 时 roll===100；skill<50 时 roll≥95）禁止燃运（规则常见约定 + 用户确认）。
 - `character.attributes.LUK` 是幸运池，燃运后真实扣减并存盘，不可透支（不足时按钮置灰）。
 
+### 燃运后属性区幸运值不刷新（显示层快照滞后）
+- 现象：燃运成功后 `character.attributes.LUK` 已正确扣减并存盘，但属性区显示的幸运值仍是旧数，直到下次进页面才更新，用户以为燃运没生效。
+- 根因：属性区幸运值读 `attrWithThresholds[item].value`（进页面 `onShow` 时由 `recalcAttrThresholds` 算一次的快照）；燃运 `onBurnLuck` 仅 `setData({ character })` 没动快照，关闭弹窗也未重算 → 数据层新、显示层旧。
+- 修复：`character-detail.js` 抽 `recalcAttrThresholds(character)` 复用阈值算法；`onBurnLuck` 成功后与关闭弹窗（`onCloseSkillCheckModal`/`onDiceToolClose`）时均从 `getCharacterById(id)` 重读最新角色并 `setData({ character, attrWithThresholds })`。
+- 通用教训：凡"显示值依赖进页面时算一次的快照"的，任何会改底层数据的操作都必须同步重算快照并 setData，否则显示与数据不一致。
+
 ### Git remote add 被 sandbox 阻止
 - 现象：git remote add origin 报 Operation not permitted
 - 解决：手动编辑 .git/config 文件添加 remote 段
