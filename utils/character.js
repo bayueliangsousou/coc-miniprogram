@@ -360,6 +360,49 @@ function getCharacterById(id) {
   return list.find(c => c.id === id) || null
 }
 
+// ─── 草稿（未存档自动保存，防退出丢失） ──────────────────────────────────────
+// 草稿仅存本地，不触发云端同步。已存档角色用 coc_draft_<id>，尚未首次存档的
+// 新角色用固定 key coc_draft_new（同一时刻只可能有一个待存档新角色）。
+
+const DRAFT_PREFIX = 'coc_draft_'
+const NEW_DRAFT_KEY = 'coc_draft_new'
+
+function saveDraft(character) {
+  if (!character || !character.id) return
+  wx.setStorageSync(DRAFT_PREFIX + character.id, { character, savedAt: Date.now() })
+}
+
+function saveNewDraft(character) {
+  if (!character) return
+  wx.setStorageSync(NEW_DRAFT_KEY, { character, savedAt: Date.now() })
+}
+
+function loadDraft(id) {
+  if (!id) return null
+  return wx.getStorageSync(DRAFT_PREFIX + id) || null
+}
+
+function loadNewDraft() {
+  return wx.getStorageSync(NEW_DRAFT_KEY) || null
+}
+
+function clearDraft(id) {
+  if (!id) return
+  wx.removeStorageSync(DRAFT_PREFIX + id)
+}
+
+function clearNewDraft() {
+  wx.removeStorageSync(NEW_DRAFT_KEY)
+}
+
+// 草稿是否比已存档版本更新（严格大于，避免时间戳相等时误恢复）
+function isDraftNewer(draft, character) {
+  if (!draft || !draft.character) return false
+  const draftTime = draft.savedAt || 0
+  const committedTime = (character && character.updatedAt) || 0
+  return draftTime > committedTime
+}
+
 // ─── 状态系统（与桌面端同步） ────────────────────────────────────────────────
 
 /**
@@ -545,6 +588,14 @@ module.exports = {
   deleteCharacter,
   getCharacterById,
   pullCharacters,
+  // 草稿（未存档自动保存）
+  saveDraft,
+  saveNewDraft,
+  loadDraft,
+  loadNewDraft,
+  clearDraft,
+  clearNewDraft,
+  isDraftNewer,
   // 状态系统
   CharacterStatus,
   StatusLabels,

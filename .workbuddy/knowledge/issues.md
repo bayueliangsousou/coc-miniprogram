@@ -14,6 +14,12 @@
 - 现象：git remote add origin 报 Operation not permitted
 - 解决：手动编辑 .git/config 文件添加 remote 段
 
+### 角色卡编辑态未存档丢失（草稿双写）
+- 现象：在 character-edit 主页改了姓名/属性/武器，未跳转子页也未点保存，App 被系统回收/划掉后改动全丢。
+- 根因：编辑态只活在 `this.data.character`，`saveCharacter`（本地+云端）仅在「跳转子页前」和「点保存」触发；主页直接编辑的字段在这两个动作之前遇退出即无落地。
+- 解决：`utils/character.js` 加草稿 API（`coc_draft_<id>` 已存档角色 / `coc_draft_new` 新角色，纯本地不触发云端同步），`onHide`/`onUnload` 落地、`onShow` 优先还原较新草稿、`onSave` 清草稿。
+- 模式：小程序编辑页凡「编辑态仅存页面 data、显式保存才落地」的，都应加本地草稿双写防退出丢失；`onShow` 重载 committed 时务必用 `savedAt > updatedAt` 严格比较，避免时间戳相等误恢复/重复 toast。
+
 ## 已知问题
 - PC端存在两套 CloudBase 连接代码（cloudRoom.ts 代理版 + cloudRoomSDK.ts 直连版）
 - GitHub CLI (gh) 无法在本地环境安装（下载域名被墙）
