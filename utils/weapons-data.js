@@ -38,7 +38,9 @@ const WEAPONS_BY_SKILL = {
     { "name": "9mm 格洛克 17（现代）", "damage": "1D10", "era": "现代" },
     { "name": "9mm 鲁格 P08", "damage": "1D10", "era": "1920s" },
     { "name": "9mm SIG Sauer P226（现代）", "damage": "1D10", "era": "现代" },
-    { "name": "信号枪", "damage": "1D10+燃烧", "era": "1920s,现代" }
+    { "name": "信号枪", "damage": "1D10+燃烧", "era": "1920s,现代" },
+    { "name": "电击枪(近战)（现代）", "damage": "1D3+眩晕", "era": "现代" },
+    { "name": "信号枪(近战)", "damage": "1D6+燃烧", "era": "1920s,现代" }
   ],
   "射击（机枪）": [
     { "name": "FN 米尼米轻机枪（现代）", "damage": "1D10+2", "era": "现代" },
@@ -75,12 +77,7 @@ const WEAPONS_BY_SKILL = {
     { "name": ".45 步枪", "damage": "2D6+1", "era": "1920s" },
     { "name": ".50 BMG 狙击步枪（现代）", "damage": "2D10+4", "era": "现代" },
     { "name": "7.62mm 狙击步枪（现代）", "damage": "2D6+1", "era": "现代" },
-    { "name": "电击枪(近战)（现代）", "damage": "1D3+眩晕", "era": "现代" },
-    { "name": "信号枪(近战)", "damage": "1D6+燃烧", "era": "1920s,现代" },
-    { "name": "鱼叉枪（现代）", "damage": "1D8", "era": "现代" },
-    { "name": "燃烧瓶", "damage": "1D6+燃烧", "era": "1920s,现代" },
-    { "name": "莫洛托夫鸡尾酒", "damage": "1D6+燃烧", "era": "1920s,现代" },
-    { "name": "火箭推进榴弹（现代）", "damage": "3D10", "era": "现代" }
+    { "name": "鱼叉枪（现代）", "damage": "1D8", "era": "现代" }
   ],
   "射击（炮术）": [
     { "name": "37mm 反坦克炮", "damage": "4D10", "era": "1920s,现代" },
@@ -94,29 +91,22 @@ const WEAPONS_BY_SKILL = {
     { "name": "RPG-7 火箭筒（现代）", "damage": "3D10", "era": "现代" },
     { "name": "M79 榴弹发射器（现代）", "damage": "2D10", "era": "现代" },
     { "name": "M203 榴弹发射器（现代）", "damage": "2D10", "era": "现代" },
-    { "name": "手榴弹", "damage": "2D10", "era": "1920s,现代" },
     { "name": "枪榴弹", "damage": "2D10", "era": "1920s,现代" },
-    { "name": "反坦克地雷（现代）", "damage": "4D10", "era": "现代" },
-    { "name": "阔剑地雷（现代）", "damage": "3D10", "era": "现代" },
-    { "name": "C4 炸药（现代）", "damage": "4D10", "era": "现代" },
-    { "name": "TNT 炸药", "damage": "4D10", "era": "1920s,现代" },
-    { "name": "塑胶炸药（现代）", "damage": "4D10", "era": "现代" },
-    { "name": "破片手雷", "damage": "2D10", "era": "1920s,现代" },
-    { "name": "闪光弹（现代）", "damage": "眩晕", "era": "现代" },
-    { "name": "烟雾弹", "damage": "无", "era": "1920s,现代" },
-    { "name": "催泪瓦斯（现代）", "damage": "眩晕", "era": "现代" },
-    { "name": "燃烧弹", "damage": "2D6+燃烧", "era": "1920s,现代" }
+    { "name": "TNT 炸药", "damage": "4D10", "era": "1920s,现代" }
   ],
   "格斗（斗殴）": [
     { "name": "徒手", "damage": "1D3+DB", "era": "1920s,现代" },
     { "name": "指虎", "damage": "1D3+1+DB", "era": "1920s,现代" },
-    { "name": " Brass Knuckles", "damage": "1D3+1+DB", "era": "1920s,现代" },
-    { "name": "拳套", "damage": "1D3+DB", "era": "1920s,现代" },
-    { "name": "踢击", "damage": "1D6+DB", "era": "1920s,现代" },
-    { "name": "擒抱", "damage": "定身", "era": "1920s,现代" },
-    { "name": "头槌", "damage": "1D4+DB", "era": "1920s,现代" },
-    { "name": "肘击", "damage": "1D4+DB", "era": "1920s,现代" },
-    { "name": "膝击", "damage": "1D6+DB", "era": "1920s,现代" }
+    { "name": "燃烧的火把", "damage": "1D6+燃烧", "era": "1920s,现代" },
+    { "name": "包革金属棒（大头棍、护身棒）", "damage": "1D8+DB", "era": "1920s,现代" },
+    { "name": "大型棍棒（棒球棒、板球棒、拨火棍）", "damage": "1D8+DB", "era": "1920s,现代" },
+    { "name": "小型棍棒（警棍）", "damage": "1D6+DB", "era": "1920s,现代" },
+    { "name": "大型刀具（弯刀等）", "damage": "1D8+DB", "era": "1920s,现代" },
+    { "name": "中型刀具（切肉刀等）", "damage": "1D4+2+DB", "era": "1920s,现代" },
+    { "name": "小型刀具（折叠刀等）", "damage": "1D4+DB", "era": "1920s,现代" },
+    { "name": "220V通电导线（现代）", "damage": "2D8+眩晕", "era": "现代" },
+    { "name": "催泪喷雾*", "damage": "晕眩", "era": "1920s,现代" },
+    { "name": "电击器（现代）", "damage": "1D3+晕眩", "era": "现代" }
   ],
   "格斗（斧）": [
     { "name": "手斧", "damage": "1D6+1", "era": "1920s,现代" },
@@ -155,11 +145,16 @@ const WEAPONS_BY_SKILL = {
     { "name": "投石索", "damage": "1D4", "era": "罕见" },
     { "name": "回力镖", "damage": "1D6", "era": "罕见" },
     { "name": "标枪", "damage": "1D8", "era": "罕见" },
-    { "name": "长矛", "damage": "1D8", "era": "罕见" }
-  ],
-  "投掷（矛）": [
-    { "name": "短矛", "damage": "1D6", "era": "罕见" },
     { "name": "长矛", "damage": "1D8", "era": "罕见" },
+    { "name": "莫洛托夫鸡尾酒", "damage": "2D6+燃烧", "era": "1920s,现代" },
+    { "name": "炸药棒*", "damage": "4D10/3码", "era": "1920s,现代" },
+    { "name": "管状土制炸弹", "damage": "1D10/3码", "era": "1920s,现代" },
+    { "name": "塑胶炸药(C-4)（现代）", "damage": "6D10/3码", "era": "1920s,现代" },
+    { "name": "手榴弹*", "damage": "4D10/3码", "era": "1920s,现代" },
+    { "name": "闪光弹（现代）", "damage": "眩晕", "era": "现代" },
+    { "name": "烟雾弹", "damage": "无", "era": "1920s,现代" },
+    { "name": "催泪瓦斯（现代）", "damage": "眩晕", "era": "现代" },
+    { "name": "短矛", "damage": "1D6", "era": "罕见" },
     { "name": "三叉戟", "damage": "1D8+1", "era": "罕见" },
     { "name": "鱼叉", "damage": "1D8", "era": "1920s,现代" }
   ],
@@ -168,9 +163,10 @@ const WEAPONS_BY_SKILL = {
     { "name": "遥控炸弹（现代）", "damage": "4D10", "era": "现代" },
     { "name": "诡雷（现代）", "damage": "3D10", "era": "现代" },
     { "name": "地雷", "damage": "3D10", "era": "1920s,现代" },
-    { "name": "水雷", "damage": "4D10", "era": "1920s,现代" },
-    { "name": "鱼雷", "damage": "4D10", "era": "1920s,现代" },
-    { "name": "深水炸弹", "damage": "4D10", "era": "1920s,现代" }
+    { "name": "深水炸弹", "damage": "4D10", "era": "1920s,现代" },
+    { "name": "反坦克地雷（现代）", "damage": "4D10", "era": "现代" },
+    { "name": "阔剑地雷（现代）", "damage": "3D10", "era": "现代" },
+    { "name": "C4 炸药（现代）", "damage": "4D10", "era": "现代" }
   ]
 };
 
