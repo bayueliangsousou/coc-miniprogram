@@ -10,6 +10,12 @@
 - 现象：plugin.json 和 agent MD 都正确但注册报 [TODO] 错误
 - 解决：init 生成的 README.md 也需清除 [TODO]
 
+### 燃运消耗用「投掷值−技能值」且常规难度 ×1
+- 规则依据：COC 7版燃运 = 失败后消耗幸运值把失败转为成功，消耗 = 失败差值（投掷值−技能值）× 难度系数。
+- 本 app 的「鉴定投掷」（`dice-tool.doD100Check` + `calcSkillCheckResult`）只有常规难度入口（roll≤技能值），无困难/极难选择，故系数固定 ×1。
+- 大失败（skill≥50 时 roll===100；skill<50 时 roll≥95）禁止燃运（规则常见约定 + 用户确认）。
+- `character.attributes.LUK` 是幸运池，燃运后真实扣减并存盘，不可透支（不足时按钮置灰）。
+
 ### Git remote add 被 sandbox 阻止
 - 现象：git remote add origin 报 Operation not permitted
 - 解决：手动编辑 .git/config 文件添加 remote 段
@@ -19,7 +25,7 @@
 - 根因：编辑态只活在 `this.data.character`，`saveCharacter`（本地+云端）仅在「跳转子页前」和「点保存」触发；主页直接编辑的字段在这两个动作之前遇退出即无落地。
 - 解决：`utils/character.js` 加草稿 API（`coc_draft_<id>` 已存档角色 / `coc_draft_new` 新角色，纯本地不触发云端同步），`onHide`/`onUnload` 落地、`onShow` 优先还原较新草稿、`onSave` 清草稿。
 - 模式：小程序编辑页凡「编辑态仅存页面 data、显式保存才落地」的，都应加本地草稿双写防退出丢失；`onShow` 重载 committed 时务必用 `savedAt > updatedAt` 严格比较，避免时间戳相等误恢复/重复 toast。
-- **PAT-016（2026-07-11）：状态选择弹窗已选项无识别标记** — 现象：角色详情页已添加「重伤」等状态后，再次打开「选择状态」弹窗，已选项前没有清晰的对号或点，无法识别哪些状态已生效。根因：弹窗 `wxml` 用 `character.status.includes(item.value)` 控制 `selected` 类与 `.radio-check` 圆点；`wxss` 中圆点依赖 CSS 变量 `--status-color` 且尺寸/对比度不足，在浅色背景上几乎不可见。修复：增加 `selectedStatusMap` 预计算选中态，避免弹窗内反复 `includes`；radio 改为实心圆+白色「✓」对号，选中项文字加粗并使用状态色，使已选项一眼可辨。涉及文件：`pages/character-detail/character-detail.js`、`.wxml`、`.wxss`。
+- **PAT-016（2026-07-11 修正）：状态选择弹窗已选项无选中对号** — 现象：角色详情页已挂上「重伤」等状态后（顶部徽标可见），再次打开「选择状态」弹窗，已选项前无对号，无法识别哪些已生效。根因（非样式问题）：弹窗选中判断依赖 `character.status` 与 `availableStatuses[].value`（英文 key 如 `seriouslyInjured`）精确匹配；当 `character.status` 实际存的是**中文 label**（历史数据 / PC 端同步 / 其他入口写入）时，`includes('seriouslyInjured')` 与 `selectedStatusMap['seriouslyInjured']` 永远查不到 → 无对号；且顶部徽标用 `statusLabels[item]`（英文→中文，无回退），只在 status 为英文 key 时才显示中文，故"顶部显示重伤"并非判断依据。另：若 `this.data.character` 与存档在"再次打开"时刻不同步（如 onShow 重载后内存引用滞后），从 `this.data.character` 构建的 map 也可能命中失败。修复：①页面加载时 `normalizeStatusList` + 反向映射 `REVERSE_STATUS_LABEL`（中文→英文）把 `character.status` 规范化为英文 key 存回；②`refreshSelectedStatusMap` 改为直接 `getCharacterById(id)` 读最新存档，且对每项同时建 `原值 / 英文key` 两个 map 入口以兼容中英文；③`onSelectStatus` 的已选判断 `includes` 同时兼容中文 label。涉及文件：`pages/character-detail/character-detail.js`（新增常量+函数、改 onShow、改 refreshSelectedStatusMap、改 onSelectStatus）、`.wxml`、`.wxss` 已在上一轮加选中态样式。
 
 ## 已知问题
 - PC端存在两套 CloudBase 连接代码（cloudRoom.ts 代理版 + cloudRoomSDK.ts 直连版）

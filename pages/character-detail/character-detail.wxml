@@ -318,10 +318,9 @@
           wx:key="value"
           data-status="{{item.value}}"
           bindtap="onSelectStatus"
-          style="--status-color: {{item.color}}"
         >
           <view class="status-picker-radio">
-            <view class="radio-check" wx:if="{{selectedStatusMap[item.value]}}" style="background: {{item.color}}">
+            <view class="radio-check" wx:if="{{selectedStatusMap[item.value]}}">
               <text class="radio-check-icon">✓</text>
             </view>
           </view>
@@ -350,6 +349,11 @@
         <cover-view class="skill-check-right">
           <cover-view class="skill-check-result-label">结果</cover-view>
           <cover-view class="skill-check-result-text {{skillCheckResult.resultClass}}">{{skillCheckResult.resultText}}</cover-view>
+        </cover-view>
+        <!-- 燃运 -->
+        <cover-view class="skill-check-burnluck" wx:if="{{showBurnLuck}}">
+          <cover-view class="skill-check-burnluck-hint">{{luckEnough ? '减少幸运值上限 ' + burnLuckCost : '幸运值不足'}}</cover-view>
+          <cover-view class="skill-check-burnluck-btn {{luckEnough ? '' : 'disabled'}}" bindtap="onBurnLuck">燃运</cover-view>
         </cover-view>
       </cover-view>
     </cover-view>

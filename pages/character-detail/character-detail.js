@@ -4,6 +4,19 @@ const { ATTR_NAMES, OCCUPATIONS, SKILLS } = require('../../utils/coc-data')
 const cloud = require('../../utils/cloud')
 const { getDefaultCharacter } = require('../../utils/default-character')
 
+// 中文状态名 → 英文 key 反向映射（兼容历史数据 / PC 端同步写入的中文 label）
+const REVERSE_STATUS_LABEL = {}
+Object.keys(StatusLabels).forEach(k => { REVERSE_STATUS_LABEL[StatusLabels[k]] = k })
+
+// 将 status 数组统一规范为英文 key（兼容中文 label）
+function normalizeStatusList(statusList) {
+  if (!Array.isArray(statusList)) return []
+  const seen = {}
+  return statusList
+    .map(s => (StatusLabels[s] ? s : (REVERSE_STATUS_LABEL[s] || s)))
+    .filter(s => s && !seen[s] && (seen[s] = true))
+}
+
 // ─── 伤害修正（DB）替换辅助 ──────────────────────────────────────────
 // db 格式：'-2' / '-1' / '0' / '+1d4' / '+1d6' / '+2d6'
 // 原始公式中有 '+DB' 时，db 自带 '+' 号会导致 '++1d4'；统一在这里处理
@@ -114,6 +127,10 @@ Page({
     skillCheckResult: null,
     skillCheckMode: false,
     skillCheckBgLoaded: false,
+    // 燃运机制
+    showBurnLuck: false,
+    burnLuckCost: 0,
+    luckEnough: false,
     // 导航栏背景（初始透明，下滑后变深色）
     navBarBg: 'transparent',
     // HP/SAN/MP 滚轮
@@ -172,6 +189,19 @@ Page({
     if (changed) {
       character.combat = combat
       saveCharacter(character)
+    }
+
+    // 兼容旧数据：规范化 status 为中文/英文统一为英文 key（修复弹窗已选项对号不显示）
+    if (!Array.isArray(character.status)) {
+      character.status = []
+      saveCharacter(character)
+    } else {
+      const norm = normalizeStatusList(character.status)
+      if (norm.length !== character.status.length ||
+          norm.some((s, i) => s !== character.status[i])) {
+        character.status = norm
+        saveCharacter(character)
+      }
     }
 
     // 兼容旧数据：确保 weapons 字段存在
@@ -637,11 +667,21 @@ Page({
   // ── 状态管理 ──
 
   // 同步 status 选中映射，避免弹窗里反复调用 includes
+  // 直接从存档读最新角色（不依赖 this.data 引用），并兼容中英文两种 status 值
   refreshSelectedStatusMap() {
-    const { character } = this.data
+    const pages = getCurrentPages()
+    const current = pages[pages.length - 1]
+    const { id } = current.options
+    const character = id ? getCharacterById(id) : this.data.character
     const statusList = (character && character.status) || []
     const map = {}
-    statusList.forEach(s => { map[s] = true })
+    statusList.forEach(s => {
+      map[s] = true
+      // 若该值本身是中文 label，则补一份英文 key 入口
+      if (StatusLabels[s]) map[s] = true
+      const eng = REVERSE_STATUS_LABEL[s]
+      if (eng) map[eng] = true
+    })
     this.setData({ selectedStatusMap: map })
   },
 
@@ -660,7 +700,7 @@ Page({
     if (!latest) return
     
     let newStatus
-    if (latest.status && latest.status.includes(status)) {
+    if (latest.status && (latest.status.includes(status) || latest.status.includes(StatusLabels[status]))) {
       // 已选中的状态，取消选择（不移除，保留弹窗让用户确认）
       wx.showModal({
         title: '确认移除状态',
@@ -1085,7 +1125,7 @@ Page({
   onCloseSkillCheckModal() {
     const diceTool = this.selectComponent('#diceTool')
     if (diceTool) diceTool.close()
-    this.setData({ showSkillCheckModal: false, skillCheckResult: null, skillCheckMode: false })
+    this.setData({ showSkillCheckModal: false, skillCheckResult: null, skillCheckMode: false, showBurnLuck: false, luckEnough: false, burnLuckCost: 0 })
   },
 
   // ── 骰子组件事件处理 ──
@@ -1097,6 +1137,11 @@ Page({
   onSkillCheckResultEvent(e) {
     const { skillName, skillValue, rollValue } = e.detail
     const checkResult = this.calcSkillCheckResult(rollValue, skillValue)
+    // 燃运：仅普通失败（非大失败）可触发，消耗 = 投掷值 - 技能值
+    const isFailure = checkResult.class === 'failure'
+    const cost = isFailure ? Math.max(0, rollValue - skillValue) : 0
+    const currentLuck = (this.data.character && this.data.character.attributes && this.data.character.attributes.LUK) || 0
+    const luckEnough = isFailure && currentLuck >= cost
     this.setData({
       skillCheckResult: {
         skillName: skillName,
@@ -1106,7 +1151,10 @@ Page({
         resultClass: checkResult.class
       },
       showSkillCheckModal: true,
-      skillCheckBgLoaded: false
+      skillCheckBgLoaded: false,
+      showBurnLuck: isFailure,
+      burnLuckCost: cost,
+      luckEnough: luckEnough
     })
   },
 
@@ -1121,7 +1169,36 @@ Page({
     // e.detail.source === 'overlay-tap' | 'collapse'
     // 如果 skill check 弹窗仍然打开，也需要关闭
     if (this.data.showSkillCheckModal) {
-      this.setData({ showSkillCheckModal: false, skillCheckResult: null, skillCheckMode: false })
+      this.setData({ showSkillCheckModal: false, skillCheckResult: null, skillCheckMode: false, showBurnLuck: false, luckEnough: false, burnLuckCost: 0 })
     }
+  },
+
+  // ── 燃运（Burning Luck）──
+  // 检定失败后，消耗幸运值（投掷值 - 技能值）将本次失败转为成功
+  onBurnLuck() {
+    if (!this.data.showBurnLuck || !this.data.luckEnough) return
+    const { character, skillCheckResult, burnLuckCost } = this.data
+    if (!character || !character.attributes) return
+    const currentLuck = character.attributes.LUK || 0
+    if (currentLuck < burnLuckCost) {
+      this.setData({ luckEnough: false })
+      return
+    }
+    const updated = {
+      ...character,
+      attributes: { ...character.attributes, LUK: currentLuck - burnLuckCost }
+    }
+    saveCharacter(updated)
+    this.setData({
+      character: updated,
+      showBurnLuck: false,
+      luckEnough: false,
+      burnLuckCost: 0,
+      skillCheckResult: {
+        ...skillCheckResult,
+        resultText: '燃运成功',
+        resultClass: 'success'
+      }
+    })
   }
 })
