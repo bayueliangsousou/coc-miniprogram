@@ -1,6 +1,6 @@
 // pages/occupation/occupation.js
 const { OCCUPATIONS } = require('../../utils/coc-data')
-const { getCharacterById, saveCharacter } = require('../../utils/character')
+const { getCharacterById, saveCharacter, saveDraft, loadDraft, clearDraft, isDraftNewer } = require('../../utils/character')
 const { saveThenBack } = require('../../utils/nav')
 
 Page({
@@ -16,9 +16,15 @@ Page({
     const { id } = options
     if (id) {
       const character = getCharacterById(id)
+      let occupationId = character ? character.occupationId : ''
+      // 草稿优先：用草稿里的 occupationId 覆盖存档
+      const draft = loadDraft(id)
+      if (draft && draft.character && isDraftNewer(draft, character)) {
+        occupationId = draft.character.occupationId || occupationId
+      }
       this.setData({
         characterId: id,
-        selectedId: character ? character.occupationId : ''
+        selectedId: occupationId
       })
     }
   },
@@ -48,7 +54,16 @@ Page({
       character.occupation = occ.name
       character.occupationId = occ.id
       saveCharacter(character)
+      clearDraft(characterId)
       saveThenBack({ title: `已选择：${occ.name}` })
     }
+  },
+
+  // 页面隐藏/关闭时落草稿，防未保存丢失
+  onHide() {
+    const { characterId, selectedId } = this.data
+    if (!characterId) return
+    const character = getCharacterById(characterId) || { id: characterId }
+    saveDraft({ ...character, occupationId: selectedId })
   }
 })

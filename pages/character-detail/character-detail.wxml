@@ -313,7 +313,7 @@
       </view>
       <view class="status-picker-list">
         <view 
-          class="status-picker-item {{character.status && character.status.includes(item.value) ? 'selected' : ''}}"
+          class="status-picker-item {{selectedStatusMap[item.value] ? 'selected' : ''}}"
           wx:for="{{availableStatuses}}"
           wx:key="value"
           data-status="{{item.value}}"
@@ -321,7 +321,9 @@
           style="--status-color: {{item.color}}"
         >
           <view class="status-picker-radio">
-            <view class="radio-check" wx:if="{{character.status && character.status.includes(item.value)}}"></view>
+            <view class="radio-check" wx:if="{{selectedStatusMap[item.value]}}" style="background: {{item.color}}">
+              <text class="radio-check-icon">✓</text>
+            </view>
           </view>
           <text class="status-picker-label">{{item.label}}</text>
         </view>

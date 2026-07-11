@@ -1,6 +1,6 @@
 // pages/character-edit/character-edit.js
 const { createEmptyCharacter, saveCharacter, getCharacterById, calcDerived, calcSkillPoints, saveDraft, saveNewDraft, loadDraft, loadNewDraft, clearDraft, clearNewDraft, isDraftNewer } = require('../../utils/character')
-const { ATTR_NAMES, ATTR_DICE_RULES, rollAttributes, SKILLS } = require('../../utils/coc-data')
+const { ATTR_NAMES, ATTR_DICE_RULES, rollAttributes, rollDice, SKILLS } = require('../../utils/coc-data')
 const { WEAPONS_BY_SKILL } = require('../../utils/weapons-data')
 const { saveThenBack } = require('../../utils/nav')
 
@@ -12,6 +12,7 @@ Page({
     attrKeys: ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU', 'LUK'],
     attrNames: ATTR_NAMES,
     attrDiceRules: ATTR_DICE_RULES,
+    attrSum: 0,
     isNew: true,
     skillPoints: { occTotal: 0, intTotal: 0 },
     // 武器相关
@@ -109,6 +110,7 @@ Page({
     }, () => {
       this.calcSkillPoints()
       this.updateCombatSkills()
+      this.recalcAttrSum()
       if (showToast) wx.showToast({ title: '已恢复未保存的草稿', icon: 'none' })
     })
   },
@@ -207,7 +209,7 @@ Page({
     if (combat.sanCurrent === oldDerived.sanStart) combat.sanCurrent = derived.sanStart
     if (combat.mpCurrent === oldDerived.mp) combat.mpCurrent = derived.mp
     character.combat = combat
-    this.setData({ character, derived }, () => { this.calcSkillPoints(); this.updateCombatSkills() })
+    this.setData({ character, derived }, () => { this.calcSkillPoints(); this.updateCombatSkills(); this.recalcAttrSum() })
   },
 
   // 战斗数值（HP/SAN/MP 当前值）输入
@@ -236,6 +238,22 @@ Page({
     })
   },
 
+  // 重算属性总和（不含幸运），新角色编辑时实时展示
+  recalcAttrSum() {
+    const attrs = (this.data.character && this.data.character.attributes) || {}
+    const keys = ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU']
+    const sum = keys.reduce((acc, k) => acc + (Number(attrs[k]) || 0), 0)
+    this.setData({ attrSum: sum })
+  },
+
+  // 单独投掷幸运值：3d6 × 5，直接填入，无动画无过程
+  onRollLuck() {
+    const luck = rollDice(3, 6) * 5
+    const attributes = { ...this.data.character.attributes, LUK: luck }
+    const character = { ...this.data.character, attributes }
+    this.setData({ character }, () => { this.recalcAttrSum() })
+  },
+
   // 随机骰所有属性
   onRollAll() {
     wx.showModal({
@@ -247,7 +265,7 @@ Page({
           const character = { ...this.data.character, attributes }
           const derived = calcDerived(attributes)
           character.combat = { hpCurrent: derived.hp, sanCurrent: derived.sanStart, mpCurrent: derived.mp }
-          this.setData({ character, derived }, () => { this.calcSkillPoints(); this.updateCombatSkills() })
+          this.setData({ character, derived }, () => { this.calcSkillPoints(); this.updateCombatSkills(); this.recalcAttrSum() })
           wx.showToast({ title: '骰子已投出！', icon: 'success' })
         }
       }

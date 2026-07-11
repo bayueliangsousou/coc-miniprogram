@@ -367,9 +367,17 @@ function getCharacterById(id) {
 const DRAFT_PREFIX = 'coc_draft_'
 const NEW_DRAFT_KEY = 'coc_draft_new'
 
+// 合并式保存：基于已有草稿（或存档）merge，而非整覆盖。
+// 原因：character-edit 主页与 skills/background/occupation 三个子页共用同一个
+// coc_draft_<id>，若整存整取，子页之间会互相覆盖彼此已落盘的字段。
+// character 只需携带本页负责的字段（如 {id, skills}），其余字段由 base 保留。
 function saveDraft(character) {
   if (!character || !character.id) return
-  wx.setStorageSync(DRAFT_PREFIX + character.id, { character, savedAt: Date.now() })
+  const key = DRAFT_PREFIX + character.id
+  const existing = wx.getStorageSync(key)
+  const base = (existing && existing.character) || getCharacterById(character.id) || {}
+  const merged = { ...base, ...character }
+  wx.setStorageSync(key, { character: merged, savedAt: Date.now() })
 }
 
 function saveNewDraft(character) {

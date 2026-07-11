@@ -19,6 +19,7 @@
 - 根因：编辑态只活在 `this.data.character`，`saveCharacter`（本地+云端）仅在「跳转子页前」和「点保存」触发；主页直接编辑的字段在这两个动作之前遇退出即无落地。
 - 解决：`utils/character.js` 加草稿 API（`coc_draft_<id>` 已存档角色 / `coc_draft_new` 新角色，纯本地不触发云端同步），`onHide`/`onUnload` 落地、`onShow` 优先还原较新草稿、`onSave` 清草稿。
 - 模式：小程序编辑页凡「编辑态仅存页面 data、显式保存才落地」的，都应加本地草稿双写防退出丢失；`onShow` 重载 committed 时务必用 `savedAt > updatedAt` 严格比较，避免时间戳相等误恢复/重复 toast。
+- **PAT-016（2026-07-11）：状态选择弹窗已选项无识别标记** — 现象：角色详情页已添加「重伤」等状态后，再次打开「选择状态」弹窗，已选项前没有清晰的对号或点，无法识别哪些状态已生效。根因：弹窗 `wxml` 用 `character.status.includes(item.value)` 控制 `selected` 类与 `.radio-check` 圆点；`wxss` 中圆点依赖 CSS 变量 `--status-color` 且尺寸/对比度不足，在浅色背景上几乎不可见。修复：增加 `selectedStatusMap` 预计算选中态，避免弹窗内反复 `includes`；radio 改为实心圆+白色「✓」对号，选中项文字加粗并使用状态色，使已选项一眼可辨。涉及文件：`pages/character-detail/character-detail.js`、`.wxml`、`.wxss`。
 
 ## 已知问题
 - PC端存在两套 CloudBase 连接代码（cloudRoom.ts 代理版 + cloudRoomSDK.ts 直连版）

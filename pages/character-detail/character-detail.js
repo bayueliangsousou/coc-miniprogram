@@ -82,6 +82,7 @@ Page({
     statusLabels: StatusLabels,
     statusColors: StatusColors,
     showStatusPicker: false,
+    selectedStatusMap: {},
     availableStatuses: [
       { value: 'seriouslyInjured', label: '重伤', color: '#e74c3c' },
       { value: 'unconscious', label: '昏迷', color: '#f39c12' },
@@ -265,6 +266,7 @@ Page({
       roomCode: currentRoom.roomCode || '',
       notepadContent: character.notepad || '',
     })
+    this.refreshSelectedStatusMap()
     wx.setNavigationBarTitle({ title: character.name || '调查员详情' })
   },
 
@@ -538,6 +540,7 @@ Page({
 
     saveCharacter(character)
     this.setData({ character })
+    this.refreshSelectedStatusMap()
     this.syncAttributeToDesktop(field, value)
   },
 
@@ -633,8 +636,18 @@ Page({
 
   // ── 状态管理 ──
 
+  // 同步 status 选中映射，避免弹窗里反复调用 includes
+  refreshSelectedStatusMap() {
+    const { character } = this.data
+    const statusList = (character && character.status) || []
+    const map = {}
+    statusList.forEach(s => { map[s] = true })
+    this.setData({ selectedStatusMap: map })
+  },
+
   // 显示状态选择器
   onShowStatusPicker() {
+    this.refreshSelectedStatusMap()
     this.setData({ showStatusPicker: true })
   },
 
@@ -660,6 +673,7 @@ Page({
             const updatedCharacter = { ...latest, status: newStatus }
             saveCharacter(updatedCharacter)
             this.setData({ character: updatedCharacter })
+            this.refreshSelectedStatusMap()
             // 同步到桌面端
             this.syncStatusToDesktop('status', newStatus)
           }
@@ -678,6 +692,7 @@ Page({
       character: updatedCharacter,
       showStatusPicker: false
     })
+    this.refreshSelectedStatusMap()
 
     // 同步到桌面端（如果在房间中）
     this.syncStatusToDesktop('status', newStatus)
@@ -703,6 +718,7 @@ Page({
           const updatedCharacter = { ...latest, status: newStatus }
           saveCharacter(updatedCharacter)
           this.setData({ character: updatedCharacter })
+          this.refreshSelectedStatusMap()
           // 同步到桌面端
           this.syncStatusToDesktop('status', newStatus)
         }

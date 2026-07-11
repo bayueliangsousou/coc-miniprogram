@@ -1,6 +1,6 @@
 // pages/skills/skills.js
 const { SKILLS, getSkillsByCategory, OCCUPATIONS } = require('../../utils/coc-data')
-const { getCharacterById, saveCharacter, calcSkillThresholds, calcSkillPoints } = require('../../utils/character')
+const { getCharacterById, saveCharacter, calcSkillThresholds, calcSkillPoints, saveDraft, loadDraft, clearDraft, isDraftNewer } = require('../../utils/character')
 const { saveThenBack } = require('../../utils/nav')
 
 Page({
@@ -66,8 +66,13 @@ Page({
 
   initSkills() {
     const { characterId } = this.data
-    const character = getCharacterById(characterId)
+    let character = getCharacterById(characterId)
     if (!character) return
+    // 草稿优先：用草稿里的字段覆盖存档，避免 onShow 无条件重载丢失未保存编辑
+    const draft = loadDraft(characterId)
+    if (draft && draft.character && isDraftNewer(draft, character)) {
+      character = { ...character, ...draft.character }
+    }
 
     // 清理旧数据：删除 optionalSkills（手动选择逻辑已废弃）
     if (character.optionalSkills) {
@@ -925,6 +930,23 @@ Page({
     return errors
   },
 
+  // 从 skillCategories 收集技能值，供 onHide 落草稿 / onSave 写存档复用
+  collectSkills() {
+    const { skillCategories, creditRatingValue } = this.data
+    const skills = {}
+    skillCategories.forEach(cat => {
+      cat.skills.forEach(sk => {
+        let name = sk.name
+        if (name === '其他语言' && sk.languageName) {
+          name = `其他语言（${sk.languageName}）`
+        }
+        skills[name] = sk.current
+      })
+    })
+    skills['信用评级'] = creditRatingValue
+    return skills
+  },
+
   onSave() {
     const { character, skillCategories, characterId, occConfig } = this.data
 
@@ -942,6 +964,14 @@ Page({
     }
 
     this._doSave(character, skillCategories)
+  },
+
+  // 页面隐藏/关闭时落草稿（含当前编辑的技能值），防未保存丢失
+  onHide() {
+    const { characterId, character } = this.data
+    if (!characterId || !character) return
+    const skills = this.collectSkills()
+    saveDraft({ ...character, skills })
   },
 
   _doSave(character, skillCategories) {
@@ -964,6 +994,7 @@ Page({
       skills
     }
     saveCharacter(updated)
+    clearDraft(this.data.characterId)
     saveThenBack({ title: '技能已保存' })
   },
 

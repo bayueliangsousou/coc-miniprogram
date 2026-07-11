@@ -52,6 +52,7 @@
     <view class="card" id="attr-section">
       <view class="section-title">
         <text>属性</text>
+        <text class="attr-sum" wx:if="{{isNew}}">总和：{{attrSum}}</text>
         <view class="btn-roll-all" bindtap="onRollAll" wx:if="{{isNew}}">
           <image class="roll-icon" src="/assets/icons/dice-new.svg" mode="aspectFit"/>
           <text>随机</text>
@@ -74,6 +75,7 @@
               bindinput="onAttrInput"
               placeholder="0"
             />
+            <view wx:if="{{item === 'LUK' && isNew}}" class="luck-roll-btn" bindtap="onRollLuck">投</view>
           </view>
         </view>
       </view>
