@@ -666,6 +666,21 @@ Page({
 
   // ── 状态管理 ──
 
+  // 重算属性困难/极难阈值快照（属性区展示依赖它，而非 character.attributes 原值）
+  // 燃运扣减 LUK 后、或关闭检定弹窗时调用，保证页面显示的幸运值即时刷新
+  recalcAttrThresholds(character) {
+    const attrWithThresholds = {}
+    this.data.attrKeys.forEach(key => {
+      const val = (character && character.attributes && character.attributes[key]) || 0
+      attrWithThresholds[key] = {
+        value: val,
+        hard: Math.floor(val / 2),
+        extreme: Math.floor(val / 5)
+      }
+    })
+    return attrWithThresholds
+  },
+
   // 同步 status 选中映射，避免弹窗里反复调用 includes
   // 直接从存档读最新角色（不依赖 this.data 引用），并兼容中英文两种 status 值
   refreshSelectedStatusMap() {
@@ -1125,7 +1140,13 @@ Page({
   onCloseSkillCheckModal() {
     const diceTool = this.selectComponent('#diceTool')
     if (diceTool) diceTool.close()
-    this.setData({ showSkillCheckModal: false, skillCheckResult: null, skillCheckMode: false, showBurnLuck: false, luckEnough: false, burnLuckCost: 0 })
+    const { id } = getCurrentPages()[getCurrentPages().length - 1].options
+    const fresh = id ? getCharacterById(id) : this.data.character
+    this.setData({
+      showSkillCheckModal: false, skillCheckResult: null, skillCheckMode: false, showBurnLuck: false, luckEnough: false, burnLuckCost: 0,
+      character: fresh || this.data.character,
+      attrWithThresholds: this.recalcAttrThresholds(fresh || this.data.character)
+    })
   },
 
   // ── 骰子组件事件处理 ──
@@ -1169,7 +1190,13 @@ Page({
     // e.detail.source === 'overlay-tap' | 'collapse'
     // 如果 skill check 弹窗仍然打开，也需要关闭
     if (this.data.showSkillCheckModal) {
-      this.setData({ showSkillCheckModal: false, skillCheckResult: null, skillCheckMode: false, showBurnLuck: false, luckEnough: false, burnLuckCost: 0 })
+      const { id } = getCurrentPages()[getCurrentPages().length - 1].options
+      const fresh = id ? getCharacterById(id) : this.data.character
+      this.setData({
+        showSkillCheckModal: false, skillCheckResult: null, skillCheckMode: false, showBurnLuck: false, luckEnough: false, burnLuckCost: 0,
+        character: fresh || this.data.character,
+        attrWithThresholds: this.recalcAttrThresholds(fresh || this.data.character)
+      })
     }
   },
 
@@ -1191,6 +1218,7 @@ Page({
     saveCharacter(updated)
     this.setData({
       character: updated,
+      attrWithThresholds: this.recalcAttrThresholds(updated),
       showBurnLuck: false,
       luckEnough: false,
       burnLuckCost: 0,
