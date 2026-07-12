@@ -261,6 +261,7 @@ Page({
     const lockedSkills = []
     let optionalCount = 0
     const categoryLimits = {}
+    const listLimits = []
 
     occ.skills.forEach(skill => {
       // 解析 "点X门技能"
@@ -268,6 +269,20 @@ Page({
         const match = skill.match(/点([一二两三四五六七八九十\d]+)门技能/)
         if (match) {
           optionalCount = this.parseChineseNum(match[1])
+        }
+      } else if (skill.includes('自选') && skill.includes('技能')) {
+        // 解析 "自选二技能" 等官方占位符
+        const match = skill.match(/自选([一二两三四五六七八九十\d]+)技能/)
+        if (match) {
+          optionalCount = this.parseChineseNum(match[1])
+        }
+      } else if (skill.includes('下列选') && skill.includes('（')) {
+        // 解析 "下列选四（估价、乔装、格斗、射击、锁匠、机械修理、妙手）"
+        const m = skill.match(/下列选([一二两三四五六七八九十\d]+)（([^）]+)）/)
+        if (m) {
+          const count = this.parseChineseNum(m[1])
+          const list = m[2].split('、').map(s => s.trim()).filter(Boolean)
+          listLimits.push({ list, count })
         }
       } else if (skill.includes('社交技能')) {
         // 解析 "一项社交技能（取悦、话术、恐吓、说服）"
@@ -287,7 +302,7 @@ Page({
       }
     })
 
-    return { lockedSkills, optionalCount, categoryLimits }
+    return { lockedSkills, optionalCount, categoryLimits, mutualExclusion: (occ && occ.mutualExclusion) || [], listLimits }
   },
 
   // 中文数字转阿拉伯数字
@@ -322,6 +337,19 @@ Page({
       }
     })
 
+    // 1.5 计算列表限制覆盖的技能（下列选N）
+    const listOccupied = new Set()
+    ;(occConfig.listLimits || []).forEach(group => {
+      const groupSkills = []
+      skillCategories.forEach(cat => cat.skills.forEach(sk => {
+        if (group.list.includes(sk.name)) groupSkills.push(sk)
+      }))
+      const over50 = groupSkills
+        .filter(sk => sk.current > 50 && !sk.isLocked && sk.name !== '母语')
+        .sort((a, b) => b.current - a.current)
+      over50.slice(0, group.count).forEach(sk => listOccupied.add(sk.name))
+    })
+
     // 2. 计算全局自选覆盖的技能
     const globalOccupied = new Set()
     if (occConfig.optionalCount > 0) {
@@ -342,7 +370,7 @@ Page({
     const globalRemaining = Math.max(0, occConfig.optionalCount - globalUsed)
 
     // 4. 更新每个技能的 displayAsOcc 和分类的 limitText
-    return skillCategories.map(cat => {
+    const result = skillCategories.map(cat => {
       const catLimit = occConfig.categoryLimits[cat.category]
       let limitText = ''
 
@@ -363,13 +391,36 @@ Page({
           const displayAsOcc = sk.isLocked || (
             sk.current > 50 && (
               categoryOccupied.has(sk.name) ||
-              globalOccupied.has(sk.name)
+              globalOccupied.has(sk.name) ||
+              listOccupied.has(sk.name)
             )
           )
-          return { ...sk, displayAsOcc }
+          // 列表限制组技能提示（下列选N）
+          let skillLimitText = ''
+          const inListLimit = (occConfig.listLimits || []).find(g => g.list.includes(sk.name))
+          if (inListLimit) {
+            skillLimitText = `（下列选${inListLimit.count}）`
+          }
+          return { ...sk, displayAsOcc, skillLimitText }
         })
       }
     })
+
+    // 互斥职业技能：一对中某方 current > 50，则摘除另一方的 ★
+    const mutEx = occConfig.mutualExclusion || []
+    mutEx.forEach(pair => {
+      const [nameA, nameB] = pair
+      let skillA, skillB
+      result.forEach(cat => cat.skills.forEach(sk => {
+        if (sk.name === nameA) skillA = sk
+        if (sk.name === nameB) skillB = sk
+      }))
+      if (!skillA || !skillB) return
+      if (skillA.current > 50) skillB.displayAsOcc = false
+      if (skillB.current > 50) skillA.displayAsOcc = false
+    })
+
+    return result
   },
 
   onToggleCategory(e) {

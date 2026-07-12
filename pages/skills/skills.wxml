@@ -96,6 +96,7 @@
           <view class="skill-name-wrap">
             <text class="occ-dot" wx:if="{{sk.displayAsOcc}}">★</text>
             <text class="skill-name {{sk.displayAsOcc ? 'occ-skill-name' : ''}}">{{sk.name}}</text>
+            <text class="skill-limit-tag" wx:if="{{sk.skillLimitText}}">{{sk.skillLimitText}}</text>
             <input
               wx:if="{{sk.name === '其他语言'}}"
               class="language-name-input"

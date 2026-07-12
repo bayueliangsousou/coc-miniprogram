@@ -308,6 +308,15 @@
   font-family: 'Special Elite';
 }
 
+.skill-limit-tag {
+  font-size: 20rpx;
+  color: #835F2D;
+  background: rgba(131, 95, 45, 0.1);
+  border-radius: 6rpx;
+  padding: 2rpx 8rpx;
+  margin-left: 8rpx;
+}
+
 .skill-row.is-occ .skill-name,
 .occ-skill-name {
   color: #835F2D;

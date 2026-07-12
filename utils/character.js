@@ -164,9 +164,15 @@ function calcSkillPoints(character, extraOccSkills = []) {
     } else if (formula === 'EDU × 2 + STR × 2 或 DEX × 2') {
       // 军人/私人侦探：取 STR 和 DEX 中较大的
       occTotal = EDU * 2 + Math.max(STR, DEX) * 2
+    } else if (formula === 'EDU × 2 + DEX × 2 或 STR × 2') {
+      // 罪犯：取 STR 和 DEX 中较大的（与上一分支数值等价）
+      occTotal = EDU * 2 + Math.max(STR, DEX) * 2
     } else if (formula === 'EDU × 2 + APP × 2 或 DEX × 2') {
       // 间谍：取 APP 和 DEX 中较大的
       occTotal = EDU * 2 + Math.max(APP, DEX) * 2
+    } else if (formula === 'EDU × 2 + DEX × 2 或 POW × 2') {
+      // 艺术家等：取 DEX 和 POW 中较大的
+      occTotal = EDU * 2 + Math.max(DEX, POW) * 2
     } else {
       // 默认公式：EDU × 4
       occTotal = EDU * 4

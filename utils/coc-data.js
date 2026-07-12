@@ -102,7 +102,7 @@ const OCCUPATIONS = [
     desc: '拥有法律从业资格、提供法律服务的专业人士。',
     creditRating: [30, 80],
     pointFormula: 'EDU × 4',
-    skills: ['会计', '图书馆使用', '法律', '母语', '心理学', '点三门技能', '信用评级']
+    skills: ['会计学', '图书馆使用', '法律', '二项社交技能（取悦、话术、恐吓或说服）', '心理学', '自选二技能', '信用评级']
   },
   {
     id: 'librarian',
@@ -170,11 +170,29 @@ const OCCUPATIONS = [
   },
   {
     id: 'police',
-    name: '警探',
-    desc: '负责侦破案件的执法人员。',
+    name: '警察',
+    desc: '维护社会治安、执行法律的执法人员。',
     creditRating: [9, 30],
-    pointFormula: 'EDU × 2 + STR × 2',
-    skills: ['急救', '射击', '乔装', '格斗（斗殴）', '恐吓', '法律', '心理学', '侦察', '信用评级']
+    pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
+    skills: ['格斗（斗殴）', '射击', '急救', '一项社交技能（取悦、话术、恐吓、说服）', '法律', '心理学', '侦察', '驾驶（汽车）', '骑乘', '信用评级'],
+    mutualExclusion: [['驾驶（汽车）', '骑乘']]
+  },
+  {
+    id: 'detective',
+    name: '警探（原作向）',
+    desc: '负责调查与侦破案件的侦探。',
+    creditRating: [20, 50],
+    pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
+    skills: ['艺术与手艺（表演）', '乔装', '射击', '法律', '聆听', '一项社交技能（取悦、话术、恐吓、说服）', '心理学', '侦察', '点一门技能', '信用评级'],
+    mutualExclusion: [['艺术与手艺（表演）', '乔装']]
+  },
+  {
+    id: 'criminal',
+    name: '罪犯',
+    desc: '游走于法律边缘、以非法手段牟利的人员。',
+    creditRating: [5, 65],
+    pointFormula: 'EDU × 2 + DEX × 2 或 STR × 2',
+    skills: ['一项社交技能（取悦、话术、恐吓、说服）', '心理学', '侦察', '潜行', '下列选四（估价、乔装、格斗、射击、锁匠、机械修理、妙手）', '信用评级']
   },
   {
     id: 'professor',
@@ -230,7 +248,7 @@ const OCCUPATIONS = [
     desc: '会计师可能在企业工作或作为自由会计师，为个体经营者和企业客户担任顾问。',
     creditRating: [30, 70],
     pointFormula: 'EDU × 4',
-    skills: ['会计', '法律', '图书馆使用', '聆听', '说服', '调查', '点一门技能', '信用评级']
+    skills: ['会计学', '法律', '图书馆使用', '聆听', '说服', '调查', '点一门技能', '信用评级']
   },
   {
     id: 'animal_trainer',
@@ -339,7 +357,8 @@ const SKILLS = [
   { name: '心理学', baseValue: 10, category: '知识' },
   { name: '历史', baseValue: 5, category: '知识' },
   { name: '法律', baseValue: 5, category: '知识' },
-  { name: '会计', baseValue: 5, category: '知识' },
+  { name: '会计学', baseValue: 5, category: '知识' },
+  { name: '博物学', baseValue: 10, category: '知识' },
   { name: '其他语言', baseValue: 1, category: '知识' },
   { name: '母语', baseValue: 0, category: '知识', note: '等于EDU' },
   { name: '人类学', baseValue: 1, category: '知识' },
@@ -363,6 +382,7 @@ const SKILLS = [
   { name: '机械修理', baseValue: 10, category: '技术' },
   { name: '操作重型机械', baseValue: 1, category: '技术' },
   { name: '锁匠', baseValue: 1, category: '技术' },
+  { name: '妙手', baseValue: 10, category: '技术' },
   { name: '计算机', baseValue: 1, category: '技术' },
   { name: '电气维修', baseValue: 10, category: '技术' },
   { name: '电子学', baseValue: 1, category: '技术' },
