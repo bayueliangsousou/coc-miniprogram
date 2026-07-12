@@ -33,6 +33,18 @@
 - 模式：小程序编辑页凡「编辑态仅存页面 data、显式保存才落地」的，都应加本地草稿双写防退出丢失；`onShow` 重载 committed 时务必用 `savedAt > updatedAt` 严格比较，避免时间戳相等误恢复/重复 toast。
 - **PAT-016（2026-07-11 修正）：状态选择弹窗已选项无选中对号** — 现象：角色详情页已挂上「重伤」等状态后（顶部徽标可见），再次打开「选择状态」弹窗，已选项前无对号，无法识别哪些已生效。根因（非样式问题）：弹窗选中判断依赖 `character.status` 与 `availableStatuses[].value`（英文 key 如 `seriouslyInjured`）精确匹配；当 `character.status` 实际存的是**中文 label**（历史数据 / PC 端同步 / 其他入口写入）时，`includes('seriouslyInjured')` 与 `selectedStatusMap['seriouslyInjured']` 永远查不到 → 无对号；且顶部徽标用 `statusLabels[item]`（英文→中文，无回退），只在 status 为英文 key 时才显示中文，故"顶部显示重伤"并非判断依据。另：若 `this.data.character` 与存档在"再次打开"时刻不同步（如 onShow 重载后内存引用滞后），从 `this.data.character` 构建的 map 也可能命中失败。修复：①页面加载时 `normalizeStatusList` + 反向映射 `REVERSE_STATUS_LABEL`（中文→英文）把 `character.status` 规范化为英文 key 存回；②`refreshSelectedStatusMap` 改为直接 `getCharacterById(id)` 读最新存档，且对每项同时建 `原值 / 英文key` 两个 map 入口以兼容中英文；③`onSelectStatus` 的已选判断 `includes` 同时兼容中文 label。涉及文件：`pages/character-detail/character-detail.js`（新增常量+函数、改 onShow、改 refreshSelectedStatusMap、改 onSelectStatus）、`.wxml`、`.wxss` 已在上一轮加选中态样式。
 
+### isLockedSkill 基础名匹配导致「锁一个、整类全★」
+- 现象：职业 `locked` 里写带括号的具体子类（如 `科学（生物学）`、`艺术与手艺（摄影）`、`格斗（斗殴）`），结果该分类下**所有子技能**都被判定为锁定职业技能（★），与官方「仅此具体子技能★」不符；医生/私家侦探/心理学家/飞行员的科学/艺术分类整列★即此 bug。
+- 根因：`isLockedSkill(skillName, lockedSkills)` 对 locked 项一律 `split('（')[0]` 取基础名比较，使 `科学（生物学）` 的基础名 `科学` 命中 `科学（化学）` 等全部同基础名子技能。
+- 修复：`isLockedSkill` 改为——**锁定项含括号（`（`/`(`）时精确全名匹配**（只该具体子技能★）；**裸名（无括号，如 `射击`/`其他语言`/`医学`）才走基础名匹配**覆盖全部子类。此修复同时让 工程师（科学仅工程学/物理学）、警察/士兵（格斗仅斗殴）、作家（艺术仅写作）等历史规则真正生效（此前同样被基础名匹配放大成整类★）。
+- 教训：`isLockedSkill` 的「基础名匹配」语义必须区分「带括号的具体子类锁定」与「裸名通配」，二者不可混用；新增带括号 locked 职业技时默认是精确锁定，不要指望它覆盖同基础名的其他子类。涉及文件：`pages/skills/skills.js`。
+
+### 局部选n（categoryLimits）必须硬封顶第 N+1 个分类技能为兴趣技能（≤50）
+- 现象：社交/艺术/科学「选N」职业里，玩家能把第 3 个同类技能加到 >50 并拿到★，违反「局部选n = 该分类最多 N 个职业技能，其余是兴趣技能封顶 50」。
+- 根因：原 `updateSkillDisplayState` 把 `chooseAny`（自由选N）候选收集为「所有 >50 且未进 categoryOccupied 的技能」，未排除「处于有限分类内、只是超名额」的技能，于是第 3 个社交技能被自由选 N 提拔为★；且 `_validateAndApply` 此前只对「正在编辑的技能」按 isOcc 截断（非★→50），未对同分类其他超名额技能做归一化。
+- 修复：①chooseAny 收集时跳过「分类在 `categoryLimits` 中、但未进入 `categoryOccupied`」的技能；②`_validateAndApply` 写入前对 `categoryLimits` 每分类按值降序、仅前 N 个非锁定技能可 >50，其余 >50 强制 50。两点叠加＝第 N+1 个及以后同类技能必然 ≤50 且非★；把第 N+1 个顶得比前 N 个都高时它升入名额、被挤下的那名归 50。
+- 教训：`categoryLimits` 是「硬名额」不是「软推荐」；其分类内职业技能数量上限为 N，超过部分一律兴趣技能封顶 50，且自由选 N 不得突破该上限。涉及文件：`pages/skills/skills.js`。
+
 ## 已知问题
 - PC端存在两套 CloudBase 连接代码（cloudRoom.ts 代理版 + cloudRoomSDK.ts 直连版）
 - GitHub CLI (gh) 无法在本地环境安装（下载域名被墙）

@@ -56,7 +56,7 @@ const OCCUPATIONS = [
     creditRating: [30, 80],
     pointFormula: 'EDU × 4',
     skillSpec: {
-      locked: ['急救', '其他语言', '医学', '心理学', '科学（生物学）', '科学（药学）', '信用评级'],
+      locked: ['急救', '其他语言', '医学', '心理学', '电器维修', '科学（生物学）', '科学（药学）', '信用评级'],
       chooseAny: 2
     }
   },

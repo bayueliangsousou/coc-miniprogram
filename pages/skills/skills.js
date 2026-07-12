@@ -272,7 +272,12 @@ Page({
   // 判断技能是否为锁定职业技能
   isLockedSkill(skillName, lockedSkills) {
     return lockedSkills.some(locked => {
-      // 处理 "艺术与手艺（设计图纸）" vs "艺术与手艺（摄影）"：按基础名（括号前）匹配
+      // 带括号的锁定项（如 科学（生物学）、艺术与手艺（摄影）、格斗（斗殴））
+      // 只精确匹配该具体子技能，避免「锁一个、整类全★」的误判
+      if (locked.includes('（') || locked.includes('(')) {
+        return locked === skillName
+      }
+      // 裸名（如 射击、其他语言、医学）按基础名（括号前）匹配，覆盖全部子类
       const lockedBase = locked.split('（')[0].split('(')[0]
       const skillBase = skillName.split('（')[0].split('(')[0]
       return lockedBase === skillBase
@@ -298,10 +303,16 @@ Page({
     skillCategories.forEach(cat => {
       const limit = occConfig.categoryLimits[cat.category]
       if (limit) {
-        const over50 = cat.skills
-          .filter(sk => sk.current > 50 && !sk.isLocked && sk.name !== '母语')
-          .sort((a, b) => b.current - a.current)
-        over50.slice(0, limit).forEach(sk => categoryOccupied.add(sk.name))
+        // 局部选n：按分类内「出现顺序」，前 N 个 >50 的非锁定技能为职业技能（★）。
+        // 不按数值排序，避免「数值高的后来者挤掉先填的技能」——
+        // 用户若想让后面的技能入选，需主动把前面的技能降到 50 或以下来腾出名额（系统绝不替用户改值）。
+        let granted = 0
+        cat.skills.forEach(sk => {
+          if (!sk.isLocked && sk.name !== '母语' && sk.current > 50 && granted < limit) {
+            categoryOccupied.add(sk.name)
+            granted++
+          }
+        })
       }
     })
 
@@ -334,19 +345,24 @@ Page({
     const mutualMembers = {}
     ;(occConfig.mutualExclusion || []).forEach(pair => pair.forEach(m => { mutualMembers[m] = true }))
 
-    // 2. 计算全局自选覆盖的技能
+    // 2. 计算全局自选覆盖的技能（全局选N：与局部选n 同逻辑）
+    //    按分类→技能「出现顺序」取前 N 个 >50 的非锁定技能为职业技能（★）；
+    //    第 (N+1) 个即便数值更高也不★、无法超过 50，除非用户主动把前面的降到 50 以下腾出名额。
+    //    不按数值排序，避免「数值高的后来者挤掉先选的」（与局部选n 一致）。
+    //    处于有限分类（categoryLimits）内的技能整体不参与全局自选——它们只能走各自的分类名额，
+    //    超名额者已是兴趣技能，不能被「自由选 N」提拔。
     const globalOccupied = new Set()
     if (occConfig.chooseAny > 0) {
-      const allOver50 = []
+      let granted = 0
       skillCategories.forEach(cat => {
+        if (occConfig.categoryLimits[cat.category]) return
         cat.skills.forEach(sk => {
-          if (sk.current > 50 && !sk.isLocked && !categoryOccupied.has(sk.name) && sk.name !== '母语') {
-            allOver50.push(sk)
+          if (!sk.isLocked && sk.name !== '母语' && sk.current > 50 && granted < occConfig.chooseAny) {
+            globalOccupied.add(sk.name)
+            granted++
           }
         })
       })
-      allOver50.sort((a, b) => b.current - a.current)
-      allOver50.slice(0, occConfig.chooseAny).forEach(sk => globalOccupied.add(sk.name))
     }
 
     // 3. 计算全局剩余名额
@@ -629,16 +645,16 @@ Page({
     // 3. 基础值兜底（硬下限，不标红）
     if (finalValue < baseValue) { finalValue = baseValue }
 
-    // 更新值（含 updateSkillDisplayState 重排序）
+    // 更新值（含 updateSkillDisplayState 重算 ★）
+    // 注意：只更新「正在编辑的这一个技能」的值，绝不动同分类的其他技能（无挤下逻辑）
     let skillCategories = oldCats.map(cat => ({
       ...cat,
       skills: cat.skills.map(sk => {
-        if (sk.name !== name) return sk
+        if (sk.name !== name) return { ...sk }
         const thresholds = calcSkillThresholds(finalValue)
         return { ...sk, current: finalValue, hard: thresholds.hard, extreme: thresholds.extreme }
       })
     }))
-
     skillCategories = this.updateSkillDisplayState(skillCategories, occConfig)
 
     // 同步计算剩余点数
