@@ -4,8 +4,13 @@
 /**
  * 职业列表
  * creditRating: [min, max] 信用评级范围
- * skills: 职业技能（8选4 或 固定）
  * pointFormula: 技能点计算公式描述
+ * skillSpec: 职业技能声明式配置（纯声明式，解析层直读，不再用中文串解析）
+ *   - locked:        固定锁定技能（恒★，占用职业点池）
+ *   - chooseFrom:    名单型选多（减法模型：进入全★，超名额摘星，候选名后挂进度标签）
+ *                    互斥（二选一）即 chooseFrom{members:[a,b], count:1}
+ *   - categoryLimits: 分类型选多（加法模型：进入不★，加到50+才★），键为分类名
+ *   - chooseAny:     全技能选 N（加法模型：进入不★，加到50+才★）
  */
 const OCCUPATIONS = [
   {
@@ -14,7 +19,11 @@ const OCCUPATIONS = [
     desc: '专门研究古代文物、艺术品和历史遗迹的专家。',
     creditRating: [30, 70],
     pointFormula: 'EDU × 4',
-    skills: ['估价', '艺术与手艺（任一）', '历史', '图书馆使用', '其他语言', '侦察', '点一门技能', '信用评级']
+    skillSpec: {
+      locked: ['估价', '历史', '图书馆使用', '其他语言', '侦察', '信用评级'],
+      categoryLimits: { '艺术': 1 },
+      chooseAny: 1
+    }
   },
   {
     id: 'author',
@@ -22,7 +31,10 @@ const OCCUPATIONS = [
     desc: '以写作为职业，创作小说、剧本或非虚构作品。',
     creditRating: [9, 30],
     pointFormula: 'EDU × 4',
-    skills: ['艺术与手艺（写作）', '历史', '图书馆使用', '神秘学', '其他语言', '心理学', '点一门技能', '信用评级']
+    skillSpec: {
+      locked: ['艺术与手艺（写作）', '历史', '图书馆使用', '神秘学', '其他语言', '心理学', '信用评级'],
+      chooseAny: 1
+    }
   },
   {
     id: 'dilettante',
@@ -30,7 +42,11 @@ const OCCUPATIONS = [
     desc: '有闲有钱、兴趣广泛的富家子弟。',
     creditRating: [50, 99],
     pointFormula: 'APP × 2 + EDU × 2',
-    skills: ['艺术与手艺（任一）', '射击', '骑术', '其他语言', '心理学', '骑乘', '点一门技能', '信用评级']
+    skillSpec: {
+      locked: ['射击', '骑乘', '其他语言', '心理学', '信用评级'],
+      categoryLimits: { '艺术': 1 },
+      chooseAny: 1
+    }
   },
   {
     id: 'doctor',
@@ -38,7 +54,10 @@ const OCCUPATIONS = [
     desc: '受过正规医学训练、拥有执照的医疗从业者。',
     creditRating: [30, 80],
     pointFormula: 'EDU × 4',
-    skills: ['急救', '图书馆使用', '医学', '心理学', '科学（生物学）', '科学（药学）', '点两门技能', '信用评级']
+    skillSpec: {
+      locked: ['急救', '图书馆使用', '医学', '心理学', '科学（生物学）', '科学（药学）', '信用评级'],
+      chooseAny: 2
+    }
   },
   {
     id: 'driver',
@@ -46,7 +65,10 @@ const OCCUPATIONS = [
     desc: '以驾驶各类交通工具为职业的人。',
     creditRating: [9, 20],
     pointFormula: 'DEX × 2 + EDU × 2',
-    skills: ['电器修理', '驾驶（汽车）', '射击', '锁匠', '机械修理', '导航', '点两门技能', '信用评级']
+    skillSpec: {
+      locked: ['电器修理', '驾驶（汽车）', '射击', '锁匠', '机械修理', '导航', '信用评级'],
+      chooseAny: 2
+    }
   },
   {
     id: 'editor',
@@ -54,7 +76,10 @@ const OCCUPATIONS = [
     desc: '在报社、出版社或杂志社工作的文字从业者。',
     creditRating: [9, 35],
     pointFormula: 'EDU × 4',
-    skills: ['历史', '图书馆使用', '母语', '其他语言', '心理学', '点三门技能', '信用评级']
+    skillSpec: {
+      locked: ['历史', '图书馆使用', '母语', '其他语言', '心理学', '信用评级'],
+      chooseAny: 3
+    }
   },
   {
     id: 'engineer',
@@ -62,7 +87,10 @@ const OCCUPATIONS = [
     desc: '受过专业工程技术训练的技术人员。',
     creditRating: [30, 60],
     pointFormula: 'EDU × 4',
-    skills: ['电器修理', '图书馆使用', '机械修理', '操作重型机械', '科学（物理学）', '点三门技能', '信用评级']
+    skillSpec: {
+      locked: ['电器修理', '图书馆使用', '机械修理', '操作重型机械', '科学（物理学）', '信用评级'],
+      chooseAny: 3
+    }
   },
   {
     id: 'gangster',
@@ -70,7 +98,10 @@ const OCCUPATIONS = [
     desc: '活跃于犯罪地下世界的成员。',
     creditRating: [5, 40],
     pointFormula: 'STR × 2 + DEX × 2',
-    skills: ['驾驶（汽车）', '射击', '恐吓', '格斗（斗殴）', '锁匠', '侦察', '点两门技能', '信用评级']
+    skillSpec: {
+      locked: ['驾驶（汽车）', '射击', '恐吓', '格斗（斗殴）', '锁匠', '侦察', '信用评级'],
+      chooseAny: 2
+    }
   },
   {
     id: 'hunter',
@@ -78,7 +109,10 @@ const OCCUPATIONS = [
     desc: '以打猎或追踪为生的户外生存专家。',
     creditRating: [9, 20],
     pointFormula: 'STR × 2 + DEX × 2',
-    skills: ['急救', '导航', '自然学', '侦察', '射击', '追踪', '点两门技能', '信用评级']
+    skillSpec: {
+      locked: ['急救', '导航', '自然学', '侦察', '射击', '追踪', '信用评级'],
+      chooseAny: 2
+    }
   },
   {
     id: 'investigator',
@@ -86,7 +120,9 @@ const OCCUPATIONS = [
     desc: '受雇调查各类私人案件的专业侦探。',
     creditRating: [9, 30],
     pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
-    skills: ['艺术与手艺（摄影）', '乔装', '格斗（斗殴）', '射击', '法律', '图书馆使用', '心理学', '侦察', '信用评级']
+    skillSpec: {
+      locked: ['艺术与手艺（摄影）', '乔装', '格斗（斗殴）', '射击', '法律', '图书馆使用', '心理学', '侦察', '信用评级']
+    }
   },
   {
     id: 'journalist',
@@ -94,7 +130,10 @@ const OCCUPATIONS = [
     desc: '为报纸、电台或杂志采集和报道新闻的职业。',
     creditRating: [9, 30],
     pointFormula: 'EDU × 4',
-    skills: ['艺术与手艺（摄影）', '历史', '图书馆使用', '母语', '心理学', '点三门技能', '信用评级']
+    skillSpec: {
+      locked: ['艺术与手艺（摄影）', '历史', '图书馆使用', '母语', '心理学', '信用评级'],
+      chooseAny: 3
+    }
   },
   {
     id: 'lawyer',
@@ -102,7 +141,11 @@ const OCCUPATIONS = [
     desc: '拥有法律从业资格、提供法律服务的专业人士。',
     creditRating: [30, 80],
     pointFormula: 'EDU × 4',
-    skills: ['会计学', '图书馆使用', '法律', '二项社交技能（取悦、话术、恐吓或说服）', '心理学', '自选二技能', '信用评级']
+    skillSpec: {
+      locked: ['会计学', '图书馆使用', '法律', '心理学', '信用评级'],
+      categoryLimits: { '社交': 2 },
+      chooseAny: 2
+    }
   },
   {
     id: 'librarian',
@@ -110,7 +153,10 @@ const OCCUPATIONS = [
     desc: '在图书馆或档案馆负责管理文献资料的人员。',
     creditRating: [9, 35],
     pointFormula: 'EDU × 4',
-    skills: ['图书馆使用', '其他语言', '母语', '点五门技能', '信用评级']
+    skillSpec: {
+      locked: ['图书馆使用', '其他语言', '母语', '信用评级'],
+      chooseAny: 5
+    }
   },
   {
     id: 'military',
@@ -118,7 +164,10 @@ const OCCUPATIONS = [
     desc: '在陆海空等武装力量中服役的现役或退役军人。',
     creditRating: [9, 30],
     pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
-    skills: ['急救', '格斗', '射击', '侦察', '点四门技能', '信用评级']
+    skillSpec: {
+      locked: ['急救', '格斗（斗殴）', '射击', '侦察', '信用评级'],
+      chooseAny: 4
+    }
   },
   {
     id: 'missionary',
@@ -126,7 +175,10 @@ const OCCUPATIONS = [
     desc: '以传播宗教信仰为使命的人员。',
     creditRating: [0, 30],
     pointFormula: 'EDU × 4',
-    skills: ['急救', '历史', '图书馆使用', '医学', '神秘学', '心理学', '点两门技能', '信用评级']
+    skillSpec: {
+      locked: ['急救', '历史', '图书馆使用', '医学', '神秘学', '心理学', '信用评级'],
+      chooseAny: 2
+    }
   },
   {
     id: 'musician',
@@ -134,7 +186,10 @@ const OCCUPATIONS = [
     desc: '以表演、创作或教授音乐为职业的艺术家。',
     creditRating: [9, 30],
     pointFormula: 'APP × 2 + EDU × 2',
-    skills: ['艺术与手艺（乐器）', '艺术与手艺（唱歌）', '心理学', '侦察', '点四门技能', '信用评级']
+    skillSpec: {
+      locked: ['艺术与手艺（乐器）', '艺术与手艺（唱歌）', '心理学', '侦察', '信用评级'],
+      chooseAny: 4
+    }
   },
   {
     id: 'nurse',
@@ -142,7 +197,11 @@ const OCCUPATIONS = [
     desc: '协助医生提供医疗护理服务的专业人员。',
     creditRating: [9, 30],
     pointFormula: 'EDU × 4',
-    skills: ['急救', '图书馆使用', '听觉', '医学', '心理学', '科学（化学或生物）', '点两门技能', '信用评级']
+    skillSpec: {
+      locked: ['急救', '图书馆使用', '听觉', '医学', '心理学', '信用评级'],
+      categoryLimits: { '科学': 1 },
+      chooseAny: 2
+    }
   },
   {
     id: 'occultist',
@@ -150,7 +209,10 @@ const OCCUPATIONS = [
     desc: '研究超自然现象和秘密知识的人。',
     creditRating: [9, 65],
     pointFormula: 'EDU × 4',
-    skills: ['人类学', '历史', '图书馆使用', '神秘学', '其他语言', '点三门技能', '信用评级']
+    skillSpec: {
+      locked: ['人类学', '历史', '图书馆使用', '神秘学', '其他语言', '信用评级'],
+      chooseAny: 3
+    }
   },
   {
     id: 'parapsychologist',
@@ -158,7 +220,10 @@ const OCCUPATIONS = [
     desc: '研究心灵感应、幽灵等超自然现象的科学家。',
     creditRating: [9, 30],
     pointFormula: 'EDU × 4',
-    skills: ['人类学', '艺术与手艺（摄影）', '历史', '图书馆使用', '神秘学', '心理学', '点两门技能', '信用评级']
+    skillSpec: {
+      locked: ['人类学', '艺术与手艺（摄影）', '历史', '图书馆使用', '神秘学', '心理学', '信用评级'],
+      chooseAny: 2
+    }
   },
   {
     id: 'pilot',
@@ -166,7 +231,10 @@ const OCCUPATIONS = [
     desc: '具备飞行资质的航空器驾驶人员。',
     creditRating: [20, 70],
     pointFormula: 'DEX × 2 + EDU × 2',
-    skills: ['导航', '驾驶（飞机）', '驾驶（汽车）', '电器修理', '机械修理', '操作重型机械', '点两门技能', '信用评级']
+    skillSpec: {
+      locked: ['导航', '驾驶（飞机）', '驾驶（汽车）', '电器修理', '机械修理', '操作重型机械', '信用评级'],
+      chooseAny: 2
+    }
   },
   {
     id: 'police',
@@ -174,8 +242,11 @@ const OCCUPATIONS = [
     desc: '维护社会治安、执行法律的执法人员。',
     creditRating: [9, 30],
     pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
-    skills: ['格斗（斗殴）', '射击', '急救', '一项社交技能（取悦、话术、恐吓、说服）', '法律', '心理学', '侦察', '驾驶（汽车）', '骑乘', '信用评级'],
-    mutualExclusion: [['驾驶（汽车）', '骑乘']]
+    skillSpec: {
+      locked: ['格斗（斗殴）', '射击', '急救', '法律', '心理学', '侦察', '信用评级'],
+      categoryLimits: { '社交': 1 },
+      mutualExclusion: [['驾驶（汽车）', '骑乘']]
+    }
   },
   {
     id: 'detective',
@@ -183,8 +254,12 @@ const OCCUPATIONS = [
     desc: '负责调查与侦破案件的侦探。',
     creditRating: [20, 50],
     pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
-    skills: ['艺术与手艺（表演）', '乔装', '射击', '法律', '聆听', '一项社交技能（取悦、话术、恐吓、说服）', '心理学', '侦察', '点一门技能', '信用评级'],
-    mutualExclusion: [['艺术与手艺（表演）', '乔装']]
+    skillSpec: {
+      locked: ['射击', '法律', '聆听', '心理学', '侦察', '信用评级'],
+      categoryLimits: { '社交': 1 },
+      mutualExclusion: [['艺术与手艺（表演）', '乔装']],
+      chooseAny: 1
+    }
   },
   {
     id: 'criminal',
@@ -192,7 +267,11 @@ const OCCUPATIONS = [
     desc: '游走于法律边缘、以非法手段牟利的人员。',
     creditRating: [5, 65],
     pointFormula: 'EDU × 2 + DEX × 2 或 STR × 2',
-    skills: ['一项社交技能（取悦、话术、恐吓、说服）', '心理学', '侦察', '潜行', '下列选四（估价、乔装、格斗、射击、锁匠、机械修理、妙手）', '信用评级']
+    skillSpec: {
+      locked: ['心理学', '侦察', '潜行', '信用评级'],
+      categoryLimits: { '社交': 1 },
+      chooseFrom: [{ members: ['估价', '乔装', '格斗（斗殴）', '射击', '锁匠', '机械修理', '妙手'], count: 4 }]
+    }
   },
   {
     id: 'professor',
@@ -200,7 +279,10 @@ const OCCUPATIONS = [
     desc: '在高等院校从事教学与研究的学者。',
     creditRating: [20, 70],
     pointFormula: 'EDU × 4',
-    skills: ['图书馆使用', '其他语言', '母语', '心理学', '点四门技能（依专业）', '信用评级']
+    skillSpec: {
+      locked: ['图书馆使用', '其他语言', '母语', '心理学', '信用评级'],
+      chooseAny: 4
+    }
   },
   {
     id: 'scientist',
@@ -208,7 +290,11 @@ const OCCUPATIONS = [
     desc: '从事自然科学研究的专业人员。',
     creditRating: [9, 40],
     pointFormula: 'EDU × 4',
-    skills: ['电器修理', '图书馆使用', '其他语言', '科学（专业，两种）', '点三门技能', '信用评级']
+    skillSpec: {
+      locked: ['电器修理', '图书馆使用', '其他语言', '信用评级'],
+      categoryLimits: { '科学': 2 },
+      chooseAny: 3
+    }
   },
   {
     id: 'sailor',
@@ -216,7 +302,10 @@ const OCCUPATIONS = [
     desc: '在海上从事航行或捕捞工作的人员。',
     creditRating: [9, 20],
     pointFormula: 'EDU × 2 + STR × 2',
-    skills: ['急救', '格斗（斗殴）', '射击', '导航', '侦察', '游泳', '点两门技能', '信用评级']
+    skillSpec: {
+      locked: ['急救', '格斗（斗殴）', '射击', '导航', '侦察', '游泳', '信用评级'],
+      chooseAny: 2
+    }
   },
   {
     id: 'soldier',
@@ -224,7 +313,10 @@ const OCCUPATIONS = [
     desc: '普通士官或列兵级别的军事人员。',
     creditRating: [9, 20],
     pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
-    skills: ['急救', '格斗', '射击', '投掷', '点四门技能', '信用评级']
+    skillSpec: {
+      locked: ['急救', '格斗（斗殴）', '射击', '投掷', '信用评级'],
+      chooseAny: 4
+    }
   },
   {
     id: 'spy',
@@ -232,7 +324,10 @@ const OCCUPATIONS = [
     desc: '秘密收集情报或执行渗透任务的特工人员。',
     creditRating: [20, 60],
     pointFormula: 'EDU × 2 + APP × 2 或 DEX × 2',
-    skills: ['艺术与手艺（摄影）', '乔装', '射击', '格斗（斗殴）', '其他语言', '心理学', '侦察', '点一门技能', '信用评级']
+    skillSpec: {
+      locked: ['艺术与手艺（摄影）', '乔装', '射击', '格斗（斗殴）', '其他语言', '心理学', '侦察', '信用评级'],
+      chooseAny: 1
+    }
   },
   {
     id: 'student',
@@ -240,7 +335,10 @@ const OCCUPATIONS = [
     desc: '正在接受高等教育的在校生。',
     creditRating: [5, 10],
     pointFormula: 'EDU × 4',
-    skills: ['图书馆使用', '母语', '点六门技能', '信用评级']
+    skillSpec: {
+      locked: ['图书馆使用', '母语', '信用评级'],
+      chooseAny: 6
+    }
   },
   {
     id: 'accountant',
@@ -248,7 +346,10 @@ const OCCUPATIONS = [
     desc: '会计师可能在企业工作或作为自由会计师，为个体经营者和企业客户担任顾问。',
     creditRating: [30, 70],
     pointFormula: 'EDU × 4',
-    skills: ['会计学', '法律', '图书馆使用', '聆听', '说服', '调查', '点一门技能', '信用评级']
+    skillSpec: {
+      locked: ['会计学', '法律', '图书馆使用', '聆听', '说服', '侦察', '信用评级'],
+      chooseAny: 1
+    }
   },
   {
     id: 'animal_trainer',
@@ -256,7 +357,9 @@ const OCCUPATIONS = [
     desc: '动物训练师可能在电影工作室、巡回马戏团、马厩工作或自由工作。',
     creditRating: [10, 40],
     pointFormula: 'EDU × 2 + APP × 2 或 POW × 2',
-    skills: ['跳跃', '聆听', '自然学', '心理学', '科学（动物学）', '潜行', '追踪', '信用评级']
+    skillSpec: {
+      locked: ['跳跃', '聆听', '自然学', '心理学', '科学（动物学）', '潜行', '追踪', '信用评级']
+    }
   },
   {
     id: 'hacker',
@@ -264,7 +367,11 @@ const OCCUPATIONS = [
     desc: '利用计算机和网络进行干扰或破坏以达成目的的技术人员。',
     creditRating: [10, 70],
     pointFormula: 'EDU × 4',
-    skills: ['计算机', '电气维修', '电子学', '图书馆使用', '调查', '一项社交技能（取悦、话术、恐吓、说服）', '点一门技能', '信用评级']
+    skillSpec: {
+      locked: ['计算机', '电气维修', '电子学', '图书馆使用', '侦察', '信用评级'],
+      categoryLimits: { '社交': 1 },
+      chooseAny: 1
+    }
   },
   {
     id: 'programmer',
@@ -272,7 +379,10 @@ const OCCUPATIONS = [
     desc: '设计、编写、测试、调试和维护计算机程序源代码的职业。',
     creditRating: [10, 70],
     pointFormula: 'EDU × 4',
-    skills: ['计算机', '电气维修', '电子学', '图书馆使用', '科学（数学）', '调查', '点一门技能', '信用评级']
+    skillSpec: {
+      locked: ['计算机', '电气维修', '电子学', '图书馆使用', '科学（数学）', '侦察', '信用评级'],
+      chooseAny: 1
+    }
   },
   {
     id: 'idol',
@@ -280,7 +390,11 @@ const OCCUPATIONS = [
     desc: '以歌舞表演为职业的艺人。',
     creditRating: [9, 70],
     pointFormula: 'EDU × 2 + APP × 2',
-    skills: ['艺术与手艺（表演）', '艺术与手艺（唱歌）', '乔装', '一项社交技能（取悦、话术、恐吓、说服）', '聆听', '心理学', '点一门技能', '信用评级']
+    skillSpec: {
+      locked: ['艺术与手艺（表演）', '艺术与手艺（唱歌）', '乔装', '聆听', '心理学', '信用评级'],
+      categoryLimits: { '社交': 1 },
+      chooseAny: 1
+    }
   },
   {
     id: 'thug',
@@ -288,7 +402,10 @@ const OCCUPATIONS = [
     desc: '犯罪组织的兵卒，被犯罪组织豢养。',
     creditRating: [5, 30],
     pointFormula: 'EDU × 2 + STR × 2',
-    skills: ['驾驶（汽车）', '格斗（斗殴）', '射击', '一项社交技能（取悦、话术、恐吓、说服）', '心理学', '潜行', '调查', '信用评级']
+    skillSpec: {
+      locked: ['驾驶（汽车）', '格斗（斗殴）', '射击', '心理学', '潜行', '侦察', '信用评级'],
+      categoryLimits: { '社交': 1 }
+    }
   },
   {
     id: 'athlete',
@@ -296,7 +413,10 @@ const OCCUPATIONS = [
     desc: '效力于职业运动队伍的专业运动员。',
     creditRating: [9, 70],
     pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
-    skills: ['攀爬', '跳跃', '格斗（斗殴）', '骑乘', '一项社交技能（取悦、话术、恐吓、说服）', '游泳', '投掷', '信用评级']
+    skillSpec: {
+      locked: ['攀爬', '跳跃', '格斗（斗殴）', '骑乘', '游泳', '投掷', '信用评级'],
+      categoryLimits: { '社交': 1 }
+    }
   },
   {
     id: 'cowboy',
@@ -304,7 +424,9 @@ const OCCUPATIONS = [
     desc: '在西部的牧区和牧场工作的人员。',
     creditRating: [9, 20],
     pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
-    skills: ['闪避', '格斗（斗殴）', '射击', '跳跃', '骑乘', '生存', '投掷', '信用评级']
+    skillSpec: {
+      locked: ['闪避', '格斗（斗殴）', '射击', '跳跃', '骑乘', '生存', '投掷', '信用评级']
+    }
   },
   {
     id: 'artist',
@@ -312,8 +434,12 @@ const OCCUPATIONS = [
     desc: '从事视觉、表演或文学艺术创作的人。',
     creditRating: [9, 50],
     pointFormula: 'EDU × 2 + DEX × 2 或 POW × 2',
-    skills: ['艺术与手艺（任一）', '历史', '博物学', '一项社交技能（取悦、话术、恐吓、说服）', '其他语言', '心理学', '侦察', '自选二技能', '信用评级'],
-    mutualExclusion: [['历史', '博物学']]
+    skillSpec: {
+      locked: ['艺术与手艺（任一）', '其他语言', '心理学', '侦察', '信用评级'],
+      categoryLimits: { '社交': 1, '艺术': 1 },
+      mutualExclusion: [['历史', '博物学']],
+      chooseAny: 2
+    }
   },
   {
     id: 'cleric',
@@ -321,7 +447,11 @@ const OCCUPATIONS = [
     desc: '从事宗教职务、主持仪式与布道的神职者。',
     creditRating: [9, 60],
     pointFormula: 'EDU × 4',
-    skills: ['会计学', '历史', '图书馆使用', '聆听', '其他语言', '一项社交技能（取悦、话术、恐吓、说服）', '心理学', '自选一技能', '信用评级']
+    skillSpec: {
+      locked: ['会计学', '历史', '图书馆使用', '聆听', '其他语言', '心理学', '信用评级'],
+      categoryLimits: { '社交': 1 },
+      chooseAny: 1
+    }
   },
   {
     id: 'drifter',
@@ -329,7 +459,11 @@ const OCCUPATIONS = [
     desc: '无固定居所、四处漂泊谋生的人。',
     creditRating: [0, 5],
     pointFormula: 'EDU × 2 + APP × 2 或 DEX × 2 或 STR × 2',
-    skills: ['攀爬', '跳跃', '聆听', '导航', '一项社交技能（取悦、话术、恐吓、说服）', '潜行', '自选二技能', '信用评级']
+    skillSpec: {
+      locked: ['攀爬', '跳跃', '聆听', '导航', '潜行', '信用评级'],
+      categoryLimits: { '社交': 1 },
+      chooseAny: 2
+    }
   },
   {
     id: 'farmer',
@@ -337,7 +471,11 @@ const OCCUPATIONS = [
     desc: '以耕种、养殖为业的农业从业者。',
     creditRating: [9, 30],
     pointFormula: 'EDU × 2 + DEX × 2 或 STR × 2',
-    skills: ['艺术与手艺（任一）', '驾驶（汽车）', '一项社交技能（取悦、话术、恐吓、说服）', '机械修理', '博物学', '操作重型机械', '追踪', '自选一技能', '信用评级']
+    skillSpec: {
+      locked: ['驾驶（汽车）', '机械修理', '博物学', '操作重型机械', '追踪', '信用评级'],
+      categoryLimits: { '社交': 1, '艺术': 1 },
+      chooseAny: 1
+    }
   },
   {
     id: 'tribesman',
@@ -345,8 +483,10 @@ const OCCUPATIONS = [
     desc: '生活在部落社会中、依循传统狩猎与生存的族人。',
     creditRating: [0, 15],
     pointFormula: 'EDU × 2 + DEX × 2 或 STR × 2',
-    skills: ['攀爬', '格斗（斗殴）', '投掷', '博物学', '聆听', '神秘学', '侦察', '游泳', '生存', '信用评级'],
-    mutualExclusion: [['格斗（斗殴）', '投掷']]
+    skillSpec: {
+      locked: ['攀爬', '博物学', '聆听', '神秘学', '侦察', '游泳', '生存', '信用评级'],
+      mutualExclusion: [['格斗（斗殴）', '投掷']]
+    }
   },
   {
     id: 'fanatic',
@@ -354,7 +494,11 @@ const OCCUPATIONS = [
     desc: '为某种信念或信仰极端献身的人。',
     creditRating: [0, 30],
     pointFormula: 'EDU × 2 + APP × 2 或 POW × 2',
-    skills: ['历史', '二项社交技能（取悦、话术、恐吓或说服）', '心理学', '潜行', '自选三技能', '信用评级']
+    skillSpec: {
+      locked: ['历史', '心理学', '潜行', '信用评级'],
+      categoryLimits: { '社交': 2 },
+      chooseAny: 3
+    }
   }
 ]
 
@@ -543,6 +687,30 @@ function getSkillsByCategory() {
   return map
 }
 
+/**
+ * 从声明式 skillSpec 提取职业指定的技能名 / 分类占位串
+ * 用于 isOccSkill 判断与职业点识别的基础名前缀匹配等价
+ */
+function getOccupationSkillNames(spec) {
+  if (!spec) return []
+  const names = [...(spec.locked || [])]
+  ;(spec.chooseFrom || []).forEach(g => {
+    ;(g.members || []).forEach(m => names.push(m))
+  })
+  ;(spec.mutualExclusion || []).forEach(pair => {
+    pair.forEach(m => names.push(m))
+  })
+  const catMap = {
+    '艺术': '艺术与手艺（任一）',
+    '科学': '科学（专业，两种）',
+    '社交': '一项社交技能（取悦、话术、恐吓、说服）'
+  }
+  Object.keys(spec.categoryLimits || {}).forEach(cat => {
+    if (catMap[cat]) names.push(catMap[cat])
+  })
+  return names
+}
+
 module.exports = {
   OCCUPATIONS,
   SKILLS,
@@ -550,5 +718,6 @@ module.exports = {
   ATTR_DICE_RULES,
   rollAttributes,
   rollDice,
-  getSkillsByCategory
+  getSkillsByCategory,
+  getOccupationSkillNames
 }

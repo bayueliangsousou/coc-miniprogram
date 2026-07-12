@@ -253,62 +253,17 @@ Page({
   },
 
   // 解析职业配置
+  // ═══════════════════════════════════════════════════════════
+  // 职业配置解析：直读声明式 skillSpec，不再做中文串正则解析
+  // ═══════════════════════════════════════════════════════════
   parseOccupationConfig(occ) {
-    if (!occ || !occ.skills) {
-      return { lockedSkills: [], optionalCount: 0, categoryLimits: {} }
+    const spec = (occ && occ.skillSpec) || {}
+    return {
+      lockedSkills: spec.locked || [],
+      chooseFrom: spec.chooseFrom || [],         // 名单型选多（减法，含互斥 count:1）
+      categoryLimits: spec.categoryLimits || {}, // 分类型选多（加法）
+      chooseAny: spec.chooseAny || 0              // 全技能选 N（加法）
     }
-
-    const lockedSkills = []
-    let optionalCount = 0
-    const categoryLimits = {}
-    const listLimits = []
-
-    occ.skills.forEach(skill => {
-      // 解析 "点X门技能"
-      if (skill.includes('点') && skill.includes('门技能')) {
-        const match = skill.match(/点([一二两三四五六七八九十\d]+)门技能/)
-        if (match) {
-          optionalCount = this.parseChineseNum(match[1])
-        }
-      } else if (skill.includes('自选') && skill.includes('技能')) {
-        // 解析 "自选二技能" 等官方占位符
-        const match = skill.match(/自选([一二两三四五六七八九十\d]+)技能/)
-        if (match) {
-          optionalCount = this.parseChineseNum(match[1])
-        }
-      } else if (skill.includes('下列选') && skill.includes('（')) {
-        // 解析 "下列选四（估价、乔装、格斗、射击、锁匠、机械修理、妙手）"
-        const m = skill.match(/下列选([一二两三四五六七八九十\d]+)（([^）]+)）/)
-        if (m) {
-          const count = this.parseChineseNum(m[1])
-          const list = m[2].split('、').map(s => s.trim()).filter(Boolean)
-          listLimits.push({ list, count })
-        }
-      } else if (skill.includes('社交技能')) {
-        // 解析 "一项社交技能（取悦、话术、恐吓、说服）"
-        const match = skill.match(/([一二两三四五六七八九\d]+).*社交技能/)
-        if (match) {
-          categoryLimits['社交'] = this.parseChineseNum(match[1])
-        }
-      } else if (skill.includes('艺术与手艺（任一）')) {
-        categoryLimits['艺术'] = 1
-      } else if (skill.includes('科学（专业，两种）')) {
-        categoryLimits['科学'] = 2
-      } else if (skill.includes('科学（化学或生物）')) {
-        categoryLimits['科学'] = 1
-      } else {
-        // 其他都是锁定技能
-        lockedSkills.push(skill)
-      }
-    })
-
-    return { lockedSkills, optionalCount, categoryLimits, mutualExclusion: (occ && occ.mutualExclusion) || [], listLimits }
-  },
-
-  // 中文数字转阿拉伯数字
-  parseChineseNum(str) {
-    const map = { '一': 1, '二': 2, '两': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 }
-    return map[str] || parseInt(str) || 0
   },
 
   // 判断技能是否为锁定职业技能
@@ -318,6 +273,16 @@ Page({
       const lockedBase = locked.split('（')[0].split('(')[0]
       const skillBase = skillName.split('（')[0].split('(')[0]
       return lockedBase === skillBase
+    })
+  },
+
+  // 判断技能名是否命中名单型选多（下列选N）的某条候选
+  // 按基础名前缀匹配，兼容「射击」裸名覆盖全部射击子类、且「格斗（斗殴）」与「格斗（剑）」同基础名的情况
+  skillBaseMatch(skName, listNames) {
+    const skBase = skName.split('（')[0].split('(')[0]
+    return listNames.some(ln => {
+      const lnBase = ln.split('（')[0].split('(')[0]
+      return skBase === lnBase
     })
   },
 
@@ -337,17 +302,22 @@ Page({
       }
     })
 
-    // 1.5 计算列表限制覆盖的技能（下列选N）
+    // 1.5 计算列表限制（下列选N，跨类别选多，减法模型：候选初始全★，超名额摘星）
     const listOccupied = new Set()
+    const listMembers = {}
+    const listTag = {}
     ;(occConfig.listLimits || []).forEach(group => {
       const groupSkills = []
       skillCategories.forEach(cat => cat.skills.forEach(sk => {
-        if (group.list.includes(sk.name)) groupSkills.push(sk)
+        if (this.skillBaseMatch(sk.name, group.list)) groupSkills.push(sk)
       }))
+      groupSkills.forEach(sk => { listMembers[sk.name] = true })
       const over50 = groupSkills
         .filter(sk => sk.current > 50 && !sk.isLocked && sk.name !== '母语')
         .sort((a, b) => b.current - a.current)
       over50.slice(0, group.count).forEach(sk => listOccupied.add(sk.name))
+      const x = Math.min(over50.length, group.count)
+      groupSkills.forEach(sk => { listTag[sk.name] = `可选职业技能${x}/${group.count}` })
     })
 
     // 2. 计算全局自选覆盖的技能
@@ -386,21 +356,20 @@ Page({
         ...cat,
         limitText,
         skills: cat.skills.map(sk => {
-          // isLocked 的技能始终显示为职业技能样式（金色+★）
-          // 自选职业技能需要 current > 50
-          const displayAsOcc = sk.isLocked || (
+          const inList = !!listMembers[sk.name]
+          // isLocked 恒★；自选/分类候选需 current>50 才★；名单型选多候选（跨类别）初始即★（减法模型）
+          let displayAsOcc = sk.isLocked || (
             sk.current > 50 && (
               categoryOccupied.has(sk.name) ||
               globalOccupied.has(sk.name) ||
               listOccupied.has(sk.name)
             )
-          )
-          // 列表限制组技能提示（下列选N）
-          let skillLimitText = ''
-          const inListLimit = (occConfig.listLimits || []).find(g => g.list.includes(sk.name))
-          if (inListLimit) {
-            skillLimitText = `（下列选${inListLimit.count}）`
+          ) || inList
+          // 跨类别选多：超过名额（count）的候选摘星，但保留进度标签
+          if (inList && sk.current > 50 && !listOccupied.has(sk.name)) {
+            displayAsOcc = false
           }
+          const skillLimitText = listTag[sk.name] || ''
           return { ...sk, displayAsOcc, skillLimitText }
         })
       }
