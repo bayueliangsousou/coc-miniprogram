@@ -173,6 +173,12 @@ function calcSkillPoints(character, extraOccSkills = []) {
     } else if (formula === 'EDU × 2 + DEX × 2 或 POW × 2') {
       // 艺术家等：取 DEX 和 POW 中较大的
       occTotal = EDU * 2 + Math.max(DEX, POW) * 2
+    } else if (formula === 'EDU × 2 + APP × 2 或 POW × 2') {
+      // 狂热者等：取 APP 和 POW 中较大的
+      occTotal = EDU * 2 + Math.max(APP, POW) * 2
+    } else if (formula === 'EDU × 2 + APP × 2 或 DEX × 2 或 STR × 2') {
+      // 流浪者：取 APP、DEX、STR 中较大的
+      occTotal = EDU * 2 + Math.max(APP, DEX, STR) * 2
     } else {
       // 默认公式：EDU × 4
       occTotal = EDU * 4

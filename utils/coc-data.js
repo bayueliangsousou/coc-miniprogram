@@ -305,6 +305,56 @@ const OCCUPATIONS = [
     creditRating: [9, 20],
     pointFormula: 'EDU × 2 + STR × 2 或 DEX × 2',
     skills: ['闪避', '格斗（斗殴）', '射击', '跳跃', '骑乘', '生存', '投掷', '信用评级']
+  },
+  {
+    id: 'artist',
+    name: '艺术家',
+    desc: '从事视觉、表演或文学艺术创作的人。',
+    creditRating: [9, 50],
+    pointFormula: 'EDU × 2 + DEX × 2 或 POW × 2',
+    skills: ['艺术与手艺（任一）', '历史', '博物学', '一项社交技能（取悦、话术、恐吓、说服）', '其他语言', '心理学', '侦察', '自选二技能', '信用评级'],
+    mutualExclusion: [['历史', '博物学']]
+  },
+  {
+    id: 'cleric',
+    name: '神职人员',
+    desc: '从事宗教职务、主持仪式与布道的神职者。',
+    creditRating: [9, 60],
+    pointFormula: 'EDU × 4',
+    skills: ['会计学', '历史', '图书馆使用', '聆听', '其他语言', '一项社交技能（取悦、话术、恐吓、说服）', '心理学', '自选一技能', '信用评级']
+  },
+  {
+    id: 'drifter',
+    name: '流浪者',
+    desc: '无固定居所、四处漂泊谋生的人。',
+    creditRating: [0, 5],
+    pointFormula: 'EDU × 2 + APP × 2 或 DEX × 2 或 STR × 2',
+    skills: ['攀爬', '跳跃', '聆听', '导航', '一项社交技能（取悦、话术、恐吓、说服）', '潜行', '自选二技能', '信用评级']
+  },
+  {
+    id: 'farmer',
+    name: '农民',
+    desc: '以耕种、养殖为业的农业从业者。',
+    creditRating: [9, 30],
+    pointFormula: 'EDU × 2 + DEX × 2 或 STR × 2',
+    skills: ['艺术与手艺（任一）', '驾驶（汽车）', '一项社交技能（取悦、话术、恐吓、说服）', '机械修理', '博物学', '操作重型机械', '追踪', '自选一技能', '信用评级']
+  },
+  {
+    id: 'tribesman',
+    name: '部落成员',
+    desc: '生活在部落社会中、依循传统狩猎与生存的族人。',
+    creditRating: [0, 15],
+    pointFormula: 'EDU × 2 + DEX × 2 或 STR × 2',
+    skills: ['攀爬', '格斗（斗殴）', '投掷', '博物学', '聆听', '神秘学', '侦察', '游泳', '生存', '信用评级'],
+    mutualExclusion: [['格斗（斗殴）', '投掷']]
+  },
+  {
+    id: 'fanatic',
+    name: '狂热者',
+    desc: '为某种信念或信仰极端献身的人。',
+    creditRating: [0, 30],
+    pointFormula: 'EDU × 2 + APP × 2 或 POW × 2',
+    skills: ['历史', '二项社交技能（取悦、话术、恐吓或说服）', '心理学', '潜行', '自选三技能', '信用评级']
   }
 ]
 
