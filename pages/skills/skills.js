@@ -272,7 +272,7 @@ Page({
   // 判断技能是否为锁定职业技能
   isLockedSkill(skillName, lockedSkills) {
     return lockedSkills.some(locked => {
-      // 处理 "艺术与手艺（任一）" vs "艺术与手艺（摄影）"
+      // 处理 "艺术与手艺（设计图纸）" vs "艺术与手艺（摄影）"：按基础名（括号前）匹配
       const lockedBase = locked.split('（')[0].split('(')[0]
       const skillBase = skillName.split('（')[0].split('(')[0]
       return lockedBase === skillBase
@@ -309,6 +309,7 @@ Page({
     const listOccupied = new Set()
     const listMembers = {}
     const listTag = {}
+    const listRemoveStar = new Set()
     ;(occConfig.chooseFrom || []).forEach(group => {
       const groupSkills = []
       skillCategories.forEach(cat => cat.skills.forEach(sk => {
@@ -318,9 +319,15 @@ Page({
       const over50 = groupSkills
         .filter(sk => sk.current > 50 && !sk.isLocked && sk.name !== '母语')
         .sort((a, b) => b.current - a.current)
-      over50.slice(0, group.count).forEach(sk => listOccupied.add(sk.name))
+      const occupied = over50.slice(0, group.count)
+      occupied.forEach(sk => listOccupied.add(sk.name))
       const x = Math.min(over50.length, group.count)
       groupSkills.forEach(sk => { listTag[sk.name] = `可选职业技能${x}/${group.count}` })
+      // 名额已满（已选数 == count）时，组内未入选成员一律摘星（即便 current<=50）
+      // 即「选 N 选多」：如士兵 急救/机械维修/其他语言 3选2，前两个>50 后第三个摘星
+      if (occupied.length >= group.count) {
+        groupSkills.forEach(sk => { if (!occupied.includes(sk)) listRemoveStar.add(sk.name) })
+      }
     })
 
     // 1.6 互斥成员初始全★（减法模型：进入编辑页即双星，一方>50后摘另一方）
@@ -373,8 +380,8 @@ Page({
               listOccupied.has(sk.name)
             )
           ) || inList || !!mutualMembers[sk.name]
-          // 跨类别选多：超过名额（count）的候选摘星，但保留进度标签
-          if (inList && sk.current > 50 && !listOccupied.has(sk.name)) {
+          // 跨类别选多：名额已满时未入选的候选摘星，但保留进度标签
+          if (inList && listRemoveStar.has(sk.name)) {
             displayAsOcc = false
           }
           const skillLimitText = listTag[sk.name] || ''

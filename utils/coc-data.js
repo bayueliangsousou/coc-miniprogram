@@ -20,8 +20,8 @@ const OCCUPATIONS = [
     creditRating: [30, 70],
     pointFormula: 'EDU × 4',
     skillSpec: {
-      locked: ['估价', '艺术与手艺（任一）', '历史', '图书馆使用', '其他语言', '侦察', '信用评级'],
-      categoryLimits: { '社交': 1 },
+      locked: ['估价', '历史', '图书馆使用', '其他语言', '侦察', '信用评级'],
+      categoryLimits: { '艺术': 1, '社交': 1 },
       chooseAny: 1
     }
   },
@@ -44,8 +44,8 @@ const OCCUPATIONS = [
     creditRating: [50, 99],
     pointFormula: 'APP × 2 + EDU × 2',
     skillSpec: {
-      locked: ['艺术与手艺（任一）', '射击', '其他语言', '骑乘', '信用评级'],
-      categoryLimits: { '社交': 1 },
+      locked: ['射击', '其他语言', '骑乘', '信用评级'],
+      categoryLimits: { '艺术': 1, '社交': 1 },
       chooseAny: 3
     }
   },
@@ -89,8 +89,7 @@ const OCCUPATIONS = [
     creditRating: [30, 60],
     pointFormula: 'EDU × 4',
     skillSpec: {
-      locked: ['艺术与手艺（设计图纸）', '电器维修', '图书馆使用', '机械修理', '操作重型机械', '信用评级'],
-      chooseFrom: [{ members: ['科学（工程学）', '科学（物理学）'], count: 1 }],
+      locked: ['艺术与手艺（设计图纸）', '电器维修', '图书馆使用', '机械修理', '操作重型机械', '科学（工程学）', '科学（物理学）', '信用评级'],
       chooseAny: 1
     }
   },
@@ -182,8 +181,8 @@ const OCCUPATIONS = [
     creditRating: [0, 30],
     pointFormula: 'EDU × 4',
     skillSpec: {
-      locked: ['艺术与手艺（任一）', '机械修理', '医学', '博物学', '信用评级'],
-      categoryLimits: { '社交': 1 },
+      locked: ['机械修理', '医学', '博物学', '信用评级'],
+      categoryLimits: { '艺术': 1, '社交': 1 },
       chooseAny: 2
     }
   },
@@ -459,8 +458,8 @@ const OCCUPATIONS = [
     creditRating: [9, 50],
     pointFormula: 'EDU × 2 + DEX × 2 或 POW × 2',
     skillSpec: {
-      locked: ['艺术与手艺（任一）', '其他语言', '心理学', '侦察', '信用评级'],
-      categoryLimits: { '社交': 1 },
+      locked: ['其他语言', '心理学', '侦察', '信用评级'],
+      categoryLimits: { '艺术': 1, '社交': 1 },
       mutualExclusion: [['历史', '博物学']],
       chooseAny: 2
     }
@@ -553,7 +552,6 @@ const SKILLS = [
   { name: '格斗（鞭子）', baseValue: 5, category: '战斗' },
   // 其他战斗技能
   { name: '投掷', baseValue: 20, category: '战斗' },
-  { name: '投掷（矛）', baseValue: 20, category: '战斗' },
   { name: '爆破', baseValue: 1, category: '战斗' },
   { name: '闪避', baseValue: 0, category: '战斗', note: '等于DEX/2' },
 
@@ -625,7 +623,6 @@ const SKILLS = [
   { name: '艺术与手艺（乐器）', baseValue: 5, category: '艺术' },
   { name: '艺术与手艺（表演）', baseValue: 5, category: '艺术' },
   { name: '艺术与手艺（唱歌）', baseValue: 5, category: '艺术' },
-  { name: '艺术与手艺（任一）', baseValue: 5, category: '艺术' },
   { name: '艺术与手艺（设计图纸）', baseValue: 5, category: '艺术' },
   { name: '艺术与手艺（农事）', baseValue: 5, category: '艺术' },
 
@@ -728,7 +725,7 @@ function getOccupationSkillNames(spec) {
     pair.forEach(m => names.push(m))
   })
   const catMap = {
-    '艺术': '艺术与手艺（任一）',
+    '艺术': '艺术与手艺',
     '科学': '科学（专业，两种）',
     '社交': '一项社交技能（取悦、话术、恐吓、说服）'
   }
