@@ -103,6 +103,19 @@
 - **chooseAny（全技能选N）保持旧逻辑不变**：进入不标★、加到50+才★。
 - 重构范围收窄为：仅把 `listLimits`（名单型选多，如罪犯下列选四）从加法改减法并入 chooseFrom、并去掉逐技能丑标签；`categoryLimits`（分类型选多）与 `optionalCount`（全选多）机制与显示完全不动。
 
+**重构完成状态（2026-07-12）**：
+- 职业数据已从中文串 `skills:[...]` 全部迁移为纯声明式 `skillSpec:{locked, chooseFrom, mutualExclusion, categoryLimits, chooseAny}`（43 个职业）。`utils/coc-data.js` 新增 `getOccupationSkillNames(spec)` 共享导出，供 `skills.js` 与 `character.js` 提取职业候选名（等价旧 `occ.skills` 前缀匹配行为）。
+- `parseOccupationConfig` 改为直读 `skillSpec`（删 `parseChineseNum` 中文数字解析、`listLimits`/`optionalCount` 旧字段）。
+- `updateSkillDisplayState` 统一字段：`chooseFrom`（减法，原 `listLimits`）、`mutualExclusion`（独立减法）、`categoryLimits`（加法）、`chooseAny`（加法，原 `optionalCount`）、`locked`。**`mutualExclusion` 保留为独立第 4 机制而非并入 `chooseFrom`**——关键语义差异：互斥要求"一方 current>50 即强制摘除另一方★（即使另一方 <50）"，而 `chooseFrom` 只摘除"current>50 且超出名额的候选"；二者进入时皆双★。互斥候选初始★由 `mutualMembers` 集合驱动。
+- `character.js` `calcSkillPoints` 的 `occSkillNames` 改用 `getOccupationSkillNames(spec)`（社交仍走 `extraOccSkills` 动态；分类占位串 `艺术与手艺（任一）`/`科学（专业，两种）`/`一项社交技能（...）` 保持前缀匹配等价）。
+- `occupation.js` 新增 `buildSkillChips(spec)` 把 `skillSpec` 转友好标签（`二选一：A / B` / `下列选N：…` / `社交选N` / `自选N项技能`），`occupation.wxml` 渲染 `item.skillChips`。
+- 校验：临时脚本扫描全部 43 职业 `skillSpec`，`locked`/`chooseFrom`/`mutualExclusion` 成员均能在 `SKILLS` 命中（精确或基础名前缀，兼容「射击」裸名），并捕获修复护士 `locked` 悬空名「听觉」→「聆听」。所有改动文件 `node --check` 通过。**未 commit，待微信开发者工具重编译验证。**
+
+**加点上限（85）判定约束（2026-07-12 修复）**：
+- 职业技能编辑页输入上限 85（职业技能）vs 50（兴趣技能）由 `isOcc` 决定，原实现只按 `chooseAny` 单一剩余名额判断（`remainingSlots = chooseAny - 所有★技能数`），导致**社交分类占用被错误扣减自由选 N 名额**——例如律师「社交选2 + 自由选2」：选满社交2后 `occupiedExcludingThis` 把社交2计入，使 `chooseAny` 剩余变 0，自由选的技能加到>50 时被判为兴趣技能（上限50），即"社交覆盖自由选2"。
+- **修复**：`pages/skills/skills.js` 删除单一 `remainingSlots` 判定，改为"假设本技能加到 finalValue 后重跑 `updateSkillDisplayState`，取该技能在本机制下是否成为★（`displayAsOcc`）"作为 `isOcc` 判定。四类机制各自独立：锁定恒★；名单型/互斥减法进全★（超名额/对方>50 才摘星）；分类型（社交/艺术/科学）与全选多（chooseAny）加法按各自剩余名额。各机制★占用互不串味。临时脚本加载真实代码验证：律师社交选2+自由选2 四个技能独立获得★且均上限85，互不覆盖。
+- 同步修复分类提示文案被覆盖：`updateSkillDisplayState` 中原 `categoryLimits` 提示「（需选N）」会被 `chooseAny` 提示「（所有技能里选N个作为职业技能）」整体覆盖；改为 `（{分类}技能需选N）` 与 `（所有技能里另选N个作为职业技能）` 二选一、互不覆盖。
+
 ---
 
 ## 双端实时互通数据清单（2026-06-06 确认）

@@ -131,19 +131,16 @@ function calcSkillThresholds(value) {
  */
 function calcSkillPoints(character, extraOccSkills = []) {
   const { attributes = {}, skills = {}, occupationId } = character
-  const { EDU = 0, DEX = 0, APP = 0, STR = 0, INT = 0 } = attributes
+  const { EDU = 0, DEX = 0, APP = 0, STR = 0, INT = 0, POW = 0 } = attributes
 
   // 1. 找到职业信息
-  const { OCCUPATIONS } = require('./coc-data')
+  const { OCCUPATIONS, getOccupationSkillNames } = require('./coc-data')
   const occ = OCCUPATIONS.find(o => o.id === occupationId)
 
-  // 获取职业技能名列表，过滤掉"点X门技能"这类说明
+  // 获取职业技能名列表（声明式 skillSpec → 基础名/分类占位串，供 isOcc 前缀匹配）
   let occSkillNames = []
-  if (occ && occ.skills) {
-    occSkillNames = occ.skills
-      .map(s => Array.isArray(s) ? s : [s])
-      .reduce((acc, arr) => acc.concat(arr), [])
-      .filter(s => typeof s === 'string' && !(s.includes('点') && s.includes('门')))
+  if (occ && occ.skillSpec) {
+    occSkillNames = getOccupationSkillNames(occ.skillSpec)
   }
 
   // 2. 计算职业技能点数（根据职业公式）
@@ -154,7 +151,7 @@ function calcSkillPoints(character, extraOccSkills = []) {
       occTotal = EDU * 4
     } else if (formula === 'DEX × 2 + EDU × 2') {
       occTotal = DEX * 2 + EDU * 2
-    } else if (formula === 'APP × 2 + EDU × 2') {
+    } else if (formula === 'APP × 2 + EDU × 2' || formula === 'EDU × 2 + APP × 2') {
       occTotal = APP * 2 + EDU * 2
     } else if (formula === 'STR × 2 + DEX × 2') {
       occTotal = STR * 2 + DEX * 2

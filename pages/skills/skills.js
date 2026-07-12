@@ -1,5 +1,5 @@
 // pages/skills/skills.js
-const { SKILLS, getSkillsByCategory, OCCUPATIONS } = require('../../utils/coc-data')
+const { SKILLS, getSkillsByCategory, OCCUPATIONS, getOccupationSkillNames } = require('../../utils/coc-data')
 const { getCharacterById, saveCharacter, calcSkillThresholds, calcSkillPoints, saveDraft, loadDraft, clearDraft, isDraftNewer } = require('../../utils/character')
 const { saveThenBack } = require('../../utils/nav')
 
@@ -30,9 +30,11 @@ Page({
     _editingStart: {},     // 记录每个技能开始编辑前的值，供 onBlur delta 计算
     // 职业配置解析结果
     occConfig: {
-      lockedSkills: [],     // 锁定的职业技能
-      optionalCount: 0,     // 全局自选名额（动态逻辑用）
-      categoryLimits: {}    // 分类限制：{ '社交': 1, '艺术': 1, '科学': 2 }
+      lockedSkills: [],       // 锁定的职业技能
+      chooseFrom: [],         // 名单型选多（减法：进入全★，超名额摘星）
+      mutualExclusion: [],    // 互斥对（减法：进入全★，一方>50摘另一方）
+      chooseAny: 0,           // 全技能选 N（加法：进不★）
+      categoryLimits: {}      // 分类限制：{ '社交': 1, '艺术': 1, '科学': 2 }
     },
     // 新建技能弹窗
     showNewSkillModal: false,
@@ -82,7 +84,7 @@ Page({
 
     // 找当前职业技能
     const occ = OCCUPATIONS.find(o => o.id === character.occupationId)
-    const occupationSkills = occ ? occ.skills : []
+    const occupationSkills = occ ? getOccupationSkillNames(occ.skillSpec) : []
     const pointFormula = occ ? occ.pointFormula : ''
     const creditRatingRange = occ ? occ.creditRating : null
     const creditRatingValue = character.skills['信用评级'] || 0
@@ -260,9 +262,10 @@ Page({
     const spec = (occ && occ.skillSpec) || {}
     return {
       lockedSkills: spec.locked || [],
-      chooseFrom: spec.chooseFrom || [],         // 名单型选多（减法，含互斥 count:1）
-      categoryLimits: spec.categoryLimits || {}, // 分类型选多（加法）
-      chooseAny: spec.chooseAny || 0              // 全技能选 N（加法）
+      chooseFrom: spec.chooseFrom || [],          // 名单型选多（减法：进入全★，超名额摘星）
+      mutualExclusion: spec.mutualExclusion || [], // 互斥对（减法：进入全★，一方>50摘另一方）
+      categoryLimits: spec.categoryLimits || {},  // 分类型选多（加法：进不★）
+      chooseAny: spec.chooseAny || 0               // 全技能选 N（加法：进不★）
     }
   },
 
@@ -302,14 +305,14 @@ Page({
       }
     })
 
-    // 1.5 计算列表限制（下列选N，跨类别选多，减法模型：候选初始全★，超名额摘星）
+    // 1.5 计算名单型选多 chooseFrom（跨类别选多，减法模型：候选初始全★，超名额摘星）
     const listOccupied = new Set()
     const listMembers = {}
     const listTag = {}
-    ;(occConfig.listLimits || []).forEach(group => {
+    ;(occConfig.chooseFrom || []).forEach(group => {
       const groupSkills = []
       skillCategories.forEach(cat => cat.skills.forEach(sk => {
-        if (this.skillBaseMatch(sk.name, group.list)) groupSkills.push(sk)
+        if (this.skillBaseMatch(sk.name, group.members)) groupSkills.push(sk)
       }))
       groupSkills.forEach(sk => { listMembers[sk.name] = true })
       const over50 = groupSkills
@@ -320,9 +323,13 @@ Page({
       groupSkills.forEach(sk => { listTag[sk.name] = `可选职业技能${x}/${group.count}` })
     })
 
+    // 1.6 互斥成员初始全★（减法模型：进入编辑页即双星，一方>50后摘另一方）
+    const mutualMembers = {}
+    ;(occConfig.mutualExclusion || []).forEach(pair => pair.forEach(m => { mutualMembers[m] = true }))
+
     // 2. 计算全局自选覆盖的技能
     const globalOccupied = new Set()
-    if (occConfig.optionalCount > 0) {
+    if (occConfig.chooseAny > 0) {
       const allOver50 = []
       skillCategories.forEach(cat => {
         cat.skills.forEach(sk => {
@@ -332,12 +339,12 @@ Page({
         })
       })
       allOver50.sort((a, b) => b.current - a.current)
-      allOver50.slice(0, occConfig.optionalCount).forEach(sk => globalOccupied.add(sk.name))
+      allOver50.slice(0, occConfig.chooseAny).forEach(sk => globalOccupied.add(sk.name))
     }
 
     // 3. 计算全局剩余名额
     const globalUsed = globalOccupied.size
-    const globalRemaining = Math.max(0, occConfig.optionalCount - globalUsed)
+    const globalRemaining = Math.max(0, occConfig.chooseAny - globalUsed)
 
     // 4. 更新每个技能的 displayAsOcc 和分类的 limitText
     const result = skillCategories.map(cat => {
@@ -345,11 +352,9 @@ Page({
       let limitText = ''
 
       if (catLimit) {
-        limitText = `（需选${catLimit}）`
-      }
-
-      if (occConfig.optionalCount > 0) {
-        limitText = `（所有技能里选${globalRemaining}个作为职业技能）`
+        limitText = `（${cat.category}技能需选${catLimit}）`
+      } else if (occConfig.chooseAny > 0) {
+        limitText = `（所有技能里另选${globalRemaining}个作为职业技能）`
       }
 
       return {
@@ -357,14 +362,14 @@ Page({
         limitText,
         skills: cat.skills.map(sk => {
           const inList = !!listMembers[sk.name]
-          // isLocked 恒★；自选/分类候选需 current>50 才★；名单型选多候选（跨类别）初始即★（减法模型）
+          // isLocked 恒★；自选/分类候选需 current>50 才★；名单型选多/互斥候选初始即★（减法模型）
           let displayAsOcc = sk.isLocked || (
             sk.current > 50 && (
               categoryOccupied.has(sk.name) ||
               globalOccupied.has(sk.name) ||
               listOccupied.has(sk.name)
             )
-          ) || inList
+          ) || inList || !!mutualMembers[sk.name]
           // 跨类别选多：超过名额（count）的候选摘星，但保留进度标签
           if (inList && sk.current > 50 && !listOccupied.has(sk.name)) {
             displayAsOcc = false
@@ -558,20 +563,31 @@ Page({
       }))
     }))
     const oldDisplayCats = this.updateSkillDisplayState(catsAtOld, occConfig)
-    let occupiedExcludingThis = 0
     const occSkillNames = []
     oldDisplayCats.forEach(cat => {
       cat.skills.forEach(sk => {
-        if (sk.displayAsOcc && !sk.isLocked) {
-          occSkillNames.push(sk.name)
-          if (sk.name !== name) occupiedExcludingThis++
-        }
+        if (sk.displayAsOcc && !sk.isLocked) occSkillNames.push(sk.name)
       })
     })
-    const remainingSlots = Math.max(0, (occConfig.optionalCount || 0) - occupiedExcludingThis)
 
-    // 输入 > 50 且有空位 → 职业技能；否则 → 兴趣技能
-    const isOcc = isLocked || (finalValue > 50 && remainingSlots > 0)
+    // 关键修复：职业技能上限（85）必须按技能「所属机制」分别判定，
+    // 不能用单一 chooseAny 剩余名额笼统判断——否则社交分类占用会被错误扣到自由选 N 名额上
+    // （如律师：社交选2 + 自由选2 应各自独立，互不覆盖）。
+    // 做法：假设本技能加到 finalValue，重跑 display 状态，取本技能是否成为★（displayAsOcc）。
+    const catsAtFinal = oldCats.map(cat => ({
+      ...cat,
+      skills: cat.skills.map(sk => ({
+        ...sk,
+        current: sk.name === name ? finalValue : sk.current
+      }))
+    }))
+    const finalDisplayCats = this.updateSkillDisplayState(catsAtFinal, occConfig)
+    let displayAsOccFinal = false
+    finalDisplayCats.forEach(cat => cat.skills.forEach(sk => {
+      if (sk.name === name) displayAsOccFinal = sk.displayAsOcc
+    }))
+    // 输入 > 50 且按本机制可成为职业技能 → 职业技能（上限85）；否则 → 兴趣技能（上限50）
+    const isOcc = isLocked || (finalValue > 50 && displayAsOccFinal)
     const maxCap = isOcc ? 85 : 50
 
     // ── 用 baseValue 状态重算可用点数池子 ──

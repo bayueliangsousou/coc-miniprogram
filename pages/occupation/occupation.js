@@ -3,10 +3,38 @@ const { OCCUPATIONS } = require('../../utils/coc-data')
 const { getCharacterById, saveCharacter, saveDraft, loadDraft, clearDraft, isDraftNewer } = require('../../utils/character')
 const { saveThenBack } = require('../../utils/nav')
 
+// 从声明式 skillSpec 生成职业选择页的技能标签（纯展示用）
+function buildSkillChips(spec) {
+  if (!spec) return []
+  const chips = []
+  ;(spec.locked || []).forEach(s => chips.push(s))
+  ;(spec.chooseFrom || []).forEach(g => {
+    if (g.count === 1) {
+      chips.push(`二选一：${g.members.join(' / ')}`)
+    } else {
+      chips.push(`下列选${g.count}：${g.members.join('、')}`)
+    }
+  })
+  const catLabel = { '社交': '社交', '艺术': '艺术', '科学': '科学' }
+  Object.keys(spec.categoryLimits || {}).forEach(cat => {
+    const n = spec.categoryLimits[cat]
+    chips.push(`${catLabel[cat] || cat}选${n}`)
+  })
+  if (spec.chooseAny) {
+    chips.push(`自选${spec.chooseAny}项技能`)
+  }
+  return chips
+}
+
+const DECORATED = OCCUPATIONS.map(o => ({
+  ...o,
+  skillChips: buildSkillChips(o.skillSpec)
+}))
+
 Page({
   data: {
-    occupations: OCCUPATIONS,
-    filteredOccupations: OCCUPATIONS,
+    occupations: DECORATED,
+    filteredOccupations: DECORATED,
     searchText: '',
     selectedId: '',
     characterId: ''
@@ -31,7 +59,7 @@ Page({
 
   onSearch(e) {
     const text = e.detail.value
-    const filtered = OCCUPATIONS.filter(o =>
+    const filtered = DECORATED.filter(o =>
       o.name.includes(text) || o.desc.includes(text)
     )
     this.setData({ searchText: text, filteredOccupations: filtered })
