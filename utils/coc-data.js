@@ -67,7 +67,7 @@ const OCCUPATIONS = [
     creditRating: [9, 20],
     pointFormula: 'DEX × 2 + EDU × 2',
     skillSpec: {
-      locked: ['电器修理', '驾驶（汽车）', '射击', '锁匠', '机械修理', '导航', '信用评级'],
+      locked: ['电器维修', '驾驶（汽车）', '射击', '锁匠', '机械修理', '导航', '信用评级'],
       chooseAny: 2
     }
   },
@@ -89,7 +89,7 @@ const OCCUPATIONS = [
     creditRating: [30, 60],
     pointFormula: 'EDU × 4',
     skillSpec: {
-      locked: ['艺术与手艺（设计图纸）', '电气维修', '图书馆使用', '机械修理', '操作重型机械', '信用评级'],
+      locked: ['艺术与手艺（设计图纸）', '电器维修', '图书馆使用', '机械修理', '操作重型机械', '信用评级'],
       chooseFrom: [{ members: ['科学（工程学）', '科学（物理学）'], count: 1 }],
       chooseAny: 1
     }
@@ -240,7 +240,7 @@ const OCCUPATIONS = [
     creditRating: [20, 70],
     pointFormula: 'DEX × 2 + EDU × 2',
     skillSpec: {
-      locked: ['电器修理', '机械修理', '导航', '操作重型机械', '驾驶（飞机）', '科学（天文学）', '信用评级'],
+      locked: ['电器维修', '机械修理', '导航', '操作重型机械', '驾驶（飞机）', '科学（天文学）', '信用评级'],
       chooseAny: 2
     }
   },
@@ -311,7 +311,7 @@ const OCCUPATIONS = [
     creditRating: [9, 40],
     pointFormula: 'EDU × 4',
     skillSpec: {
-      locked: ['电器修理', '图书馆使用', '其他语言', '信用评级'],
+      locked: ['电器维修', '图书馆使用', '其他语言', '信用评级'],
       categoryLimits: { '科学': 2 },
       chooseAny: 3
     }
@@ -391,7 +391,7 @@ const OCCUPATIONS = [
     creditRating: [10, 70],
     pointFormula: 'EDU × 4',
     skillSpec: {
-      locked: ['计算机', '电气维修', '电子学', '图书馆使用', '侦察', '信用评级'],
+      locked: ['计算机', '电器维修', '电子学', '图书馆使用', '侦察', '信用评级'],
       categoryLimits: { '社交': 1 },
       chooseAny: 2
     }
@@ -403,7 +403,7 @@ const OCCUPATIONS = [
     creditRating: [10, 70],
     pointFormula: 'EDU × 4',
     skillSpec: {
-      locked: ['计算机', '电气维修', '电子学', '图书馆使用', '科学（数学）', '侦察', '信用评级'],
+      locked: ['计算机', '电器维修', '电子学', '图书馆使用', '科学（数学）', '侦察', '信用评级'],
       chooseAny: 1
     }
   },
@@ -598,13 +598,12 @@ const SKILLS = [
   // 技术类
   { name: '急救', baseValue: 30, category: '技术' },
   { name: '医学', baseValue: 1, category: '技术' },
-  { name: '电器修理', baseValue: 10, category: '技术' },
+  { name: '电器维修', baseValue: 10, category: '技术' },
   { name: '机械修理', baseValue: 10, category: '技术' },
   { name: '操作重型机械', baseValue: 1, category: '技术' },
   { name: '锁匠', baseValue: 1, category: '技术' },
   { name: '妙手', baseValue: 10, category: '技术' },
   { name: '计算机', baseValue: 1, category: '技术' },
-  { name: '电气维修', baseValue: 10, category: '技术' },
   { name: '电子学', baseValue: 1, category: '技术' },
 
   // 运动类

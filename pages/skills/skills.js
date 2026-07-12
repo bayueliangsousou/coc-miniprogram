@@ -352,7 +352,10 @@ Page({
       let limitText = ''
 
       if (catLimit) {
-        limitText = `（${cat.category}技能需选${catLimit}）`
+        // 实时算该分类已选数（categoryOccupied 已按名额封顶），显示剩余可选数，选满归 0
+        const selectedInCat = cat.skills.filter(sk => categoryOccupied.has(sk.name)).length
+        const remaining = Math.max(0, catLimit - selectedInCat)
+        limitText = `（${cat.category}技能可选${remaining}）`
       } else if (occConfig.chooseAny > 0) {
         limitText = `（所有技能里另选${globalRemaining}个作为职业技能）`
       }
