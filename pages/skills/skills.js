@@ -87,7 +87,18 @@ Page({
     const occupationSkills = occ ? getOccupationSkillNames(occ.skillSpec) : []
     const pointFormula = occ ? occ.pointFormula : ''
     const creditRatingRange = occ ? occ.creditRating : null
-    const creditRatingValue = character.skills['信用评级'] || 0
+    // 默认填入社会信用评级最低值（CoC 规则：职业授予的信用评级下限须从职业点扣除）
+    // 仅当角色尚未设置信用评级时才默认填最低值，已设置（含草稿）则保留用户值
+    let creditRatingValue = character.skills['信用评级']
+    if (creditRatingValue === undefined || creditRatingValue === null || creditRatingValue === '' || creditRatingValue === 0) {
+      if (creditRatingRange && creditRatingRange.length === 2) {
+        creditRatingValue = creditRatingRange[0]
+        // 同步写回 character.skills，保证点数计算与最终存档一致
+        character = { ...character, skills: { ...character.skills, '信用评级': creditRatingValue } }
+      } else {
+        creditRatingValue = 0
+      }
+    }
 
     // 解析职业配置
     const occConfig = this.parseOccupationConfig(occ)
@@ -992,9 +1003,31 @@ Page({
     return errors
   },
 
+  // 保存/落草稿前，把「非职业技能（displayAsOcc=false）却 current>50」的技能归 50，
+  // 确保「第 N+1 个技能」永远存不进 >50（符合「局部选n / 全局选N」规则）。
+  // 只降超编技能的值，绝不改动已占名额的 N 个职业技能（不挤下原则）。
+  clampOverflowSkills(skillCategories) {
+    const occConfig = this.data.occConfig
+    if (!occConfig) return { cats: skillCategories, changed: 0 }
+    const cats = this.updateSkillDisplayState(skillCategories, occConfig)
+    let changed = 0
+    cats.forEach(cat => cat.skills.forEach(sk => {
+      if (!sk.displayAsOcc && sk.current > 50 && sk.name !== '母语') {
+        sk.current = 50
+        const th = calcSkillThresholds(50)
+        sk.hard = th.hard
+        sk.extreme = th.extreme
+        changed++
+      }
+    }))
+    return { cats, changed }
+  },
+
   // 从 skillCategories 收集技能值，供 onHide 落草稿 / onSave 写存档复用
-  collectSkills() {
-    const { skillCategories, creditRatingValue } = this.data
+  // skillCategoriesParam 可选：传入则用它，否则用 this.data.skillCategories
+  collectSkills(skillCategoriesParam) {
+    const skillCategories = skillCategoriesParam || this.data.skillCategories
+    const { creditRatingValue } = this.data
     const skills = {}
     skillCategories.forEach(cat => {
       cat.skills.forEach(sk => {
@@ -1025,32 +1058,27 @@ Page({
       return
     }
 
-    this._doSave(character, skillCategories)
+    const { cats: clamped, changed } = this.clampOverflowSkills(skillCategories)
+    this.setData({ skillCategories: clamped })
+    if (changed > 0) {
+      wx.showToast({ title: `已自动将 ${changed} 个超出职业上限的技能归为50`, icon: 'none' })
+    }
+    this._doSave(character, clamped)
   },
 
   // 页面隐藏/关闭时落草稿（含当前编辑的技能值），防未保存丢失
   onHide() {
     const { characterId, character } = this.data
     if (!characterId || !character) return
-    const skills = this.collectSkills()
+    const { cats: clamped } = this.clampOverflowSkills(this.data.skillCategories)
+    this.setData({ skillCategories: clamped })
+    const skills = this.collectSkills(clamped)
     saveDraft({ ...character, skills })
   },
 
   _doSave(character, skillCategories) {
-    // 收集所有技能值
-    const skills = {}
-    skillCategories.forEach(cat => {
-      cat.skills.forEach(sk => {
-        let name = sk.name
-        // 「其他语言」如果填了语言名，保存为「其他语言（XX）」
-        if (name === '其他语言' && sk.languageName) {
-          name = `其他语言（${sk.languageName}）`
-        }
-        skills[name] = sk.current
-      })
-    })
-    // 补回信用评级（不在 skillCategories 中）
-    skills['信用评级'] = this.data.creditRatingValue
+    // 收集所有技能值（clampOverflowSkills 已在 onSave 中执行，这里直接收集）
+    const skills = this.collectSkills(skillCategories)
     const updated = {
       ...character,
       skills
