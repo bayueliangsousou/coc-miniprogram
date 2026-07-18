@@ -33,6 +33,12 @@
 - 模式：小程序编辑页凡「编辑态仅存页面 data、显式保存才落地」的，都应加本地草稿双写防退出丢失；`onShow` 重载 committed 时务必用 `savedAt > updatedAt` 严格比较，避免时间戳相等误恢复/重复 toast。
 - **PAT-016（2026-07-11 修正）：状态选择弹窗已选项无选中对号** — 现象：角色详情页已挂上「重伤」等状态后（顶部徽标可见），再次打开「选择状态」弹窗，已选项前无对号，无法识别哪些已生效。根因（非样式问题）：弹窗选中判断依赖 `character.status` 与 `availableStatuses[].value`（英文 key 如 `seriouslyInjured`）精确匹配；当 `character.status` 实际存的是**中文 label**（历史数据 / PC 端同步 / 其他入口写入）时，`includes('seriouslyInjured')` 与 `selectedStatusMap['seriouslyInjured']` 永远查不到 → 无对号；且顶部徽标用 `statusLabels[item]`（英文→中文，无回退），只在 status 为英文 key 时才显示中文，故"顶部显示重伤"并非判断依据。另：若 `this.data.character` 与存档在"再次打开"时刻不同步（如 onShow 重载后内存引用滞后），从 `this.data.character` 构建的 map 也可能命中失败。修复：①页面加载时 `normalizeStatusList` + 反向映射 `REVERSE_STATUS_LABEL`（中文→英文）把 `character.status` 规范化为英文 key 存回；②`refreshSelectedStatusMap` 改为直接 `getCharacterById(id)` 读最新存档，且对每项同时建 `原值 / 英文key` 两个 map 入口以兼容中英文；③`onSelectStatus` 的已选判断 `includes` 同时兼容中文 label。涉及文件：`pages/character-detail/character-detail.js`（新增常量+函数、改 onShow、改 refreshSelectedStatusMap、改 onSelectStatus）、`.wxml`、`.wxss` 已在上一轮加选中态样式。
 
+### PAT-017（2026-07-18）：cover-view 嵌套 fixed 子元素在真机/预览版不渲染
+- 现象：技能检定弹窗内容（投掷值/技能值/结果）真机可见，但嵌套其中的「燃运」区（`position: fixed; bottom:0`）整块缺失（哪怕 LUK 不足也应显示「幸运值不足」灰按钮）。
+- 根因：弹窗是顶层 `position: fixed` 的 `cover-view`，燃运区是**嵌套在它内部的另一个 `position: fixed` 的 `cover-view` 子节点**；微信 `cover-view` 对嵌套 fixed 子元素支持极差，真机里将其算到屏幕外或不渲染（模拟器正常）。该页面无原生组件，`cover-view` 本多余。
+- 修复：整段 `cover-view`→`view`、`cover-image`→`image`（背景图加 `mode="scaleToFill"`）。普通 `view` 的 fixed 子节点正常相对视口定位。wxss 无需改（class 选择器）。涉及文件：`pages/character-detail/character-detail.wxml`。
+- 通用教训：微信小程序只要页面**没有原生组件（map/video/canvas/live-player/camera）**，弹窗/浮层一律用普通 `view`，不要用 `cover-view`；`cover-view` 仅用于覆盖在原生组件之上的场景，且其内部**不要嵌套 `position: fixed` 子节点**，否则真机普遍渲染异常。
+
 ### isLockedSkill 基础名匹配导致「锁一个、整类全★」
 - 现象：职业 `locked` 里写带括号的具体子类（如 `科学（生物学）`、`艺术与手艺（摄影）`、`格斗（斗殴）`），结果该分类下**所有子技能**都被判定为锁定职业技能（★），与官方「仅此具体子技能★」不符；医生/私家侦探/心理学家/飞行员的科学/艺术分类整列★即此 bug。
 - 根因：`isLockedSkill(skillName, lockedSkills)` 对 locked 项一律 `split('（')[0]` 取基础名比较，使 `科学（生物学）` 的基础名 `科学` 命中 `科学（化学）` 等全部同基础名子技能。
