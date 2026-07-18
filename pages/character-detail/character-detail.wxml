@@ -331,33 +331,33 @@
   </view>
 
   <!-- 技能检定结果弹窗（无蒙版，靠上） -->
-  <cover-view class="skill-check-modal" wx:if="{{showSkillCheckModal}}">
-    <cover-view class="skill-check-content">
-      <cover-image class="skill-check-bg" src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png" bindload="onSkillCheckBgLoaded"/>
-      <cover-view class="skill-check-body" wx:if="{{skillCheckBgLoaded}}">
-        <cover-view class="skill-check-left">
-          <cover-view class="skill-check-row">
-            <cover-view class="skill-check-label">投掷值</cover-view>
-            <cover-view class="skill-check-num">{{skillCheckResult.rollValue}}</cover-view>
-          </cover-view>
-          <cover-view class="skill-check-row">
-            <cover-view class="skill-check-label">技能值</cover-view>
-            <cover-view class="skill-check-num skill-check-num-skill">{{skillCheckResult.skillValue}}</cover-view>
-          </cover-view>
-        </cover-view>
-        <cover-view class="skill-check-divider"></cover-view>
-        <cover-view class="skill-check-right">
-          <cover-view class="skill-check-result-label">结果</cover-view>
-          <cover-view class="skill-check-result-text {{skillCheckResult.resultClass}}">{{skillCheckResult.resultText}}</cover-view>
-        </cover-view>
-      </cover-view>
-    </cover-view>
+  <view class="skill-check-modal" wx:if="{{showSkillCheckModal}}">
+    <view class="skill-check-content">
+      <image class="skill-check-bg" src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png" bindload="onSkillCheckBgLoaded" mode="scaleToFill"/>
+      <view class="skill-check-body" wx:if="{{skillCheckBgLoaded}}">
+        <view class="skill-check-left">
+          <view class="skill-check-row">
+            <view class="skill-check-label">投掷值</view>
+            <view class="skill-check-num">{{skillCheckResult.rollValue}}</view>
+          </view>
+          <view class="skill-check-row">
+            <view class="skill-check-label">技能值</view>
+            <view class="skill-check-num skill-check-num-skill">{{skillCheckResult.skillValue}}</view>
+          </view>
+        </view>
+        <view class="skill-check-divider"></view>
+        <view class="skill-check-right">
+          <view class="skill-check-result-label">结果</view>
+          <view class="skill-check-result-text {{skillCheckResult.resultClass}}">{{skillCheckResult.resultText}}</view>
+        </view>
+      </view>
+    </view>
     <!-- 燃运：固定吸底在屏幕最下方 -->
-    <cover-view class="skill-check-burnluck" wx:if="{{showBurnLuck && skillCheckBgLoaded}}">
-      <cover-view class="skill-check-burnluck-hint">{{luckEnough ? '减少幸运值上限 ' + burnLuckCost : '幸运值不足'}}</cover-view>
-      <cover-view class="skill-check-burnluck-btn {{luckEnough ? '' : 'disabled'}}" bindtap="onBurnLuck">燃运</cover-view>
-    </cover-view>
-  </cover-view>
+    <view class="skill-check-burnluck" wx:if="{{showBurnLuck && skillCheckBgLoaded}}">
+      <view class="skill-check-burnluck-hint">{{luckEnough ? '减少幸运值上限 ' + burnLuckCost : '幸运值不足'}}</view>
+      <view class="skill-check-burnluck-btn {{luckEnough ? '' : 'disabled'}}" bindtap="onBurnLuck">燃运</view>
+    </view>
+  </view>
 
   <!-- 房间输入弹窗 -->
   <view class="room-input-modal" wx:if="{{showRoomInputModal}}" catchtouchmove="preventTouchMove">
