@@ -533,12 +533,12 @@ Page({
 
   // 保存
   onSave() {
-    const { name } = this.data.character
-    if (!name || !name.trim()) {
+    const character = { ...this.data.character, name: (this.data.nameValue || '').trim() }
+    if (!character.name) {
       wx.showToast({ title: '请填写调查员姓名', icon: 'none' })
       return
     }
-    const saved = saveCharacter(this.data.character)
+    const saved = saveCharacter(character)
     clearDraft(saved.id)
     clearNewDraft()
     this._justSaved = true
