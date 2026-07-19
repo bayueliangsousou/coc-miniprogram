@@ -8,7 +8,7 @@
       <view class="form-row">
         <text class="form-label">姓名</text>
         <input class="form-input" placeholder="调查员姓名"
-          value="{{character.name}}" data-field="name" bindinput="onBaseInput"/>
+          value="{{nameValue}}" data-field="name" bindinput="onBaseInput"/>
       </view>
       <view class="form-row">
         <text class="form-label">职业</text>
