@@ -14,6 +14,7 @@ Page({
     attrDiceRules: ATTR_DICE_RULES,
     attrSum: 0,
     isNew: true,
+    saveDisabled: false,
     skillPoints: { occTotal: 0, intTotal: 0 },
     // 武器相关
     showWeaponForm: false,  // 是否显示武器输入表单
@@ -64,6 +65,7 @@ Page({
         }, () => { 
           this.calcSkillPoints()
           this.updateCombatSkills()
+          this.updateSaveState()
         })
         return
       }
@@ -71,7 +73,7 @@ Page({
     const character = createEmptyCharacter()
     const derived = calcDerived(character.attributes)
     character.combat = { hpCurrent: derived.hp, sanCurrent: derived.sanStart, mpCurrent: derived.mp }
-    this.setData({ character, derived, skillPoints: { occTotal: 0, intTotal: 0 }, hasEditedSkills: false })
+    this.setData({ character, derived, skillPoints: { occTotal: 0, intTotal: 0 }, hasEditedSkills: false }, () => this.updateSaveState())
   },
 
   onShow() {
@@ -243,7 +245,19 @@ Page({
     const attrs = (this.data.character && this.data.character.attributes) || {}
     const keys = ['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU']
     const sum = keys.reduce((acc, k) => acc + (Number(attrs[k]) || 0), 0)
-    this.setData({ attrSum: sum })
+    this.setData({ attrSum: sum }, () => this.updateSaveState())
+  },
+
+  // 计算保存按钮可用状态：新建角色且未填写任何属性时禁用（属性任一 > 0 即解锁）
+  updateSaveState() {
+    const { isNew, character } = this.data
+    let saveDisabled = false
+    if (isNew) {
+      const attrs = (character && character.attributes) || {}
+      const hasAnyAttr = Object.values(attrs).some(v => v > 0)
+      saveDisabled = !hasAnyAttr
+    }
+    this.setData({ saveDisabled })
   },
 
   // 单独投掷幸运值：3d6 × 5，直接填入，无动画无过程

@@ -417,6 +417,20 @@
   box-shadow: 0 -2rpx 16rpx rgba(0, 0, 0, 0.08);
 }
 
+/* 保存按钮上方的提示小字（新建人物未填属性时） */
+.save-hint {
+  font-size: 24rpx;
+  color: #e67e22;
+  text-align: center;
+  margin-bottom: 12rpx;
+}
+
+/* 保存按钮置灰态（覆盖 .btn-primary 渐变） */
+.btn-disabled {
+  background: #d4cfc6 !important;
+  color: #9b958a !important;
+}
+
 /* ── 武器弹窗 ── */
 .modal-mask {
   position: fixed;
