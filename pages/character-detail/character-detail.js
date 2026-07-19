@@ -1014,6 +1014,8 @@ Page({
         maxMp: character.combat?.mpMax || (character.attributes?.POW ? Math.ceil(character.attributes.POW / 5) : 0),
         // 闪避值（从 DEX/2 计算）
         dodge: derived.dodge,
+        // 移动值（派生属性，必须与桌面端同步；否则 PC 端 mov 永远为 0）
+        mov: derived.mov,
         // 武器列表（与小程序角色详情页战斗下拉弹窗一致，确保含格斗斗殴）
         weapons: weaponsToSend,
         // 状态
