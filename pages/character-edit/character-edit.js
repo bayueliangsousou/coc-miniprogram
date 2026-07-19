@@ -16,6 +16,7 @@ Page({
     isNew: true,
     saveDisabled: false,
     saveHint: '',
+    nameValue: '',   // 姓名独立轻量状态（受控 input 直接绑定，避免大对象 setData 导致中文丢字/回弹）
     skillPoints: { occTotal: 0, intTotal: 0 },
     // 武器相关
     showWeaponForm: false,  // 是否显示武器输入表单
@@ -62,8 +63,9 @@ Page({
           derived: calcDerived(character.attributes),
           isNew: false,
           hasEditedSkills,
-          genderIndex
-        }, () => { 
+          genderIndex,
+          nameValue: character.name || ''
+        }, () => {
           this.calcSkillPoints()
           this.updateCombatSkills()
           this.updateSaveState()
@@ -74,7 +76,7 @@ Page({
     const character = createEmptyCharacter()
     const derived = calcDerived(character.attributes)
     character.combat = { hpCurrent: derived.hp, sanCurrent: derived.sanStart, mpCurrent: derived.mp }
-    this.setData({ character, derived, skillPoints: { occTotal: 0, intTotal: 0 }, hasEditedSkills: false }, () => this.updateSaveState())
+    this.setData({ character, derived, skillPoints: { occTotal: 0, intTotal: 0 }, hasEditedSkills: false, nameValue: '' }, () => this.updateSaveState())
   },
 
   onShow() {
@@ -109,7 +111,8 @@ Page({
       character,
       derived: calcDerived(character.attributes),
       hasEditedSkills,
-      genderIndex
+      genderIndex,
+      nameValue: character.name || ''
     }, () => {
       this.calcSkillPoints()
       this.updateCombatSkills()
@@ -174,6 +177,14 @@ Page({
   onBaseInput(e) {
     const { field } = e.currentTarget.dataset
     const value = e.detail.value
+    if (field === 'name') {
+      // 姓名走独立轻量状态，避免每次输入都 setData 整个大 character 对象导致受控 input 丢字/回弹
+      this.setData({
+        nameValue: value,
+        character: { ...this.data.character, name: value }
+      }, () => this.updateSaveState())
+      return
+    }
     const character = { ...this.data.character, [field]: value }
     this.setData({ character }, () => this.updateSaveState())
   },
@@ -257,7 +268,7 @@ Page({
     if (isNew) {
       const attrs = (character && character.attributes) || {}
       const hasAnyAttr = Object.values(attrs).some(v => v > 0)
-      const name = ((character && character.name) || '').trim()
+      const name = (this.data.nameValue || '').trim()
       if (!hasAnyAttr) {
         saveDisabled = true
         saveHint = '请完成属性编辑'
