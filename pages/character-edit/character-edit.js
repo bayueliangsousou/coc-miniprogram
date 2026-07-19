@@ -15,6 +15,7 @@ Page({
     attrSum: 0,
     isNew: true,
     saveDisabled: false,
+    saveHint: '',
     skillPoints: { occTotal: 0, intTotal: 0 },
     // 武器相关
     showWeaponForm: false,  // 是否显示武器输入表单
@@ -174,7 +175,7 @@ Page({
     const { field } = e.currentTarget.dataset
     const value = e.detail.value
     const character = { ...this.data.character, [field]: value }
-    this.setData({ character })
+    this.setData({ character }, () => this.updateSaveState())
   },
 
   // 显示性别选择器
@@ -248,16 +249,24 @@ Page({
     this.setData({ attrSum: sum }, () => this.updateSaveState())
   },
 
-  // 计算保存按钮可用状态：新建角色且未填写任何属性时禁用（属性任一 > 0 即解锁）
+  // 计算保存按钮可用状态：新建角色时，未填属性 或 未填姓名 都禁用，并给出对应提示
   updateSaveState() {
     const { isNew, character } = this.data
     let saveDisabled = false
+    let saveHint = ''
     if (isNew) {
       const attrs = (character && character.attributes) || {}
       const hasAnyAttr = Object.values(attrs).some(v => v > 0)
-      saveDisabled = !hasAnyAttr
+      const name = ((character && character.name) || '').trim()
+      if (!hasAnyAttr) {
+        saveDisabled = true
+        saveHint = '请完成属性编辑'
+      } else if (!name) {
+        saveDisabled = true
+        saveHint = '请填写调查员姓名'
+      }
     }
-    this.setData({ saveDisabled })
+    this.setData({ saveDisabled, saveHint })
   },
 
   // 单独投掷幸运值：3d6 × 5，直接填入，无动画无过程
