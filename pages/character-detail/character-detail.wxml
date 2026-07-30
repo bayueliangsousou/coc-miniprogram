@@ -332,8 +332,8 @@
 
   <!-- 技能检定结果弹窗（无蒙版，靠上） -->
   <view class="skill-check-modal" wx:if="{{showSkillCheckModal}}">
-    <view class="skill-check-content">
-      <image class="skill-check-bg" src="https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png" bindload="onSkillCheckBgLoaded" mode="scaleToFill"/>
+    <view class="skill-check-content {{burnLuckAnimating ? 'burn-luck-anim' : ''}}">
+      <image class="skill-check-bg" src="{{skillCheckBgSrc}}" bindload="onSkillCheckBgLoaded" mode="scaleToFill"/>
       <view class="skill-check-body" wx:if="{{skillCheckBgLoaded}}">
         <view class="skill-check-left">
           <view class="skill-check-row">

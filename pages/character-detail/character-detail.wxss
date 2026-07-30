@@ -1211,6 +1211,12 @@
   border-radius: 25rpx;
   pointer-events: auto;
   overflow: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+/* 燃运切换动画：收缩淡出（数据/底图在中段切换后放大淡入） */
+.skill-check-content.burn-luck-anim {
+  opacity: 0;
+  transform: scale(0.9);
 }
 .skill-check-bg {
   position: absolute;

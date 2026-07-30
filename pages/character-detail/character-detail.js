@@ -127,6 +127,10 @@ Page({
     skillCheckResult: null,
     skillCheckMode: false,
     skillCheckBgLoaded: false,
+    // 弹窗底图：成功用老底图，失败用「失败容器.png」
+    skillCheckBgSrc: 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png',
+    // 燃运切换动画标记（收缩淡出 → 数据切换 → 放大淡入）
+    burnLuckAnimating: false,
     // 燃运机制
     showBurnLuck: false,
     burnLuckCost: 0,
@@ -1162,9 +1166,14 @@ Page({
     const checkResult = this.calcSkillCheckResult(rollValue, skillValue)
     // 燃运：仅普通失败（非大失败）可触发，消耗 = 投掷值 - 技能值
     const isFailure = checkResult.class === 'failure'
+    // 失败类（普通失败 / 大失败）用「失败容器.png」，其余用老底图
+    const isFailClass = checkResult.class === 'failure' || checkResult.class === 'fumble'
     const cost = isFailure ? Math.max(0, rollValue - skillValue) : 0
     const currentLuck = (this.data.character && this.data.character.attributes && this.data.character.attributes.LUK) || 0
     const luckEnough = isFailure && currentLuck >= cost
+    const bgSrc = isFailClass
+      ? 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/失败容器.png'
+      : 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png'
     this.setData({
       skillCheckResult: {
         skillName: skillName,
@@ -1175,6 +1184,7 @@ Page({
       },
       showSkillCheckModal: true,
       skillCheckBgLoaded: false,
+      skillCheckBgSrc: bgSrc,
       showBurnLuck: isFailure,
       burnLuckCost: cost,
       luckEnough: luckEnough
@@ -1218,17 +1228,23 @@ Page({
       attributes: { ...character.attributes, LUK: currentLuck - burnLuckCost }
     }
     saveCharacter(updated)
-    this.setData({
-      character: updated,
-      attrWithThresholds: this.recalcAttrThresholds(updated),
-      showBurnLuck: false,
-      luckEnough: false,
-      burnLuckCost: 0,
-      skillCheckResult: {
-        ...skillCheckResult,
-        resultText: '燃运成功',
-        resultClass: 'success'
-      }
-    })
+    // 先触发收缩淡出动画，动画进行到中段时再切换数据与底图，避免生硬跳变
+    this.setData({ burnLuckAnimating: true })
+    setTimeout(() => {
+      this.setData({
+        character: updated,
+        attrWithThresholds: this.recalcAttrThresholds(updated),
+        showBurnLuck: false,
+        luckEnough: false,
+        burnLuckCost: 0,
+        burnLuckAnimating: false,
+        skillCheckBgSrc: 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png',
+        skillCheckResult: {
+          ...skillCheckResult,
+          resultText: '燃运成功',
+          resultClass: 'success'
+        }
+      })
+    }, 250)
   }
 })
