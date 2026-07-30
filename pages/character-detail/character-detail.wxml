@@ -67,6 +67,7 @@
       <view class="hp-divider"></view>
       <view class="hp-item">
         <text class="hp-lbl" bindtap="onSanDiceTap">SAN</text>
+        <view class="skv-dice-btn" bindtap="onSanDiceTap">🎲</view>
         <view class="hp-val-row">
           <text class="hp-current-tap" data-field="sanCurrent" bindtap="onHpTap">{{character.combat.sanCurrent}}</text>
           <text class="hp-slash">/</text>
@@ -332,8 +333,11 @@
 
   <!-- 技能检定结果弹窗（无蒙版，靠上） -->
   <view class="skill-check-modal" wx:if="{{showSkillCheckModal}}">
-    <view class="skill-check-content {{burnLuckAnimating ? 'burn-luck-anim' : ''}}">
+    <view class="skill-check-ambient {{burnLuckFlip === 'flip-in' ? 'ambient-on' : ''}}"></view>
+    <view class="skill-check-core {{burnLuckFlip === 'flip-in' ? 'core-on' : ''}}"></view>
+    <view class="skill-check-content {{burnLuckFlip}}">
       <image class="skill-check-bg" src="{{skillCheckBgSrc}}" bindload="onSkillCheckBgLoaded" mode="scaleToFill"/>
+      <view class="skill-check-flash {{burnLuckFlash ? 'flash-on' : ''}}"></view>
       <view class="skill-check-body" wx:if="{{skillCheckBgLoaded}}">
         <view class="skill-check-left">
           <view class="skill-check-row">

@@ -8,6 +8,9 @@ const { getDefaultCharacter } = require('../../utils/default-character')
 const REVERSE_STATUS_LABEL = {}
 Object.keys(StatusLabels).forEach(k => { REVERSE_STATUS_LABEL[StatusLabels[k]] = k })
 
+// 技能检定弹窗底图（成功态 / 燃运后使用）；抽成常量，供失败时预加载与燃运切图复用
+const SKILL_CHECK_SUCCESS_BG = 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png'
+
 // 将 status 数组统一规范为英文 key（兼容中文 label）
 function normalizeStatusList(statusList) {
   if (!Array.isArray(statusList)) return []
@@ -129,8 +132,10 @@ Page({
     skillCheckBgLoaded: false,
     // 弹窗底图：成功用老底图，失败用「失败容器.png」
     skillCheckBgSrc: 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png',
-    // 燃运切换动画标记（收缩淡出 → 数据切换 → 放大淡入）
-    burnLuckAnimating: false,
+    // 燃运翻牌动画状态：'' | 'flip-out'（翻到侧面）| 'flip-in'（翻回成功面）
+    burnLuckFlip: '',
+    // 燃运白光闪 overlay 标记
+    burnLuckFlash: false,
     // 燃运机制
     showBurnLuck: false,
     burnLuckCost: 0,
@@ -1173,7 +1178,7 @@ Page({
     const luckEnough = isFailure && currentLuck >= cost
     const bgSrc = isFailClass
       ? 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/失败容器.png'
-      : 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png'
+      : SKILL_CHECK_SUCCESS_BG
     this.setData({
       skillCheckResult: {
         skillName: skillName,
@@ -1187,8 +1192,20 @@ Page({
       skillCheckBgSrc: bgSrc,
       showBurnLuck: isFailure,
       burnLuckCost: cost,
-      luckEnough: luckEnough
+      luckEnough: luckEnough,
+      // 每次新开弹窗复位燃运动画状态，避免上一次的 flip/flash 残留
+      burnLuckFlip: '',
+      burnLuckFlash: false
     })
+    // 鉴定失败（出现「燃运」按钮）时，提前预热成功底图，
+    // 避免用户点燃运、弹窗切到成功态时因临时联网下载而空白/卡顿
+    if (isFailure) {
+      wx.getImageInfo({
+        src: SKILL_CHECK_SUCCESS_BG,
+        success() {},
+        fail() {}
+      })
+    }
   },
 
   onSkillCheckBgLoaded() {
@@ -1228,23 +1245,29 @@ Page({
       attributes: { ...character.attributes, LUK: currentLuck - burnLuckCost }
     }
     saveCharacter(updated)
-    // 先触发收缩淡出动画，动画进行到中段时再切换数据与底图，避免生硬跳变
-    this.setData({ burnLuckAnimating: true })
+    // 燃运翻牌动画：阶段1 翻到侧面（宽度缩到0）
+    this.setData({ burnLuckFlip: 'flip-out' })
     setTimeout(() => {
+      // 阶段2：在宽度为0的瞬间切换底图与文字，并翻回成功面 + 触发金光/白光
       this.setData({
         character: updated,
         attrWithThresholds: this.recalcAttrThresholds(updated),
         showBurnLuck: false,
         luckEnough: false,
         burnLuckCost: 0,
-        burnLuckAnimating: false,
-        skillCheckBgSrc: 'https://mastermind-5grqnmdu0d3a7d81-1404084982.tcloudbaseapp.com/images/d100-popup-bg.png',
+        skillCheckBgSrc: SKILL_CHECK_SUCCESS_BG,
         skillCheckResult: {
           ...skillCheckResult,
           resultText: '燃运成功',
           resultClass: 'success'
-        }
+        },
+        burnLuckFlip: 'flip-in',
+        burnLuckFlash: true
       })
-    }, 250)
+      // 阶段3：白光闪动画结束后复位 flash class，便于下次重播
+      setTimeout(() => {
+        this.setData({ burnLuckFlash: false })
+      }, 500)
+    }, 150)
   }
 })
