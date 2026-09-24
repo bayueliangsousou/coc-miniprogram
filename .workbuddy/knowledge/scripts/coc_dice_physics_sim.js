@@ -6,6 +6,14 @@ const path='/Users/liuqilong/Projects/coc-miniprogram/miniprogram_npm/cannon-es/
 const C = require(path)
 
 const N = parseInt(process.argv[2]||'150',10)
+const FIX = process.env.FIX==='1'   // 开启后套用本轮真实引擎修复：D4 质心平移 + D6/D3 均匀四元数 + 三轴角速度
+
+/* Shoemake 均匀随机四元数（与引擎 randomQuaternion 一致） */
+function randomQuaternion(){
+  const u1=Math.random(),u2=Math.random(),u3=Math.random()
+  const s1=Math.sqrt(1-u1),s2=Math.sqrt(u1)
+  return{x:s1*Math.sin(2*Math.PI*u2),y:s1*Math.cos(2*Math.PI*u2),z:s2*Math.sin(2*Math.PI*u3),w:s2*Math.cos(2*Math.PI*u3)}
+}
 
 /* ========== 源码常量（逐字复制） ========== */
 const PHYSICS_CONFIG = { GRAVITY:-30,SLEEP_LINEAR:0.01,SLEEP_ANGULAR:0.01,ADJUST_WINDOW:12,STABLE_DOT:0.93 }
@@ -30,7 +38,8 @@ function createConvexBody(type){
   let verts=[],faces=[],s,L,h,r,phi,ip,sg,i,a,y,uc,lc,un,ln,rv
   switch(type){
     case'D4': s=0.060;L=20;h=Math.sqrt(2/3)*L;r=L/Math.sqrt(3)
-      rv=[[0,h,0],[r,0,0],[-r/2,0,r*Math.sqrt(3)/2],[-r/2,0,-r*Math.sqrt(3)/2]]
+      const cg4=FIX?h/4:0   // 修复：几何重心平移回 body 原点
+      rv=[[0,h-cg4,0],[r,-cg4,0],[-r/2,-cg4,r*Math.sqrt(3)/2],[-r/2,-cg4,-r*Math.sqrt(3)/2]]
       verts=rv.map(v=>new C.Vec3(v[0]*s,v[1]*s,v[2]*s)); faces=[[0,2,1],[0,3,2],[0,1,3],[1,2,3]];break
     case'D8': s=0.70;rv=[[0,0,s],[0,0,-s],[s,0,0],[-s,0,0],[0,s,0],[0,-s,0]]
       verts=rv.map(v=>new C.Vec3(v[0],v[1],v[2])); faces=[[0,2,4],[0,4,3],[0,3,5],[0,5,2],[1,4,2],[1,3,4],[1,5,3],[1,2,5]];break
@@ -124,12 +133,15 @@ function throwOnce(type,initMode){
   const angle=0
   body.position.set(Math.cos(angle)*(1+Math.random()),3+Math.random()*2,Math.sin(angle)*(1.5+Math.random()*1.5))
   if(initMode==='identity') body.quaternion.set(0,0,0,1)
+  else if(FIX){const rq=randomQuaternion();body.quaternion.set(rq.x,rq.y,rq.z,rq.w)}
   else {const q=eulerToQuat(Math.random()*Math.PI*2,Math.random()*Math.PI*2,Math.random()*Math.PI*2)
         body.quaternion.set(q[0],q[1],q[2],q[3])}
   body.velocity.set((Math.random()-0.5)*4,1+Math.random()*3,(Math.random()-0.5)*4)
-  const axes=[0,1,2].sort(()=>Math.random()-0.5).slice(0,2)
-  const av=[0,0,0];axes.forEach(a=>{av[a]=8+Math.random()*4})
-  body.angularVelocity.set(av[0],av[1],av[2]);body.wakeUp()
+  if(FIX){const av=[8+Math.random()*6,8+Math.random()*6,8+Math.random()*6];body.angularVelocity.set(av[0],av[1],av[2])}
+  else {const axes=[0,1,2].sort(()=>Math.random()-0.5).slice(0,2)
+    const av=[0,0,0];axes.forEach(a=>{av[a]=8+Math.random()*4})
+    body.angularVelocity.set(av[0],av[1],av[2])}
+  body.wakeUp()
   world.addBody(body)
 
   let slowFrames=0,inAdjust=false,finished=false,steps=0,maxDot=0

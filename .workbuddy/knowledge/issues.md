@@ -181,7 +181,7 @@
 > 方法：静态几何审计 + 工程内 `miniprogram_npm/cannon-es` 真实物理投掷（每种 1200 次，D3/D6 追加 4000 次）
 > 完整报告：`.workbuddy/knowledge/dice-audit-2026-09-24.md`
 > 复现脚本：`.workbuddy/knowledge/scripts/coc_dice_*.js`
-> **状态：只调研，未改动任何运行时代码**
+> **状态：已修复并验证（2026-09-24 提交 main，未改判定语义只改物理几何/初态/逻辑）**
 
 ### 健康状态总表
 
@@ -226,12 +226,35 @@
 
 ### 修复优先级
 
-1. **P0** D4 `createConvexBody` 顶点减 `cg=h/4` + `createD4Mesh` 同步平移
-2. **P1** 新增 `randomQuaternion()` 替换欧拉角初态（同时惠及 D6/D3）
-3. P2 D10 上半 faces 绕序反向
-4. P2 `VERTEX_DATA.D20` 换正二十面体顶点表
-5. P2 D12/D6/D3 物理尺寸与视觉对齐
-6. P3 D100 `dv = (tens+unit) || 100`
+1. **P0** D4 `createConvexBody` 顶点减 `cg=h/4` + `createD4Mesh` 同步平移 ✅ 已落地
+2. **P1** 新增 `randomQuaternion()` 替换欧拉角初态（同时惠及 D6/D3）+ 角速度改三轴 ✅ 已落地
+3. P2 D10 上半 faces 绕序反向 ✅ 已落地
+4. P2 `VERTEX_DATA.D20` 换正二十面体顶点表 —— ⏸ 暂缓（见下）
+5. P2 D12/D6/D3 物理尺寸与视觉对齐 —— ⏸ 暂缓（见下）
+6. P3 D100 `dv = (tens+unit) || 100` ✅ 已落地
+
+### 修复落地记录（2026-09-24，提交 main）
+
+文件：`utils/dice-engine.js`
+
+- **P0 D4**：`createConvexBody` D4 四个顶点 y 全部减 `cg=h/4`（含 `[r,-cg,0]`，四个顶点一致）；`createD4Mesh` 视觉网格 `V` 同步减 `cg`。判定表 `VERTEX_DATA.D4` 不动（整体平移不改变 argmax 排序）。
+- **P1 初态**：新增 `randomQuaternion()`（Shoemake 均匀采样）；`createDice` 的 `mesh.rotation.set(欧拉随机)` 改为 `mesh.quaternion.set(rq.x,rq.y,rq.z,rq.w)`。`startThrowAnimation` 角速度从「2 随机轴 `8+rand*4`」改为「三轴 `8+rand*6`」。
+- **P2 D10**：`createConvexBody` 含顶点 0 的上半部 10 个三角面绕序 `[0,uc,lc]/[0,lc,un]` 翻转为 `[0,lc,uc]/[0,un,lc]`；含顶点 1 的下半部保持。消除 10 条 `points into the shape` 警告。
+- **P3 D100**：`calculateResults` 中 `var dv = tens + unit` → `var dv = (tens + unit) || 100`。
+
+**权威物理仿真验证（scripts/coc_dice_physics_sim.js，FIX=1，每种 1200 次）**
+| 骰子 | 修复前卡方 | 修复后卡方 | 临界 | 结论 |
+|---|---|---|---|---|
+| D4 | 1821.39 ❌ | **0.98** | 7.815 | ✅ |
+| D6 | 18.26 ❌ | **3.67** | 11.07 | ✅ |
+| D3 | 3.51 ✅ | **2.56** | 5.991 | ✅ |
+
+（D8/D10/D12/D20 本次未改；暂停项见下。）
+
+### 暂缓项与理由（未改，等确认）
+
+- **D20 判定表顶点畸形（ISSUE-DICE-004）**：当前读数检查 20/20 一致，改写顶点表有破坏读数的回归风险；且属于非标准姿态下的潜在误读，日常读数正确。建议单独写小脚本、在保持 20/20 读数的前提下替换顶点表后再落地，不在本轮批量修改中冒进。
+- **D12/D6/D3 视觉浮空（尺寸不符）**：仿真测得 D6/D3 静止中心 y≈0.552，物理半边长 0.546，视觉半边长 0.45 → 视觉网格比碰撞体小约 18%，落停后视觉离地约 0.1（纯外观）。不影响点数公平性。如需「贴桌」观感，应把视觉 scale 调大到与物理半边长一致（D6/D3→1.092、D12→0.435），属外观调整，等用户确认是否要改。
 
 ### 调研过程自我修正
 

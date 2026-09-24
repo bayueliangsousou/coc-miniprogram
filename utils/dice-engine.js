@@ -74,6 +74,15 @@ function rotateByQuat(v,quat){
 }
 
 /* ============================================================
+   Uniform random quaternion (Shoemake) —— 用于初始朝向，避免欧拉角随机在极点扎堆导致分布偏斜
+   ============================================================ */
+function randomQuaternion(){
+  var u1=Math.random(),u2=Math.random(),u3=Math.random()
+  var s1=Math.sqrt(1-u1),s2=Math.sqrt(u1)
+  return{x:s1*Math.sin(2*Math.PI*u2),y:s1*Math.cos(2*Math.PI*u2),z:s2*Math.sin(2*Math.PI*u3),w:s2*Math.cos(2*Math.PI*u3)}
+}
+
+/* ============================================================
    Dice mesh creation
    ============================================================ */
 function createD3Mesh(){
@@ -87,8 +96,9 @@ function createD3Mesh(){
 }
 
 function createD4Mesh(){
-  var group=new THREE.Group(),L=20,h=Math.sqrt(2/3)*L,r=L/Math.sqrt(3)
-  var V=[new THREE.Vector3(0,h,0),new THREE.Vector3(r,0,0),new THREE.Vector3(-r/2,0,r*Math.sqrt(3)/2),new THREE.Vector3(-r/2,0,-r*Math.sqrt(3)/2)]
+  var group=new THREE.Group(),L=20,h=Math.sqrt(2/3)*L,r=L/Math.sqrt(3),cg=h/4
+  // 视觉网格与物理碰撞体同步下移 cg=h/4，使几何重心回到 group 原点（cannon-es 拿原点当质心，否则 D4 会像不倒翁永远底面朝下）
+  var V=[new THREE.Vector3(0,h-cg,0),new THREE.Vector3(r,-cg,0),new THREE.Vector3(-r/2,-cg,r*Math.sqrt(3)/2),new THREE.Vector3(-r/2,-cg,-r*Math.sqrt(3)/2)]
   var faces=[{vi:[0,3,1]},{vi:[0,1,2]},{vi:[0,2,3]},{vi:[1,3,2]}]
   var D4_TEX_NUMS=[[1,4,2],[1,2,3],[1,3,4],[2,4,3]]
   function makeD4Tex(nums){
@@ -285,7 +295,8 @@ function createDice(type){
     default:mesh=createD6Mesh()
   }
   mesh.position.set((Math.random()-0.5)*2,4+Math.random()*2,(Math.random()-0.5)*2)
-  mesh.rotation.set(Math.random()*Math.PI*2,Math.random()*Math.PI*2,Math.random()*Math.PI*2)
+  var rq=randomQuaternion()
+  mesh.quaternion.set(rq.x,rq.y,rq.z,rq.w)
   return mesh
 }
 
@@ -325,8 +336,10 @@ function createConvexBody(type,radius){
   var verts=[],faces=[],s,L,h,r,phi,ip,sg,pg,i,a,y,uc,lc,un,ln,rv
   switch(type){
     case'D4':
-      s=0.060;L=20;h=Math.sqrt(2/3)*L;r=L/Math.sqrt(3)
-      rv=[[0,h,0],[r,0,0],[-r/2,0,r*Math.sqrt(3)/2],[-r/2,0,-r*Math.sqrt(3)/2]]
+      s=0.060;L=20;h=Math.sqrt(2/3)*L;r=L/Math.sqrt(3);var cg=h/4
+      // 关键修复：四个顶点 y 全部减 cg=h/4，使四面体几何重心回到 body 原点。
+      // cannon-es 拿 body 原点当质心且不自动算凸包重心；原点在底面中心时骰子永远底面朝下（现状 1 占 75.6%）。
+      rv=[[0,h-cg,0],[r,-cg,0],[-r/2,-cg,r*Math.sqrt(3)/2],[-r/2,-cg,-r*Math.sqrt(3)/2]]
       verts=rv.map(function(v){return new C.Vec3(v[0]*s,v[1]*s,v[2]*s)})
       faces=[[0,2,1],[0,3,2],[0,1,3],[1,2,3]];break
     case'D8':
@@ -336,7 +349,8 @@ function createConvexBody(type,radius){
     case'D10':case'D90':
       s=1*0.92;r=0.765*s;h=0.0808*s;verts.push(new C.Vec3(0,r,0),new C.Vec3(0,-r,0))
       for(i=0;i<10;i++){a=i*Math.PI*2/10;y=h*(i%2===0?1:-1);verts.push(new C.Vec3(r*Math.cos(a),y,r*Math.sin(a)))}
-      for(i=0;i<5;i++){uc=2+i*2;lc=2+i*2+1;un=2+((i*2+2)%10);faces.push([0,uc,lc],[0,lc,un])}
+      // 含顶点 0 的上半部 10 个三角面原绕向朝内（cannon 打印 points into the shape 警告，SAT 碰撞可能穿透），翻转修正；含顶点 1 的下半部保持
+      for(i=0;i<5;i++){uc=2+i*2;lc=2+i*2+1;un=2+((i*2+2)%10);faces.push([0,lc,uc],[0,un,lc])}
       for(i=0;i<5;i++){lc=2+i*2+1;un=2+((i*2+2)%10);ln=2+((i*2+3)%10);faces.push([1,lc,un],[1,un,ln])};break
     case'D12':
       sg=0.5*0.87;phi=(1+Math.sqrt(5))/2;ip=1/phi
@@ -546,8 +560,8 @@ function startThrowAnimation() {
     body.position.set(Math.cos(angle) * (1 + Math.random()), 3 + Math.random() * 2, Math.sin(angle) * (1.5 + Math.random() * 1.5))
     body.quaternion.set(mesh.quaternion.x, mesh.quaternion.y, mesh.quaternion.z, mesh.quaternion.w)
     body.velocity.set((Math.random() - 0.5) * 4, 1 + Math.random() * 3, (Math.random() - 0.5) * 4)
-    var axes = [0, 1, 2].sort(function() { return Math.random() - 0.5 }).slice(0, 2)
-    var av = [0, 0, 0]; axes.forEach(function(a) { av[a] = 8 + Math.random() * 4 })
+    // 三轴都给随机角速度（8~14），比原来的 2 随机轴翻滚更充分、分布更均匀
+    var av = [8 + Math.random() * 6, 8 + Math.random() * 6, 8 + Math.random() * 6]
     body.angularVelocity.set(av[0], av[1], av[2]); body.wakeUp()
     physicsWorld.addBody(body); diceBodies.push(body)
   }
@@ -575,7 +589,7 @@ function calculateResults() {
     }
     if (typeof v === 'number') { ret.push({ id: rid++, type: t.toLowerCase(), value: v }); total += v }
   }
-  if (tens !== null && unit !== null) { var dv = tens + unit; ret.push({ id: rid++, type: 'd100', value: dv }); total += dv }
+  if (tens !== null && unit !== null) { var dv = (tens + unit) || 100; ret.push({ id: rid++, type: 'd100', value: dv }); total += dv }
   return { results: ret, totalSum: total }
 }
 
